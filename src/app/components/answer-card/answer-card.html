@@ -1,0 +1,15 @@
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">{{ answer().label }}</span>
+    @if (answer().isWinner) {
+      <app-winner-badge />
+    }
+  </div>
+  <div class="card-body">
+    <p class="card-text mb-3">{{ answer().content }}</p>
+    <app-score-summary [summary]="summary()" />
+    <button type="button" class="btn btn-sm btn-outline-danger mt-3" (click)="removeRequested.emit(answer().id)">
+      Remove
+    </button>
+  </div>
+</div>

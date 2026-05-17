@@ -1,0 +1,26 @@
+@if (criteria().length === 0 || answers().length === 0) {
+  <p class="text-muted mb-0">Add criteria and answers to view the rubric table.</p>
+} @else {
+  <div class="table-responsive">
+    <table class="table table-striped table-bordered align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Criterion</th>
+          @for (answer of answers(); track answer.id) {
+            <th scope="col">{{ answer.label }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (criterion of criteria(); track criterion.id) {
+          <tr>
+            <th scope="row">{{ criterion.name }}</th>
+            @for (answer of answers(); track answer.id) {
+              <td>{{ scoreFor(answer, criterion.id) }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

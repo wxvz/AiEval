@@ -1,0 +1,9 @@
+<div>
+  <div class="d-flex justify-content-between small mb-1">
+    <span>Score</span>
+    <span class="fw-semibold">{{ summary().totalPoints }} / {{ summary().maxPoints }} ({{ summary().percentage }}%)</span>
+  </div>
+  <div class="progress" role="progressbar" [attr.aria-valuenow]="summary().percentage" aria-valuemin="0" aria-valuemax="100">
+    <div class="progress-bar" [style.width.%]="summary().percentage"></div>
+  </div>
+</div>

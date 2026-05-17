@@ -1,0 +1,41 @@
+@if (!evaluation()) {
+  <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
+} @else {
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Compare: {{ evaluation()!.title }}</h1>
+    <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
+  </div>
+
+  <app-rubric-table [criteria]="evaluation()!.criteria" [answers]="evaluation()!.answers" />
+
+  <h2 class="h5 mt-4">Scores</h2>
+  @if (evaluation()!.answers.length === 0) {
+    <app-empty-state title="No answers to compare" message="Add answers on the edit page first." />
+  } @else {
+    <div class="row g-3">
+      @for (answer of evaluation()!.answers; track answer.id) {
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h3 class="h6 mb-0">{{ answer.label }}</h3>
+                @if (answer.isWinner) {
+                  <app-winner-badge />
+                }
+              </div>
+              <app-score-summary [summary]="summaryFor(answer.id)" />
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success mt-3"
+                [disabled]="answer.isWinner"
+                (click)="setWinner(answer.id)"
+              >
+                Mark winner
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+}

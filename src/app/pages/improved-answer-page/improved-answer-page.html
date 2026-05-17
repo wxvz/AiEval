@@ -1,0 +1,10 @@
+@if (!evaluation()) {
+  <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
+} @else {
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Improved answer: {{ evaluation()!.title }}</h1>
+    <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
+  </div>
+
+  <app-improved-answer-editor [value]="evaluation()!.improvedAnswer ?? ''" (saved)="onSave($event)" />
+}

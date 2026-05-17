@@ -1,0 +1,31 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <div class="mb-3">
+    <label class="form-label" for="evaluation-title">Title</label>
+    <input
+      id="evaluation-title"
+      type="text"
+      class="form-control"
+      formControlName="title"
+      [class.is-invalid]="form.controls.title.touched && form.controls.title.invalid"
+    />
+    @if (form.controls.title.touched && form.controls.title.hasError('required')) {
+      <div class="invalid-feedback">Title is required.</div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="evaluation-prompt">Prompt</label>
+    <textarea
+      id="evaluation-prompt"
+      class="form-control"
+      rows="5"
+      formControlName="prompt"
+      [class.is-invalid]="form.controls.prompt.touched && form.controls.prompt.invalid"
+    ></textarea>
+    @if (form.controls.prompt.touched && form.controls.prompt.hasError('required')) {
+      <div class="invalid-feedback">Prompt is required.</div>
+    }
+  </div>
+
+  <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+</form>

@@ -1,0 +1,36 @@
+@if (!evaluation()) {
+  <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
+  <a routerLink="/" class="btn btn-link px-0">Back to dashboard</a>
+} @else {
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Edit: {{ evaluation()!.title }}</h1>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">Compare</a>
+      <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'improved']">
+        Improved
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <h2 class="h5">Details</h2>
+      <app-evaluation-form
+        [evaluation]="evaluation()!"
+        submitLabel="Save changes"
+        (submitted)="onEvaluationSubmit($event)"
+      />
+    </div>
+    <div class="col-lg-6">
+      <h2 class="h5">Answers</h2>
+      <app-answer-form class="d-block mb-3" (submitted)="onAnswerSubmit($event)" />
+      @if (evaluation()!.answers.length === 0) {
+        <app-empty-state title="No answers" message="Add at least one model answer to compare." />
+      } @else {
+        @for (answer of evaluation()!.answers; track answer.id) {
+          <app-answer-card [answer]="answer" (removeRequested)="removeAnswer($event)" />
+        }
+      }
+    </div>
+  </div>
+}

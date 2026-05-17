@@ -1,0 +1,28 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">Evaluations</h1>
+  <a routerLink="/evaluations/new" class="btn btn-primary">New Evaluation</a>
+</div>
+
+@if (loading()) {
+  <app-loading-spinner message="Loading evaluations..." />
+} @else if (evaluations().length === 0) {
+  <app-empty-state
+    title="No evaluations yet"
+    message="Create an evaluation to compare AI answers side by side."
+  />
+} @else {
+  <div class="row g-3">
+    @for (evaluation of evaluations(); track evaluation.id) {
+      <div class="col-md-6 col-lg-4">
+        <app-evaluation-card [evaluation]="evaluation" (deleteRequested)="requestDelete($event)" />
+      </div>
+    }
+  </div>
+}
+
+<app-confirm-delete-modal
+  modalId="deleteEvaluationModal"
+  title="Delete evaluation"
+  message="This will permanently remove the evaluation and all of its answers."
+  (confirmed)="confirmDelete()"
+/>
