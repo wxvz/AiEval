@@ -39,18 +39,6 @@ describe('EvaluationService criteria modes', () => {
     return service;
   }
 
-  function legacyEvaluation(): Evaluation {
-    return {
-      id: 'legacy-evaluation',
-      title: 'Legacy evaluation',
-      prompt: 'This is a legacy evaluation prompt.',
-      criteria: [customCriterion],
-      answers: [],
-      createdAt: '2026-01-01T00:00:00.000Z',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    };
-  }
-
   function savedEvaluation(overrides: Partial<Evaluation> = {}): Evaluation {
     return {
       id: MONGO_ID,
@@ -83,15 +71,6 @@ describe('EvaluationService criteria modes', () => {
     const created = await createPromise;
     expect(created.criteriaMode).toBe('default');
     expect(service.getActiveCriteria(created)).toEqual(DEFAULT_CRITERIA);
-  });
-
-  it('treats existing evaluations without criteriaMode as custom criteria mode', async () => {
-    const service = await createService([legacyEvaluation()]);
-    const evaluation = service.getById('legacy-evaluation');
-
-    expect(evaluation).toBeTruthy();
-    expect(evaluation?.criteriaMode).toBeUndefined();
-    expect(service.getActiveCriteria(evaluation as Evaluation)).toEqual([customCriterion]);
   });
 
   it('preserves custom criteria when toggling between default and custom modes', async () => {
@@ -239,5 +218,56 @@ describe('EvaluationService criteria modes', () => {
     const deleteRequest = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
     deleteRequest.flush(null);
     expect(feedback.feedback()).toEqual({ type: 'success', message: 'Evaluation deleted.' });
+  });
+
+  it('shows server error message from API response body on create failure', async () => {
+    const service = await createService();
+    const feedback = TestBed.inject(FeedbackService);
+
+    const createPromise = service.create(
+      {
+        title: 'Bad evaluation',
+        prompt: 'Missing required fields on server.',
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+
+    const post = httpMock.expectOne('/api/evaluations');
+    post.flush(
+      { message: 'title and prompt are required' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    await expect(createPromise).rejects.toThrow('title and prompt are required');
+    expect(feedback.feedback()).toEqual({
+      type: 'danger',
+      message: 'title and prompt are required',
+    });
+  });
+
+  it('shows server error message from API response body on update failure', async () => {
+    const evaluation = savedEvaluation();
+    const service = await createService([evaluation]);
+    const feedback = TestBed.inject(FeedbackService);
+
+    service.update(
+      evaluation.id,
+      { title: '' },
+      {
+        success: 'Changes saved.',
+        error: 'Could not save changes.',
+      },
+    );
+
+    const put = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    put.flush({ message: 'title and prompt are required' }, { status: 400, statusText: 'Bad Request' });
+
+    expect(feedback.feedback()).toEqual({
+      type: 'danger',
+      message: 'title and prompt are required',
+    });
   });
 });

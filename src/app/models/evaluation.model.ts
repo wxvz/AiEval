@@ -47,8 +47,7 @@ export interface Evaluation {
   id: string;
   title: string;
   prompt: string;
-  criteriaMode?: CriteriaMode;
-  rubricId?: string;
+  criteriaMode: CriteriaMode;
   criteria: RubricCriterion[];
   answers: Answer[];
   improvedAnswer?: ImprovedAnswer;

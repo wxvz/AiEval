@@ -56,7 +56,6 @@ export function createEvaluationsRouter(): Router {
         answers: Array.isArray(body.answers) ? body.answers : [],
         ...(body.improvedAnswer !== undefined ? { improvedAnswer: body.improvedAnswer } : {}),
         ...(body.winnerAnswerId !== undefined ? { winnerAnswerId: body.winnerAnswerId } : {}),
-        ...(body.rubricId !== undefined ? { rubricId: body.rubricId } : {}),
         createdAt: now,
         updatedAt: now,
       };
@@ -96,12 +95,11 @@ export function createEvaluationsRouter(): Router {
       const updated: EvaluationRecord = {
         title: body.title?.trim() ?? existing.title,
         prompt: body.prompt?.trim() ?? existing.prompt,
-        criteriaMode: body.criteriaMode ?? existing.criteriaMode,
+        criteriaMode: body.criteriaMode ?? existing.criteriaMode ?? 'default',
         criteria: body.criteria ?? existing.criteria,
         answers: body.answers ?? existing.answers,
         improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
         winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
-        rubricId: body.rubricId ?? existing.rubricId,
         createdAt: existing.createdAt,
         updatedAt: new Date().toISOString(),
       };

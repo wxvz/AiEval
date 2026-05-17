@@ -40,7 +40,9 @@ export class EditEvaluationPage {
     return current ? this.evaluationService.getActiveCriteria(current) : [];
   });
 
-  protected readonly criteriaMode = computed(() => this.evaluation()?.criteriaMode ?? 'custom');
+  protected readonly criteriaMode = computed(
+    () => this.evaluation()?.criteriaMode ?? 'default',
+  );
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
     this.evaluationService.update(this.evaluationId, value, {
