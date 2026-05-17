@@ -21,8 +21,8 @@
           <button
             type="button"
             class="btn btn-sm rounded-pill"
-            [class.btn-secondary]="selectedAnswer()?.id === modelAnswer.id"
-            [class.btn-outline-secondary]="selectedAnswer()?.id !== modelAnswer.id"
+            [class.btn-secondary]="selectedAnswer().id === modelAnswer.id"
+            [class.btn-outline-secondary]="selectedAnswer().id !== modelAnswer.id"
             (click)="selectAnswer(index)"
           >
             {{ modelAnswer.label }}
