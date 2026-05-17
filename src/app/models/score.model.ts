@@ -1,9 +1,24 @@
+export interface ScorableCriterion {
+  id: string;
+  name: string;
+  maxPoints: number;
+}
+
 export interface Score {
   criterionId: string;
   criterionName: string;
   points: number;
   maxPoints: number;
   notes?: string;
+}
+
+export function initialScoresForCriteria(criteria: ScorableCriterion[]): Score[] {
+  return criteria.map((criterion) => ({
+    criterionId: criterion.id,
+    criterionName: criterion.name,
+    points: 0,
+    maxPoints: criterion.maxPoints,
+  }));
 }
 
 export interface ScoreSummary {
