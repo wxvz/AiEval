@@ -1,5 +1,10 @@
 import { RubricCriterion, Score } from '../../models';
-import { upsertCriterionScore } from './compare-answers-page';
+import {
+  activeScoresForCriteria,
+  nextAnswerIndex,
+  previousAnswerIndex,
+  upsertCriterionScore,
+} from './compare-answers-page';
 
 describe('upsertCriterionScore', () => {
   const criterion: RubricCriterion = {
@@ -65,5 +70,43 @@ describe('upsertCriterionScore', () => {
   it('clamps scores below zero and above max points', () => {
     expect(upsertCriterionScore([], criterion, -2)[0].points).toBe(0);
     expect(upsertCriterionScore([], criterion, 12)[0].points).toBe(5);
+  });
+});
+
+describe('focused compare helpers', () => {
+  it('cycles to the next answer index', () => {
+    expect(nextAnswerIndex(0, 3)).toBe(1);
+    expect(nextAnswerIndex(2, 3)).toBe(0);
+    expect(nextAnswerIndex(0, 0)).toBe(0);
+  });
+
+  it('cycles to the previous answer index', () => {
+    expect(previousAnswerIndex(2, 3)).toBe(1);
+    expect(previousAnswerIndex(0, 3)).toBe(2);
+    expect(previousAnswerIndex(0, 0)).toBe(0);
+  });
+
+  it('filters score summaries to active criteria', () => {
+    const activeCriterion: RubricCriterion = {
+      id: 'criterion-active',
+      name: 'Active criterion',
+      maxPoints: 5,
+    };
+    const activeScore: Score = {
+      criterionId: activeCriterion.id,
+      criterionName: activeCriterion.name,
+      points: 4,
+      maxPoints: activeCriterion.maxPoints,
+    };
+    const inactiveScore: Score = {
+      criterionId: 'criterion-inactive',
+      criterionName: 'Inactive criterion',
+      points: 10,
+      maxPoints: 10,
+    };
+
+    expect(activeScoresForCriteria([activeScore, inactiveScore], [activeCriterion])).toEqual([
+      activeScore,
+    ]);
   });
 });

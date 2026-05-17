@@ -6,40 +6,97 @@
     <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
   </div>
 
-  <app-rubric-table
-    [criteria]="activeCriteria()"
-    [answers]="evaluation()!.answers"
-    (scoreChanged)="onScoreChanged($event)"
-  />
-
-  <h2 class="h5 mt-4">Scores</h2>
   @if (evaluation()!.answers.length === 0) {
     <app-empty-state title="No answers to compare" message="Add answers on the edit page first." />
-  } @else {
-    <div class="row g-3">
-      @for (answer of evaluation()!.answers; track answer.id) {
-        <div class="col-md-6">
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <h3 class="h6 mb-0">{{ answer.label }}</h3>
-                @if (answer.isWinner) {
-                  <app-winner-badge />
+  } @else if (activeCriteria().length === 0) {
+    <app-empty-state title="No criteria to score" message="Add criteria on the edit page first." />
+  } @else if (selectedAnswer(); as answer) {
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+      <button type="button" class="btn btn-outline-secondary btn-sm" aria-label="Previous model" (click)="previousAnswer()">
+        &larr;
+      </button>
+
+      <div class="d-flex flex-wrap gap-2">
+        @for (modelAnswer of evaluation()!.answers; track modelAnswer.id; let index = $index) {
+          <button
+            type="button"
+            class="btn btn-sm rounded-pill"
+            [class.btn-secondary]="selectedAnswer()?.id === modelAnswer.id"
+            [class.btn-outline-secondary]="selectedAnswer()?.id !== modelAnswer.id"
+            (click)="selectAnswer(index)"
+          >
+            {{ modelAnswer.label }}
+            @if (modelAnswer.isWinner) {
+              <app-winner-badge />
+            }
+          </button>
+        }
+      </div>
+
+      <button type="button" class="btn btn-outline-secondary btn-sm" aria-label="Next model" (click)="nextAnswer()">
+        &rarr;
+      </button>
+      <span class="text-muted small ms-auto">
+        {{ selectedAnswerPosition() + 1 }} of {{ evaluation()!.answers.length }}
+      </span>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+          <h2 class="h5 mb-0">{{ answer.label }}</h2>
+          @if (answer.isWinner) {
+            <app-winner-badge />
+          }
+        </div>
+        <p class="card-text mb-0">{{ answer.content }}</p>
+      </div>
+    </div>
+
+    <h2 class="h5 mb-3">Criteria</h2>
+    <div class="vstack gap-3">
+      @for (criterion of activeCriteria(); track criterion.id) {
+        <div class="card">
+          <div class="card-body">
+            <div class="row g-3 align-items-start">
+              <div class="col-md">
+                <div class="fw-semibold">{{ criterion.name }}</div>
+                @if (criterion.description) {
+                  <p class="text-muted small mb-0">{{ criterion.description }}</p>
                 }
               </div>
-              <app-score-summary [summary]="summaryFor(answer.id)" />
-              <button
-                type="button"
-                class="btn btn-sm btn-outline-success mt-3"
-                [disabled]="answer.isWinner"
-                (click)="setWinner(answer.id)"
-              >
-                Mark winner
-              </button>
+              <div class="col-md-3">
+                <label class="form-label small" [for]="'score-' + answer.id + '-' + criterion.id">
+                  Score / {{ criterion.maxPoints }}
+                </label>
+                <input
+                  [id]="'score-' + answer.id + '-' + criterion.id"
+                  type="number"
+                  class="form-control"
+                  min="0"
+                  [max]="criterion.maxPoints"
+                  [value]="scoreFor(answer, criterion.id) ?? ''"
+                  (input)="onScoreInput(answer, criterion, $event)"
+                />
+              </div>
             </div>
           </div>
         </div>
       }
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-body">
+        <app-score-summary [summary]="summaryFor(answer.id)" />
+        <button
+          type="button"
+          class="btn btn-outline-success mt-3"
+          [disabled]="answer.isWinner"
+          (click)="setWinner(answer.id)"
+        >
+          Mark winner
+        </button>
+      </div>
     </div>
   }
 }
