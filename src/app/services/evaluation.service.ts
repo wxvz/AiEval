@@ -1,4 +1,6 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
 
 import {
   Answer,
@@ -12,17 +14,40 @@ import {
   UpdateEvaluationDto,
 } from '../models';
 
-const STORAGE_KEY = 'ai-eval-evaluations';
+const API = '/api/evaluations';
 
 @Injectable({
   providedIn: 'root',
 })
 export class EvaluationService {
-  private readonly evaluationsSignal = signal<Evaluation[]>(this.loadFromStorage());
+  private readonly http = inject(HttpClient);
+
+  private readonly evaluationsSignal = signal<Evaluation[]>([]);
+  private readonly loadingSignal = signal(true);
+  private readonly loadErrorSignal = signal<string | null>(null);
 
   readonly evaluations = this.evaluationsSignal.asReadonly();
+  readonly loading = this.loadingSignal.asReadonly();
+  readonly loadError = this.loadErrorSignal.asReadonly();
 
   readonly count = computed(() => this.evaluationsSignal().length);
+
+  loadFromApi(): Promise<void> {
+    this.loadingSignal.set(true);
+    this.loadErrorSignal.set(null);
+
+    return firstValueFrom(this.http.get<Evaluation[]>(API))
+      .then((evaluations) => {
+        this.evaluationsSignal.set(evaluations);
+      })
+      .catch(() => {
+        this.loadErrorSignal.set('Could not load evaluations from the server.');
+        this.evaluationsSignal.set([]);
+      })
+      .finally(() => {
+        this.loadingSignal.set(false);
+      });
+  }
 
   getAll(): Evaluation[] {
     return this.evaluationsSignal();
@@ -53,45 +78,51 @@ export class EvaluationService {
       updatedAt: now,
     };
 
-    this.persist([evaluation, ...this.evaluationsSignal()]);
+    this.evaluationsSignal.update((list) => [evaluation, ...list]);
+    this.http.post<Evaluation>(API, evaluation).subscribe({
+      next: (saved) => this.replaceEvaluation(saved),
+      error: () => this.removeEvaluationFromList(evaluation.id),
+    });
+
     return evaluation;
   }
 
   update(id: string, dto: UpdateEvaluationDto): Evaluation | undefined {
-    let updated: Evaluation | undefined;
+    const current = this.getById(id);
 
-    const next = this.evaluationsSignal().map((evaluation) => {
-      if (evaluation.id !== id) {
-        return evaluation;
-      }
-
-      updated = {
-        ...evaluation,
-        ...dto,
-        title: dto.title?.trim() ?? evaluation.title,
-        prompt: dto.prompt?.trim() ?? evaluation.prompt,
-        updatedAt: new Date().toISOString(),
-      };
-
-      return updated;
-    });
-
-    if (!updated) {
+    if (!current) {
       return undefined;
     }
 
-    this.persist(next);
+    const updated: Evaluation = {
+      ...current,
+      ...dto,
+      title: dto.title?.trim() ?? current.title,
+      prompt: dto.prompt?.trim() ?? current.prompt,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.replaceEvaluation(updated);
+    this.http.put<Evaluation>(`${API}/${id}`, updated).subscribe({
+      next: (saved) => this.replaceEvaluation(saved),
+      error: () => this.replaceEvaluation(current),
+    });
+
     return updated;
   }
 
   delete(id: string): boolean {
-    const next = this.evaluationsSignal().filter((evaluation) => evaluation.id !== id);
+    const current = this.getById(id);
 
-    if (next.length === this.evaluationsSignal().length) {
+    if (!current) {
       return false;
     }
 
-    this.persist(next);
+    this.removeEvaluationFromList(id);
+    this.http.delete(`${API}/${id}`).subscribe({
+      error: () => this.replaceEvaluation(current),
+    });
+
     return true;
   }
 
@@ -179,47 +210,32 @@ export class EvaluationService {
     evaluationId: string,
     updater: (answers: Answer[]) => Answer[],
   ): boolean {
-    let found = false;
+    const evaluation = this.getById(evaluationId);
 
-    const next = this.evaluationsSignal().map((evaluation) => {
-      if (evaluation.id !== evaluationId) {
-        return evaluation;
-      }
-
-      found = true;
-      return {
-        ...evaluation,
-        answers: updater(evaluation.answers),
-        updatedAt: new Date().toISOString(),
-      };
-    });
-
-    if (!found) {
+    if (!evaluation) {
       return false;
     }
 
-    this.persist(next);
-    return true;
+    return !!this.update(evaluationId, {
+      answers: updater(evaluation.answers),
+    });
   }
 
-  private persist(evaluations: Evaluation[]): void {
-    this.evaluationsSignal.set(evaluations);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(evaluations));
-  }
+  private replaceEvaluation(evaluation: Evaluation): void {
+    this.evaluationsSignal.update((list) => {
+      const index = list.findIndex((item) => item.id === evaluation.id);
 
-  private loadFromStorage(): Evaluation[] {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-
-      if (!raw) {
-        return [];
+      if (index === -1) {
+        return [evaluation, ...list];
       }
 
-      const parsed = JSON.parse(raw) as Evaluation[];
+      const next = [...list];
+      next[index] = evaluation;
+      return next;
+    });
+  }
 
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+  private removeEvaluationFromList(id: string): void {
+    this.evaluationsSignal.update((list) => list.filter((evaluation) => evaluation.id !== id));
   }
 }

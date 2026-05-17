@@ -69,13 +69,27 @@ Install dependencies:
 npm install
 ```
 
-Start the local development server:
+Copy environment variables and set your MongoDB connection string:
 
 ```bash
+cp .env.example .env
+```
+
+Start the API and Angular app together:
+
+```bash
+npm run dev
+```
+
+Or run them in separate terminals:
+
+```bash
+npm run server
 npm start
 ```
 
-The app runs at `http://localhost:4200/` by default.
+- Frontend: `http://localhost:4200/`
+- API: `http://localhost:3000/api`
 
 ## Build and test
 

@@ -22,7 +22,8 @@ declare const bootstrap: {
 export class DashboardPage {
   private readonly evaluationService = inject(EvaluationService);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.evaluationService.loading;
+  protected readonly loadError = this.evaluationService.loadError;
   protected readonly evaluations = this.evaluationService.evaluations;
   protected readonly deleteTargetId = signal<string | null>(null);
 

@@ -5,6 +5,8 @@
 
 @if (loading()) {
   <app-loading-spinner message="Loading evaluations..." />
+} @else if (loadError()) {
+  <div class="alert alert-danger" role="alert">{{ loadError() }}</div>
 } @else if (evaluations().length === 0) {
   <app-empty-state
     title="No evaluations yet"
