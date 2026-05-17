@@ -1,0 +1,8 @@
+.navbar {
+  --bs-navbar-padding-y: 0.75rem;
+}
+
+.navbar-brand,
+.navbar .nav-link {
+  font-size: 1.05rem;
+}
