@@ -7,7 +7,7 @@ export interface FeedbackMessage {
   message: string;
 }
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 3000;
 const EXIT_ANIMATION_MS = 250;
 
 @Injectable({
