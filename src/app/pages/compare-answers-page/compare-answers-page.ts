@@ -142,6 +142,9 @@ export class CompareAnswersPage {
   }
 
   protected setWinner(answerId: string): void {
-    this.evaluationService.setWinner(this.evaluationId, answerId);
+    this.evaluationService.setWinner(this.evaluationId, answerId, {
+      success: 'Winner marked.',
+      error: 'Could not mark winner.',
+    });
   }
 }

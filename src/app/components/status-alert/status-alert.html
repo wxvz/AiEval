@@ -1,0 +1,5 @@
+@if (feedbackService.feedback(); as feedback) {
+  <div class="alert mb-3" [class.alert-success]="feedback.type === 'success'" [class.alert-danger]="feedback.type === 'danger'" role="alert">
+    {{ feedback.message }}
+  </div>
+}

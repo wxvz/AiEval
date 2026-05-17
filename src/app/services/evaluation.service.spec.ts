@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DEFAULT_CRITERIA, Evaluation, RubricCriterion } from '../models';
 import { EvaluationService } from './evaluation.service';
+import { FeedbackService } from './feedback.service';
 
 const MONGO_ID = '507f1f77bcf86cd799439011';
 
@@ -171,5 +172,72 @@ describe('EvaluationService criteria modes', () => {
     });
 
     expect(service.getActiveCriteria(customMode)).toEqual([customCriterion]);
+  });
+
+  it('shows feedback on create success and error', async () => {
+    const service = await createService();
+    const feedback = TestBed.inject(FeedbackService);
+
+    const createPromise = service.create(
+      {
+        title: 'Feedback evaluation',
+        prompt: 'Test feedback on create.',
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+
+    const post = httpMock.expectOne('/api/evaluations');
+    post.flush(savedEvaluation({ title: 'Feedback evaluation', prompt: 'Test feedback on create.' }));
+    await createPromise;
+
+    expect(feedback.feedback()).toEqual({ type: 'success', message: 'Evaluation created.' });
+
+    const failingPromise = service.create(
+      {
+        title: 'Failing evaluation',
+        prompt: 'This create should fail.',
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+
+    const failingPost = httpMock.expectOne('/api/evaluations');
+    failingPost.error(new ProgressEvent('error'), { status: 500, statusText: 'Server Error' });
+
+    await expect(failingPromise).rejects.toThrow();
+    expect(feedback.feedback()).toEqual({ type: 'danger', message: 'Could not create evaluation.' });
+  });
+
+  it('shows feedback on update and delete', async () => {
+    const evaluation = savedEvaluation();
+    const service = await createService([evaluation]);
+    const feedback = TestBed.inject(FeedbackService);
+
+    service.update(
+      evaluation.id,
+      { title: 'Updated title' },
+      {
+        success: 'Changes saved.',
+        error: 'Could not save changes.',
+      },
+    );
+    httpMock.expectOne(`/api/evaluations/${evaluation.id}`).flush({
+      ...evaluation,
+      title: 'Updated title',
+    });
+    expect(feedback.feedback()).toEqual({ type: 'success', message: 'Changes saved.' });
+
+    service.delete(evaluation.id, {
+      success: 'Evaluation deleted.',
+      error: 'Could not delete evaluation.',
+    });
+    const deleteRequest = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    deleteRequest.flush(null);
+    expect(feedback.feedback()).toEqual({ type: 'success', message: 'Evaluation deleted.' });
   });
 });

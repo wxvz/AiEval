@@ -43,19 +43,33 @@ export class EditEvaluationPage {
   protected readonly criteriaMode = computed(() => this.evaluation()?.criteriaMode ?? 'custom');
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
-    this.evaluationService.update(this.evaluationId, value);
+    this.evaluationService.update(this.evaluationId, value, {
+      success: 'Changes saved.',
+      error: 'Could not save changes.',
+    });
   }
 
   protected setCriteriaMode(criteriaMode: CriteriaMode): void {
-    this.evaluationService.setCriteriaMode(this.evaluationId, criteriaMode);
+    this.evaluationService.setCriteriaMode(this.evaluationId, criteriaMode, {
+      success:
+        criteriaMode === 'default' ? 'Using default criteria.' : 'Using custom criteria.',
+      error: 'Could not update criteria mode.',
+    });
   }
 
   protected onCriterionSubmit(value: CriterionFormValue): void {
-    this.evaluationService.addCriterion(this.evaluationId, {
-      name: value.name,
-      maxPoints: value.maxPoints,
-      ...(value.description.trim() ? { description: value.description } : {}),
-    });
+    this.evaluationService.addCriterion(
+      this.evaluationId,
+      {
+        name: value.name,
+        maxPoints: value.maxPoints,
+        ...(value.description.trim() ? { description: value.description } : {}),
+      },
+      {
+        success: 'Criterion added.',
+        error: 'Could not add criterion.',
+      },
+    );
   }
 
   protected removeCriterion(criterionId: string): void {
@@ -65,13 +79,23 @@ export class EditEvaluationPage {
       return;
     }
 
-    this.evaluationService.update(this.evaluationId, {
-      criteria: current.criteria.filter((criterion) => criterion.id !== criterionId),
-    });
+    this.evaluationService.update(
+      this.evaluationId,
+      {
+        criteria: current.criteria.filter((criterion) => criterion.id !== criterionId),
+      },
+      {
+        success: 'Criterion removed.',
+        error: 'Could not remove criterion.',
+      },
+    );
   }
 
   protected onAnswerSubmit(value: AnswerFormValue): void {
-    this.evaluationService.addAnswer(this.evaluationId, value);
+    this.evaluationService.addAnswer(this.evaluationId, value, {
+      success: 'Model answer added.',
+      error: 'Could not add model answer.',
+    });
   }
 
   protected removeAnswer(answerId: string): void {
@@ -81,8 +105,15 @@ export class EditEvaluationPage {
       return;
     }
 
-    this.evaluationService.update(this.evaluationId, {
-      answers: current.answers.filter((answer) => answer.id !== answerId),
-    });
+    this.evaluationService.update(
+      this.evaluationId,
+      {
+        answers: current.answers.filter((answer) => answer.id !== answerId),
+      },
+      {
+        success: 'Model answer removed.',
+        error: 'Could not remove model answer.',
+      },
+    );
   }
 }

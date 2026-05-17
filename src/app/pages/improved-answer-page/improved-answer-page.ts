@@ -21,6 +21,13 @@ export class ImprovedAnswerPage {
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
 
   protected onSave(improvedAnswer: ImprovedAnswer): void {
-    this.evaluationService.update(this.evaluationId, { improvedAnswer });
+    this.evaluationService.update(
+      this.evaluationId,
+      { improvedAnswer },
+      {
+        success: 'Improved answer saved.',
+        error: 'Could not save improved answer.',
+      },
+    );
   }
 }

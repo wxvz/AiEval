@@ -13,14 +13,21 @@ import {
   RubricCriterion,
   UpdateEvaluationDto,
 } from '../models';
+import { FeedbackService } from './feedback.service';
 
 const API = '/api/evaluations';
+
+export interface OperationFeedback {
+  success: string;
+  error: string;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class EvaluationService {
   private readonly http = inject(HttpClient);
+  private readonly feedback = inject(FeedbackService);
 
   private readonly evaluationsSignal = signal<Evaluation[]>([]);
   private readonly loadingSignal = signal(true);
@@ -61,24 +68,42 @@ export class EvaluationService {
     return evaluation.criteriaMode === 'default' ? DEFAULT_CRITERIA : evaluation.criteria;
   }
 
-  setCriteriaMode(id: string, criteriaMode: CriteriaMode): Evaluation | undefined {
-    return this.update(id, { criteriaMode });
+  setCriteriaMode(
+    id: string,
+    criteriaMode: CriteriaMode,
+    operationFeedback?: OperationFeedback,
+  ): Evaluation | undefined {
+    return this.update(id, { criteriaMode }, operationFeedback);
   }
 
-  create(dto: CreateEvaluationDto): Promise<Evaluation> {
+  create(dto: CreateEvaluationDto, operationFeedback?: OperationFeedback): Promise<Evaluation> {
     return firstValueFrom(
       this.http.post<Evaluation>(API, {
         title: dto.title.trim(),
         prompt: dto.prompt.trim(),
         ...(dto.criteria ? { criteria: dto.criteria } : {}),
       }),
-    ).then((saved) => {
-      this.evaluationsSignal.update((list) => [saved, ...list]);
-      return saved;
-    });
+    )
+      .then((saved) => {
+        this.evaluationsSignal.update((list) => [saved, ...list]);
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+        return saved;
+      })
+      .catch(() => {
+        if (operationFeedback) {
+          this.feedback.error(operationFeedback.error);
+        }
+        throw new Error(operationFeedback?.error ?? 'Could not create evaluation.');
+      });
   }
 
-  update(id: string, dto: UpdateEvaluationDto): Evaluation | undefined {
+  update(
+    id: string,
+    dto: UpdateEvaluationDto,
+    operationFeedback?: OperationFeedback,
+  ): Evaluation | undefined {
     const current = this.getById(id);
 
     if (!current) {
@@ -95,14 +120,24 @@ export class EvaluationService {
 
     this.replaceEvaluation(updated);
     this.http.put<Evaluation>(`${API}/${id}`, updated).subscribe({
-      next: (saved) => this.replaceEvaluation(saved),
-      error: () => this.replaceEvaluation(current),
+      next: (saved) => {
+        this.replaceEvaluation(saved);
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+      },
+      error: () => {
+        this.replaceEvaluation(current);
+        if (operationFeedback) {
+          this.feedback.error(operationFeedback.error);
+        }
+      },
     });
 
     return updated;
   }
 
-  delete(id: string): boolean {
+  delete(id: string, operationFeedback?: OperationFeedback): boolean {
     const current = this.getById(id);
 
     if (!current) {
@@ -111,13 +146,27 @@ export class EvaluationService {
 
     this.removeEvaluationFromList(id);
     this.http.delete(`${API}/${id}`).subscribe({
-      error: () => this.replaceEvaluation(current),
+      next: () => {
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+      },
+      error: () => {
+        this.replaceEvaluation(current);
+        if (operationFeedback) {
+          this.feedback.error(operationFeedback.error);
+        }
+      },
     });
 
     return true;
   }
 
-  addCriterion(evaluationId: string, dto: CreateCriterionDto): RubricCriterion | undefined {
+  addCriterion(
+    evaluationId: string,
+    dto: CreateCriterionDto,
+    operationFeedback?: OperationFeedback,
+  ): RubricCriterion | undefined {
     const description = dto.description?.trim();
 
     const criterion: RubricCriterion = {
@@ -133,14 +182,22 @@ export class EvaluationService {
       return undefined;
     }
 
-    return this.update(evaluationId, {
-      criteria: [...evaluation.criteria, criterion],
-    })
+    return this.update(
+      evaluationId,
+      {
+        criteria: [...evaluation.criteria, criterion],
+      },
+      operationFeedback,
+    )
       ? criterion
       : undefined;
   }
 
-  addAnswer(evaluationId: string, dto: CreateAnswerDto): Answer | undefined {
+  addAnswer(
+    evaluationId: string,
+    dto: CreateAnswerDto,
+    operationFeedback?: OperationFeedback,
+  ): Answer | undefined {
     const answer: Answer = {
       id: crypto.randomUUID(),
       evaluationId,
@@ -149,7 +206,11 @@ export class EvaluationService {
       scores: [],
     };
 
-    return this.updateEvaluationAnswers(evaluationId, (answers) => [...answers, answer])
+    return this.updateEvaluationAnswers(
+      evaluationId,
+      (answers) => [...answers, answer],
+      operationFeedback,
+    )
       ? answer
       : undefined;
   }
@@ -158,48 +219,61 @@ export class EvaluationService {
     evaluationId: string,
     answerId: string,
     partial: Partial<Pick<Answer, 'label' | 'content' | 'scores' | 'isWinner'>>,
+    operationFeedback?: OperationFeedback,
   ): Answer | undefined {
     let updated: Answer | undefined;
 
-    const changed = this.updateEvaluationAnswers(evaluationId, (answers) =>
-      answers.map((answer) => {
-        if (answer.id !== answerId) {
-          return answer;
-        }
+    const changed = this.updateEvaluationAnswers(
+      evaluationId,
+      (answers) =>
+        answers.map((answer) => {
+          if (answer.id !== answerId) {
+            return answer;
+          }
 
-        updated = {
-          ...answer,
-          ...partial,
-          label: partial.label?.trim() ?? answer.label,
-          content: partial.content?.trim() ?? answer.content,
-        };
+          updated = {
+            ...answer,
+            ...partial,
+            label: partial.label?.trim() ?? answer.label,
+            content: partial.content?.trim() ?? answer.content,
+          };
 
-        return updated;
-      }),
+          return updated;
+        }),
+      operationFeedback,
     );
 
     return changed ? updated : undefined;
   }
 
-  setWinner(evaluationId: string, answerId: string): Evaluation | undefined {
+  setWinner(
+    evaluationId: string,
+    answerId: string,
+    operationFeedback?: OperationFeedback,
+  ): Evaluation | undefined {
     const evaluation = this.getById(evaluationId);
 
     if (!evaluation?.answers.some((answer) => answer.id === answerId)) {
       return undefined;
     }
 
-    return this.update(evaluationId, {
-      winnerAnswerId: answerId,
-      answers: evaluation.answers.map((answer) => ({
-        ...answer,
-        isWinner: answer.id === answerId,
-      })),
-    });
+    return this.update(
+      evaluationId,
+      {
+        winnerAnswerId: answerId,
+        answers: evaluation.answers.map((answer) => ({
+          ...answer,
+          isWinner: answer.id === answerId,
+        })),
+      },
+      operationFeedback,
+    );
   }
 
   private updateEvaluationAnswers(
     evaluationId: string,
     updater: (answers: Answer[]) => Answer[],
+    operationFeedback?: OperationFeedback,
   ): boolean {
     const evaluation = this.getById(evaluationId);
 
@@ -207,9 +281,13 @@ export class EvaluationService {
       return false;
     }
 
-    return !!this.update(evaluationId, {
-      answers: updater(evaluation.answers),
-    });
+    return !!this.update(
+      evaluationId,
+      {
+        answers: updater(evaluation.answers),
+      },
+      operationFeedback,
+    );
   }
 
   private replaceEvaluation(evaluation: Evaluation): void {

@@ -40,7 +40,10 @@ export class DashboardPage {
     const id = this.deleteTargetId();
 
     if (id) {
-      this.evaluationService.delete(id);
+      this.evaluationService.delete(id, {
+        success: 'Evaluation deleted.',
+        error: 'Could not delete evaluation.',
+      });
     }
 
     this.deleteTargetId.set(null);
