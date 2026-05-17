@@ -1,4 +1,5 @@
 import { Answer } from './answer.model';
+import { ImprovedAnswer } from './improved-answer.model';
 
 export interface RubricCriterion {
   id: string;
@@ -50,7 +51,7 @@ export interface Evaluation {
   rubricId?: string;
   criteria: RubricCriterion[];
   answers: Answer[];
-  improvedAnswer?: string;
+  improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
   createdAt: string;
   updatedAt: string;

@@ -59,7 +59,7 @@ Use it to create an evaluation from a prompt, add model answers, score each answ
 4. Remove weak parts, confusing wording, or incorrect claims.
 5. Rewrite the final answer in a cleaner version.
 6. Open **Improved** from the evaluation.
-7. Enter the improved answer and click **Save improved answer**.
+7. Fill in winning answer, strengths, weaknesses, useful parts from other answers, and the improved final answer, then click **Save improved answer**.
 
 ## Development
 

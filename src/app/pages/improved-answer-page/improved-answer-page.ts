@@ -3,6 +3,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/improved-answer-editor';
+import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
 
 @Component({
@@ -19,7 +20,7 @@ export class ImprovedAnswerPage {
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
 
-  protected onSave(improvedAnswer: string): void {
+  protected onSave(improvedAnswer: ImprovedAnswer): void {
     this.evaluationService.update(this.evaluationId, { improvedAnswer });
   }
 }

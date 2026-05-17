@@ -17,6 +17,14 @@ export interface Score {
   notes?: string;
 }
 
+export interface ImprovedAnswer {
+  winningAnswer?: string;
+  strengths?: string;
+  weaknesses?: string;
+  usefulFromOthers?: string;
+  finalAnswer?: string;
+}
+
 export interface Answer {
   id: string;
   evaluationId: string;
@@ -34,7 +42,7 @@ export interface Evaluation {
   rubricId?: string;
   criteria: RubricCriterion[];
   answers: Answer[];
-  improvedAnswer?: string;
+  improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
   createdAt: string;
   updatedAt: string;
