@@ -1,0 +1,14 @@
+<div class="card mb-3">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">{{ criterion().name }}</span>
+    <span class="badge text-bg-secondary">Max {{ criterion().maxPoints }} pts</span>
+  </div>
+  <div class="card-body">
+    @if (criterion().description) {
+      <p class="card-text mb-3">{{ criterion().description }}</p>
+    }
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeRequested.emit(criterion().id)">
+      Remove
+    </button>
+  </div>
+</div>

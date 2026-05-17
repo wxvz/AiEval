@@ -1,10 +1,10 @@
 <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
   <div class="mb-3">
-    <label class="form-label" for="answer-label">Label</label>
+    <label class="form-label" for="answer-label">Model name</label>
     <input id="answer-label" type="text" class="form-control" formControlName="label" placeholder="e.g. GPT-4" />
   </div>
   <div class="mb-3">
-    <label class="form-label" for="answer-content">Answer</label>
+    <label class="form-label" for="answer-content">Model answer</label>
     <textarea id="answer-content" class="form-control" rows="4" formControlName="content"></textarea>
   </div>
   <button type="submit" class="btn btn-outline-primary btn-sm">{{ submitLabel() }}</button>

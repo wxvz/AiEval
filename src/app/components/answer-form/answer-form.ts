@@ -13,7 +13,7 @@ export interface AnswerFormValue {
   styleUrl: './answer-form.css',
 })
 export class AnswerForm {
-  readonly submitLabel = input('Add Answer');
+  readonly submitLabel = input('Add model answer');
 
   readonly submitted = output<AnswerFormValue>();
 
