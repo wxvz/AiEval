@@ -10,6 +10,7 @@ import {
   CreateEvaluationDto,
   DEFAULT_CRITERIA,
   Evaluation,
+  initialScoresForCriteria,
   RubricCriterion,
   UpdateEvaluationDto,
 } from '../models';
@@ -201,12 +202,18 @@ export class EvaluationService {
     dto: CreateAnswerDto,
     operationFeedback?: OperationFeedback,
   ): Answer | undefined {
+    const evaluation = this.getById(evaluationId);
+
+    if (!evaluation) {
+      return undefined;
+    }
+
     const answer: Answer = {
       id: crypto.randomUUID(),
       evaluationId,
       label: dto.label.trim(),
       content: dto.content.trim(),
-      scores: [],
+      scores: initialScoresForCriteria(this.getActiveCriteria(evaluation)),
     };
 
     return this.updateEvaluationAnswers(

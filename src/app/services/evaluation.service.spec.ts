@@ -126,6 +126,36 @@ describe('EvaluationService criteria modes', () => {
     expect(service.getActiveCriteria(restoredCustomMode)).toEqual(customMode.criteria);
   });
 
+  it('initializes answer scores from active criteria when adding an answer', async () => {
+    const service = await createService();
+    const createPromise = service.create({
+      title: 'Scored evaluation',
+      prompt: 'Evaluate answers with initialized score rows.',
+    });
+    const post = httpMock.expectOne('/api/evaluations');
+    const created = savedEvaluation({
+      title: 'Scored evaluation',
+      prompt: 'Evaluate answers with initialized score rows.',
+    });
+    post.flush(created);
+    await createPromise;
+
+    service.addAnswer(created.id, {
+      label: 'Model A',
+      content: 'First model answer.',
+    });
+    httpMock.expectOne(`/api/evaluations/${created.id}`).flush({
+      ...service.getById(created.id)!,
+    });
+
+    const answer = service.getById(created.id)!.answers[0];
+    expect(answer.scores).toHaveLength(DEFAULT_CRITERIA.length);
+    expect(answer.scores.every((score) => score.points === 0)).toBe(true);
+    expect(answer.scores.reduce((sum, score) => sum + score.maxPoints, 0)).toBe(
+      DEFAULT_CRITERIA.reduce((sum, criterion) => sum + criterion.maxPoints, 0),
+    );
+  });
+
   it('returns default criteria only in default mode and saved criteria in custom mode', async () => {
     const service = await createService();
     const createPromise = service.create({
