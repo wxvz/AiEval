@@ -1,15 +1,16 @@
 import { Router } from 'express';
-import type { Collection } from 'mongodb';
+import { getEvaluationsCollection } from '../db.js';
+import { parseObjectId, toApiEvaluation } from '../serialization.js';
+import type { Evaluation, EvaluationRecord } from '../types/evaluation.js';
 
-import type { Evaluation } from '../types/evaluation.js';
-
-export function createEvaluationsRouter(collection: Collection<Evaluation>): Router {
+export function createEvaluationsRouter(): Router {
   const router = Router();
 
   router.get('/', async (_req, res, next) => {
     try {
+      const collection = getEvaluationsCollection();
       const evaluations = await collection.find().sort({ updatedAt: -1 }).toArray();
-      res.json(evaluations);
+      res.json(evaluations.map(toApiEvaluation));
     } catch (error) {
       next(error);
     }
@@ -17,14 +18,21 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
 
   router.get('/:id', async (req, res, next) => {
     try {
-      const evaluation = await collection.findOne({ id: req.params['id'] });
+      const objectId = parseObjectId(req.params['id']);
+
+      if (!objectId) {
+        res.status(400).json({ message: 'Invalid evaluation id' });
+        return;
+      }
+
+      const evaluation = await getEvaluationsCollection().findOne({ _id: objectId });
 
       if (!evaluation) {
         res.status(404).json({ message: 'Evaluation not found' });
         return;
       }
 
-      res.json(evaluation);
+      res.json(toApiEvaluation(evaluation));
     } catch (error) {
       next(error);
     }
@@ -40,8 +48,7 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
       }
 
       const now = new Date().toISOString();
-      const evaluation: Evaluation = {
-        id: body.id ?? crypto.randomUUID(),
+      const document: EvaluationRecord = {
         title: body.title.trim(),
         prompt: body.prompt.trim(),
         criteriaMode: body.criteriaMode ?? 'default',
@@ -50,12 +57,19 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
         ...(body.improvedAnswer !== undefined ? { improvedAnswer: body.improvedAnswer } : {}),
         ...(body.winnerAnswerId !== undefined ? { winnerAnswerId: body.winnerAnswerId } : {}),
         ...(body.rubricId !== undefined ? { rubricId: body.rubricId } : {}),
-        createdAt: body.createdAt ?? now,
+        createdAt: now,
         updatedAt: now,
       };
 
-      await collection.insertOne(evaluation);
-      res.status(201).json(evaluation);
+      const result = await getEvaluationsCollection().insertOne(document);
+      const inserted = await getEvaluationsCollection().findOne({ _id: result.insertedId });
+
+      if (!inserted) {
+        res.status(500).json({ message: 'Failed to create evaluation' });
+        return;
+      }
+
+      res.status(201).json(toApiEvaluation(inserted));
     } catch (error) {
       next(error);
     }
@@ -63,8 +77,15 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
 
   router.put('/:id', async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const existing = await collection.findOne({ id });
+      const objectId = parseObjectId(req.params['id']);
+
+      if (!objectId) {
+        res.status(400).json({ message: 'Invalid evaluation id' });
+        return;
+      }
+
+      const collection = getEvaluationsCollection();
+      const existing = await collection.findOne({ _id: objectId });
 
       if (!existing) {
         res.status(404).json({ message: 'Evaluation not found' });
@@ -72,19 +93,21 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
       }
 
       const body = req.body as Partial<Evaluation>;
-      const updated: Evaluation = {
-        ...existing,
-        ...body,
-        id: existing.id,
+      const updated: EvaluationRecord = {
         title: body.title?.trim() ?? existing.title,
         prompt: body.prompt?.trim() ?? existing.prompt,
+        criteriaMode: body.criteriaMode ?? existing.criteriaMode,
         criteria: body.criteria ?? existing.criteria,
         answers: body.answers ?? existing.answers,
+        improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
+        winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
+        rubricId: body.rubricId ?? existing.rubricId,
+        createdAt: existing.createdAt,
         updatedAt: new Date().toISOString(),
       };
 
-      await collection.updateOne({ id }, { $set: updated });
-      res.json(updated);
+      await collection.updateOne({ _id: objectId }, { $set: updated });
+      res.json(toApiEvaluation({ _id: objectId, ...updated }));
     } catch (error) {
       next(error);
     }
@@ -92,7 +115,14 @@ export function createEvaluationsRouter(collection: Collection<Evaluation>): Rou
 
   router.delete('/:id', async (req, res, next) => {
     try {
-      const result = await collection.deleteOne({ id: req.params['id'] });
+      const objectId = parseObjectId(req.params['id']);
+
+      if (!objectId) {
+        res.status(400).json({ message: 'Invalid evaluation id' });
+        return;
+      }
+
+      const result = await getEvaluationsCollection().deleteOne({ _id: objectId });
 
       if (result.deletedCount === 0) {
         res.status(404).json({ message: 'Evaluation not found' });

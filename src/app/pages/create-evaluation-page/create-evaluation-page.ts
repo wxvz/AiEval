@@ -15,7 +15,8 @@ export class CreateEvaluationPage {
   private readonly router = inject(Router);
 
   protected onSubmit(value: EvaluationFormValue): void {
-    const created = this.evaluationService.create(value);
-    void this.router.navigate(['/evaluations', created.id, 'edit']);
+    void this.evaluationService.create(value).then((created) => {
+      void this.router.navigate(['/evaluations', created.id, 'edit']);
+    });
   }
 }

@@ -65,26 +65,17 @@ export class EvaluationService {
     return this.update(id, { criteriaMode });
   }
 
-  create(dto: CreateEvaluationDto): Evaluation {
-    const now = new Date().toISOString();
-    const evaluation: Evaluation = {
-      id: crypto.randomUUID(),
-      title: dto.title.trim(),
-      prompt: dto.prompt.trim(),
-      criteriaMode: 'default',
-      criteria: dto.criteria ?? [],
-      answers: [],
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    this.evaluationsSignal.update((list) => [evaluation, ...list]);
-    this.http.post<Evaluation>(API, evaluation).subscribe({
-      next: (saved) => this.replaceEvaluation(saved),
-      error: () => this.removeEvaluationFromList(evaluation.id),
+  create(dto: CreateEvaluationDto): Promise<Evaluation> {
+    return firstValueFrom(
+      this.http.post<Evaluation>(API, {
+        title: dto.title.trim(),
+        prompt: dto.prompt.trim(),
+        ...(dto.criteria ? { criteria: dto.criteria } : {}),
+      }),
+    ).then((saved) => {
+      this.evaluationsSignal.update((list) => [saved, ...list]);
+      return saved;
     });
-
-    return evaluation;
   }
 
   update(id: string, dto: UpdateEvaluationDto): Evaluation | undefined {

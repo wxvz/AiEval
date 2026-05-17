@@ -40,4 +40,6 @@ export interface Evaluation {
   updatedAt: string;
 }
 
-export type EvaluationDocument = Omit<Evaluation, 'id'> & { _id: ObjectId };
+export type EvaluationRecord = Omit<Evaluation, 'id'>;
+
+export type EvaluationDocument = EvaluationRecord & { _id: ObjectId };

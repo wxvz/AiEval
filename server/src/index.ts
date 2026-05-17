@@ -2,7 +2,7 @@ import cors from 'cors';
 import express from 'express';
 
 import { assertConfig, config } from './config.js';
-import { closeDb, connectDb, getEvaluationsCollection } from './db.js';
+import { closeDb, connectDb } from './db.js';
 import { createEvaluationsRouter } from './routes/evaluations.js';
 
 assertConfig();
@@ -17,10 +17,9 @@ app.get('/api/health', (_req, res) => {
 });
 
 async function start(): Promise<void> {
-  const db = await connectDb();
-  const evaluations = getEvaluationsCollection(db);
+  await connectDb();
 
-  app.use('/api/evaluations', createEvaluationsRouter(evaluations));
+  app.use('/api/evaluations', createEvaluationsRouter());
 
   app.use(
     (

@@ -5,6 +5,8 @@ import { TestBed } from '@angular/core/testing';
 import { DEFAULT_CRITERIA, Evaluation, RubricCriterion } from '../models';
 import { EvaluationService } from './evaluation.service';
 
+const MONGO_ID = '507f1f77bcf86cd799439011';
+
 describe('EvaluationService criteria modes', () => {
   const customCriterion: RubricCriterion = {
     id: 'custom-accuracy',
@@ -48,17 +50,36 @@ describe('EvaluationService criteria modes', () => {
     };
   }
 
+  function savedEvaluation(overrides: Partial<Evaluation> = {}): Evaluation {
+    return {
+      id: MONGO_ID,
+      title: 'New evaluation',
+      prompt: 'Evaluate these model answers for quality.',
+      criteriaMode: 'default',
+      criteria: [],
+      answers: [],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+      ...overrides,
+    };
+  }
+
   it('defaults newly created evaluations to default criteria mode', async () => {
     const service = await createService();
 
-    const created = service.create({
+    const createPromise = service.create({
       title: 'New evaluation',
       prompt: 'Evaluate these model answers for quality.',
     });
 
     const post = httpMock.expectOne('/api/evaluations');
-    post.flush(created);
+    expect(post.request.body).toEqual({
+      title: 'New evaluation',
+      prompt: 'Evaluate these model answers for quality.',
+    });
+    post.flush(savedEvaluation());
 
+    const created = await createPromise;
     expect(created.criteriaMode).toBe('default');
     expect(service.getActiveCriteria(created)).toEqual(DEFAULT_CRITERIA);
   });
@@ -74,11 +95,17 @@ describe('EvaluationService criteria modes', () => {
 
   it('preserves custom criteria when toggling between default and custom modes', async () => {
     const service = await createService();
-    const created = service.create({
+    const createPromise = service.create({
       title: 'Mode evaluation',
       prompt: 'Evaluate answers while preserving custom criteria.',
     });
-    httpMock.expectOne('/api/evaluations').flush(created);
+    const post = httpMock.expectOne('/api/evaluations');
+    const created = savedEvaluation({
+      title: 'Mode evaluation',
+      prompt: 'Evaluate answers while preserving custom criteria.',
+    });
+    post.flush(created);
+    await createPromise;
 
     service.setCriteriaMode(created.id, 'custom');
     httpMock.expectOne(`/api/evaluations/${created.id}`).flush({
@@ -121,12 +148,19 @@ describe('EvaluationService criteria modes', () => {
 
   it('returns default criteria only in default mode and saved criteria in custom mode', async () => {
     const service = await createService();
-    const created = service.create({
+    const createPromise = service.create({
       title: 'Active criteria evaluation',
       prompt: 'Evaluate active criteria behavior across both modes.',
       criteria: [customCriterion],
     });
-    httpMock.expectOne('/api/evaluations').flush(created);
+    const post = httpMock.expectOne('/api/evaluations');
+    const created = savedEvaluation({
+      title: 'Active criteria evaluation',
+      prompt: 'Evaluate active criteria behavior across both modes.',
+      criteria: [customCriterion],
+    });
+    post.flush(created);
+    await createPromise;
 
     expect(service.getActiveCriteria(created)).toEqual(DEFAULT_CRITERIA);
 
