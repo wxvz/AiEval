@@ -16,13 +16,19 @@ describe('FeedbackService', () => {
     vi.useRealTimers();
   });
 
-  it('shows success feedback and auto-clears after 5 seconds', () => {
+  it('shows success feedback and auto-clears after 5 seconds plus exit animation', () => {
     service.success('Saved.');
 
     expect(service.feedback()).toEqual({ type: 'success', message: 'Saved.' });
 
     vi.advanceTimersByTime(5000);
 
+    expect(service.exiting()).toBe(true);
+    expect(service.feedback()).toEqual({ type: 'success', message: 'Saved.' });
+
+    vi.advanceTimersByTime(250);
+
+    expect(service.exiting()).toBe(false);
     expect(service.feedback()).toBeNull();
   });
 
@@ -33,8 +39,12 @@ describe('FeedbackService', () => {
 
     vi.advanceTimersByTime(4000);
     expect(service.feedback()?.message).toBe('Second.');
+    expect(service.exiting()).toBe(false);
 
     vi.advanceTimersByTime(1000);
+    expect(service.exiting()).toBe(true);
+
+    vi.advanceTimersByTime(250);
     expect(service.feedback()).toBeNull();
   });
 
@@ -42,6 +52,7 @@ describe('FeedbackService', () => {
     service.success('Saved.');
     service.clear();
 
+    expect(service.exiting()).toBe(false);
     expect(service.feedback()).toBeNull();
   });
 });
