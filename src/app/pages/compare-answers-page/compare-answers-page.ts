@@ -21,6 +21,11 @@ export class CompareAnswersPage {
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly activeCriteria = computed(() => {
+    const current = this.evaluation();
+
+    return current ? this.evaluationService.getActiveCriteria(current) : [];
+  });
 
   protected summaryFor(answerId: string) {
     const answer = this.evaluation()?.answers.find((item) => item.id === answerId);

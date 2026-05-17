@@ -10,6 +10,7 @@ import { RubricCriterion } from '../../models';
 })
 export class CriterionCard {
   readonly criterion = input.required<RubricCriterion>();
+  readonly removable = input(true);
 
   readonly removeRequested = output<string>();
 }

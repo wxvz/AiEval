@@ -22,13 +22,42 @@
       />
 
       <h2 class="h5 mt-4">Rubric criteria</h2>
-      <p class="text-muted small">Define what you will score each model answer on (e.g. accuracy, clarity).</p>
-      <app-criterion-form class="d-block mb-3" (submitted)="onCriterionSubmit($event)" />
-      @if (evaluation()!.criteria.length === 0) {
-        <app-empty-state title="No criteria" message="Add at least one rubric criterion to compare answers." />
+      <div class="btn-group btn-group-sm mb-3" role="group" aria-label="Criteria mode">
+        <input
+          type="radio"
+          class="btn-check"
+          name="criteria-mode"
+          id="criteria-mode-default"
+          [checked]="criteriaMode() === 'default'"
+          (change)="setCriteriaMode('default')"
+        />
+        <label class="btn btn-outline-primary" for="criteria-mode-default">Default criteria</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="criteria-mode"
+          id="criteria-mode-custom"
+          [checked]="criteriaMode() === 'custom'"
+          (change)="setCriteriaMode('custom')"
+        />
+        <label class="btn btn-outline-primary" for="criteria-mode-custom">Custom criteria</label>
+      </div>
+
+      @if (criteriaMode() === 'default') {
+        <p class="text-muted small">Use the built-in scoring criteria for this evaluation.</p>
+        @for (criterion of activeCriteria(); track criterion.id) {
+          <app-criterion-card [criterion]="criterion" [removable]="false" />
+        }
       } @else {
-        @for (criterion of evaluation()!.criteria; track criterion.id) {
-          <app-criterion-card [criterion]="criterion" (removeRequested)="removeCriterion($event)" />
+        <p class="text-muted small">Define what you will score each model answer on (e.g. accuracy, clarity).</p>
+        <app-criterion-form class="d-block mb-3" (submitted)="onCriterionSubmit($event)" />
+        @if (evaluation()!.criteria.length === 0) {
+          <app-empty-state title="No criteria" message="Add at least one rubric criterion to compare answers." />
+        } @else {
+          @for (criterion of activeCriteria(); track criterion.id) {
+            <app-criterion-card [criterion]="criterion" (removeRequested)="removeCriterion($event)" />
+          }
         }
       }
     </div>

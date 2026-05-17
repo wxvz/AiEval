@@ -7,8 +7,10 @@
     @if (criterion().description) {
       <p class="card-text mb-3">{{ criterion().description }}</p>
     }
-    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeRequested.emit(criterion().id)">
-      Remove
-    </button>
+    @if (removable()) {
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeRequested.emit(criterion().id)">
+        Remove
+      </button>
+    }
   </div>
 </div>

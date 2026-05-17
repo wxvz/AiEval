@@ -2,9 +2,11 @@ import { Injectable, computed, signal } from '@angular/core';
 
 import {
   Answer,
+  CriteriaMode,
   CreateAnswerDto,
   CreateCriterionDto,
   CreateEvaluationDto,
+  DEFAULT_CRITERIA,
   Evaluation,
   RubricCriterion,
   UpdateEvaluationDto,
@@ -30,12 +32,21 @@ export class EvaluationService {
     return this.evaluationsSignal().find((evaluation) => evaluation.id === id);
   }
 
+  getActiveCriteria(evaluation: Evaluation): RubricCriterion[] {
+    return evaluation.criteriaMode === 'default' ? DEFAULT_CRITERIA : evaluation.criteria;
+  }
+
+  setCriteriaMode(id: string, criteriaMode: CriteriaMode): Evaluation | undefined {
+    return this.update(id, { criteriaMode });
+  }
+
   create(dto: CreateEvaluationDto): Evaluation {
     const now = new Date().toISOString();
     const evaluation: Evaluation = {
       id: crypto.randomUUID(),
       title: dto.title.trim(),
       prompt: dto.prompt.trim(),
+      criteriaMode: 'default',
       criteria: dto.criteria ?? [],
       answers: [],
       createdAt: now,

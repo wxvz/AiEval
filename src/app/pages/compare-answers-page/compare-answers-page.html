@@ -6,7 +6,7 @@
     <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
   </div>
 
-  <app-rubric-table [criteria]="evaluation()!.criteria" [answers]="evaluation()!.answers" />
+  <app-rubric-table [criteria]="activeCriteria()" [answers]="evaluation()!.answers" />
 
   <h2 class="h5 mt-4">Scores</h2>
   @if (evaluation()!.answers.length === 0) {

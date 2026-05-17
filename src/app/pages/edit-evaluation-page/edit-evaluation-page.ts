@@ -6,12 +6,24 @@ import { AnswerForm, AnswerFormValue } from '../../components/answer-form/answer
 import { CriterionCard } from '../../components/criterion-card/criterion-card';
 import { CriterionForm, CriterionFormValue } from '../../components/criterion-form/criterion-form';
 import { EmptyState } from '../../components/empty-state/empty-state';
-import { EvaluationForm, EvaluationFormValue } from '../../components/evaluation-form/evaluation-form';
+import {
+  EvaluationForm,
+  EvaluationFormValue,
+} from '../../components/evaluation-form/evaluation-form';
+import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
 @Component({
   selector: 'app-edit-evaluation-page',
-  imports: [RouterLink, EvaluationForm, CriterionForm, CriterionCard, AnswerForm, AnswerCard, EmptyState],
+  imports: [
+    RouterLink,
+    EvaluationForm,
+    CriterionForm,
+    CriterionCard,
+    AnswerForm,
+    AnswerCard,
+    EmptyState,
+  ],
   templateUrl: './edit-evaluation-page.html',
   styleUrl: './edit-evaluation-page.css',
 })
@@ -22,9 +34,20 @@ export class EditEvaluationPage {
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly activeCriteria = computed(() => {
+    const current = this.evaluation();
+
+    return current ? this.evaluationService.getActiveCriteria(current) : [];
+  });
+
+  protected readonly criteriaMode = computed(() => this.evaluation()?.criteriaMode ?? 'custom');
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
     this.evaluationService.update(this.evaluationId, value);
+  }
+
+  protected setCriteriaMode(criteriaMode: CriteriaMode): void {
+    this.evaluationService.setCriteriaMode(this.evaluationId, criteriaMode);
   }
 
   protected onCriterionSubmit(value: CriterionFormValue): void {

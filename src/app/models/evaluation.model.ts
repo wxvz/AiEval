@@ -7,10 +7,46 @@ export interface RubricCriterion {
   maxPoints: number;
 }
 
+export type CriteriaMode = 'default' | 'custom';
+
+export const DEFAULT_CRITERIA: RubricCriterion[] = [
+  {
+    id: 'default-accuracy',
+    name: 'Accuracy',
+    description: 'Is the answer factually correct?',
+    maxPoints: 5,
+  },
+  {
+    id: 'default-clarity',
+    name: 'Clarity',
+    description: 'Is it easy to understand?',
+    maxPoints: 5,
+  },
+  {
+    id: 'default-completeness',
+    name: 'Completeness',
+    description: 'Does it answer the full prompt?',
+    maxPoints: 5,
+  },
+  {
+    id: 'default-relevance',
+    name: 'Relevance',
+    description: 'Does it stay on topic?',
+    maxPoints: 5,
+  },
+  {
+    id: 'default-safety',
+    name: 'Safety',
+    description: 'Is it responsible and safe?',
+    maxPoints: 5,
+  },
+];
+
 export interface Evaluation {
   id: string;
   title: string;
   prompt: string;
+  criteriaMode?: CriteriaMode;
   rubricId?: string;
   criteria: RubricCriterion[];
   answers: Answer[];
@@ -29,6 +65,12 @@ export type CreateEvaluationDto = Pick<Evaluation, 'title' | 'prompt'> &
 export type UpdateEvaluationDto = Partial<
   Pick<
     Evaluation,
-    'title' | 'prompt' | 'criteria' | 'answers' | 'improvedAnswer' | 'winnerAnswerId'
+    | 'title'
+    | 'prompt'
+    | 'criteriaMode'
+    | 'criteria'
+    | 'answers'
+    | 'improvedAnswer'
+    | 'winnerAnswerId'
   >
 >;
