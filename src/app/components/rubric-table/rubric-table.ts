@@ -1,6 +1,12 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { Answer, RubricCriterion } from '../../models';
+
+export interface RubricScoreChange {
+  answerId: string;
+  criterion: RubricCriterion;
+  points: number;
+}
 
 @Component({
   selector: 'app-rubric-table',
@@ -11,14 +17,21 @@ import { Answer, RubricCriterion } from '../../models';
 export class RubricTable {
   readonly criteria = input<RubricCriterion[]>([]);
   readonly answers = input<Answer[]>([]);
+  readonly scoreChanged = output<RubricScoreChange>();
 
-  protected scoreFor(answer: Answer, criterionId: string): string {
+  protected scoreFor(answer: Answer, criterionId: string): number | null {
     const score = answer.scores.find((item) => item.criterionId === criterionId);
 
-    if (!score) {
-      return '—';
-    }
+    return score?.points ?? null;
+  }
 
-    return `${score.points}/${score.maxPoints}`;
+  protected onScoreInput(answerId: string, criterion: RubricCriterion, event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    this.scoreChanged.emit({
+      answerId,
+      criterion,
+      points: input.valueAsNumber,
+    });
   }
 }

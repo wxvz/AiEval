@@ -68,7 +68,7 @@
         <app-empty-state title="No answers" message="Add at least one model answer to compare." />
       } @else {
         @for (answer of evaluation()!.answers; track answer.id) {
-          <app-answer-card [answer]="answer" (removeRequested)="removeAnswer($event)" />
+          <app-answer-card [answer]="answer" [criteria]="activeCriteria()" (removeRequested)="removeAnswer($event)" />
         }
       }
     </div>

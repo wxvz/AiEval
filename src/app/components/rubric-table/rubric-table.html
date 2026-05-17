@@ -14,9 +14,22 @@
       <tbody>
         @for (criterion of criteria(); track criterion.id) {
           <tr>
-            <th scope="row">{{ criterion.name }}</th>
+            <th scope="row">
+              <div>{{ criterion.name }}</div>
+              <div class="text-muted small">Max {{ criterion.maxPoints }} pts</div>
+            </th>
             @for (answer of answers(); track answer.id) {
-              <td>{{ scoreFor(answer, criterion.id) }}</td>
+              <td>
+                <input
+                  type="number"
+                  class="form-control form-control-sm"
+                  min="0"
+                  [max]="criterion.maxPoints"
+                  [value]="scoreFor(answer, criterion.id) ?? ''"
+                  [attr.aria-label]="answer.label + ' score for ' + criterion.name"
+                  (input)="onScoreInput(answer.id, criterion, $event)"
+                />
+              </td>
             }
           </tr>
         }
