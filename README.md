@@ -93,4 +93,6 @@ npm test
 
 ## Requirements
 
+- Node.js 22.12+ (see `.nvmrc`)
+- npm 11.12+ (use `corepack install` after cloning)
 
