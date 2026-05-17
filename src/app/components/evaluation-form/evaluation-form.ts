@@ -1,7 +1,8 @@
-import { Component, effect, input, output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { Evaluation } from '../../models';
+import { FeedbackService } from '../../services/feedback.service';
 
 export interface EvaluationFormValue {
   title: string;
@@ -15,6 +16,8 @@ export interface EvaluationFormValue {
   styleUrl: './evaluation-form.css',
 })
 export class EvaluationForm {
+  private readonly feedback = inject(FeedbackService);
+
   readonly evaluation = input<Evaluation | null>(null);
   readonly submitLabel = input('Save');
 
@@ -38,6 +41,7 @@ export class EvaluationForm {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.feedback.error('Please enter a valid title and prompt.');
       return;
     }
 

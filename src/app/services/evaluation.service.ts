@@ -14,6 +14,7 @@ import {
   UpdateEvaluationDto,
 } from '../models';
 import { FeedbackService } from './feedback.service';
+import { messageFromHttpError } from './http-error-message';
 
 const API = '/api/evaluations';
 
@@ -91,11 +92,13 @@ export class EvaluationService {
         }
         return saved;
       })
-      .catch(() => {
+      .catch((error) => {
         if (operationFeedback) {
-          this.feedback.error(operationFeedback.error);
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
         }
-        throw new Error(operationFeedback?.error ?? 'Could not create evaluation.');
+        throw new Error(
+          messageFromHttpError(error, operationFeedback?.error ?? 'Could not create evaluation.'),
+        );
       });
   }
 
@@ -126,10 +129,10 @@ export class EvaluationService {
           this.feedback.success(operationFeedback.success);
         }
       },
-      error: () => {
+      error: (error) => {
         this.replaceEvaluation(current);
         if (operationFeedback) {
-          this.feedback.error(operationFeedback.error);
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
         }
       },
     });
@@ -151,10 +154,10 @@ export class EvaluationService {
           this.feedback.success(operationFeedback.success);
         }
       },
-      error: () => {
+      error: (error) => {
         this.replaceEvaluation(current);
         if (operationFeedback) {
-          this.feedback.error(operationFeedback.error);
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
         }
       },
     });

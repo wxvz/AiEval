@@ -1,5 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { FeedbackService } from '../../services/feedback.service';
 
 export interface CriterionFormValue {
   name: string;
@@ -14,6 +16,8 @@ export interface CriterionFormValue {
   styleUrl: './criterion-form.css',
 })
 export class CriterionForm {
+  private readonly feedback = inject(FeedbackService);
+
   readonly submitLabel = input('Add criterion');
 
   readonly submitted = output<CriterionFormValue>();
@@ -30,6 +34,7 @@ export class CriterionForm {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.feedback.error('Please enter a valid criterion name and max points.');
       return;
     }
 

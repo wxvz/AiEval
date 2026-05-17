@@ -1,5 +1,7 @@
-import { Component, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { FeedbackService } from '../../services/feedback.service';
 
 export interface AnswerFormValue {
   label: string;
@@ -13,6 +15,8 @@ export interface AnswerFormValue {
   styleUrl: './answer-form.css',
 })
 export class AnswerForm {
+  private readonly feedback = inject(FeedbackService);
+
   readonly submitLabel = input('Add model answer');
 
   readonly submitted = output<AnswerFormValue>();
@@ -25,6 +29,7 @@ export class AnswerForm {
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.feedback.error('Please enter a model name and answer.');
       return;
     }
 

@@ -16,12 +16,12 @@ describe('FeedbackService', () => {
     vi.useRealTimers();
   });
 
-  it('shows success feedback and auto-clears after 5 seconds plus exit animation', () => {
+  it('shows success feedback and auto-clears after 3 seconds plus exit animation', () => {
     service.success('Saved.');
 
     expect(service.feedback()).toEqual({ type: 'success', message: 'Saved.' });
 
-    vi.advanceTimersByTime(5000);
+    vi.advanceTimersByTime(3000);
 
     expect(service.exiting()).toBe(true);
     expect(service.feedback()).toEqual({ type: 'success', message: 'Saved.' });
@@ -34,10 +34,10 @@ describe('FeedbackService', () => {
 
   it('resets the dismiss timer when a new message is shown', () => {
     service.success('First.');
-    vi.advanceTimersByTime(4000);
+    vi.advanceTimersByTime(2000);
     service.error('Second.');
 
-    vi.advanceTimersByTime(4000);
+    vi.advanceTimersByTime(2000);
     expect(service.feedback()?.message).toBe('Second.');
     expect(service.exiting()).toBe(false);
 
