@@ -1,0 +1,27 @@
+<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+  <div class="mb-3">
+    <label class="form-label" for="criterion-name">Criterion name</label>
+    <input
+      id="criterion-name"
+      type="text"
+      class="form-control"
+      formControlName="name"
+      placeholder="e.g. Accuracy"
+    />
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="criterion-description">Description <span class="text-muted">(optional)</span></label>
+    <textarea
+      id="criterion-description"
+      class="form-control"
+      rows="2"
+      formControlName="description"
+      placeholder="What does a strong score look like for this criterion?"
+    ></textarea>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="criterion-max-points">Max points</label>
+    <input id="criterion-max-points" type="number" class="form-control" formControlName="maxPoints" min="1" max="100" />
+  </div>
+  <button type="submit" class="btn btn-outline-primary btn-sm">{{ submitLabel() }}</button>
+</form>

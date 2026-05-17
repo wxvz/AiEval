@@ -20,6 +20,9 @@ export interface Evaluation {
   updatedAt: string;
 }
 
+export type CreateCriterionDto = Pick<RubricCriterion, 'name' | 'maxPoints'> &
+  Partial<Pick<RubricCriterion, 'description'>>;
+
 export type CreateEvaluationDto = Pick<Evaluation, 'title' | 'prompt'> &
   Partial<Pick<Evaluation, 'criteria'>>;
 

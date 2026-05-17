@@ -1,6 +1,14 @@
 import { Injectable, computed, signal } from '@angular/core';
 
-import { Answer, CreateAnswerDto, CreateEvaluationDto, Evaluation, UpdateEvaluationDto } from '../models';
+import {
+  Answer,
+  CreateAnswerDto,
+  CreateCriterionDto,
+  CreateEvaluationDto,
+  Evaluation,
+  RubricCriterion,
+  UpdateEvaluationDto,
+} from '../models';
 
 const STORAGE_KEY = 'ai-eval-evaluations';
 
@@ -74,6 +82,29 @@ export class EvaluationService {
 
     this.persist(next);
     return true;
+  }
+
+  addCriterion(evaluationId: string, dto: CreateCriterionDto): RubricCriterion | undefined {
+    const description = dto.description?.trim();
+
+    const criterion: RubricCriterion = {
+      id: crypto.randomUUID(),
+      name: dto.name.trim(),
+      maxPoints: dto.maxPoints,
+      ...(description ? { description } : {}),
+    };
+
+    const evaluation = this.getById(evaluationId);
+
+    if (!evaluation) {
+      return undefined;
+    }
+
+    return this.update(evaluationId, {
+      criteria: [...evaluation.criteria, criterion],
+    })
+      ? criterion
+      : undefined;
   }
 
   addAnswer(evaluationId: string, dto: CreateAnswerDto): Answer | undefined {

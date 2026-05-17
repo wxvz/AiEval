@@ -20,6 +20,17 @@
         submitLabel="Save changes"
         (submitted)="onEvaluationSubmit($event)"
       />
+
+      <h2 class="h5 mt-4">Rubric criteria</h2>
+      <p class="text-muted small">Define what you will score each model answer on (e.g. accuracy, clarity).</p>
+      <app-criterion-form class="d-block mb-3" (submitted)="onCriterionSubmit($event)" />
+      @if (evaluation()!.criteria.length === 0) {
+        <app-empty-state title="No criteria" message="Add at least one rubric criterion to compare answers." />
+      } @else {
+        @for (criterion of evaluation()!.criteria; track criterion.id) {
+          <app-criterion-card [criterion]="criterion" (removeRequested)="removeCriterion($event)" />
+        }
+      }
     </div>
     <div class="col-lg-6">
       <h2 class="h5">Answers</h2>
