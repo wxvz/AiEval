@@ -80,6 +80,10 @@ export async function resolveProvider(): Promise<ResolvedLlmSetup> {
   );
 }
 
+export async function tryResolveGroq(): Promise<ResolvedLlmSetup | null> {
+  return tryResolve('groq');
+}
+
 export async function resolveNextProvider(
   current: ProviderName,
 ): Promise<ResolvedLlmSetup | null> {

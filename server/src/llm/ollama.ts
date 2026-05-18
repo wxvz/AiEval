@@ -9,6 +9,7 @@ export function createOllamaProvider(): LlmProvider {
       const response = await llmFetch(`${config.ollamaBaseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: options?.signal,
         body: JSON.stringify({
           model,
           messages,

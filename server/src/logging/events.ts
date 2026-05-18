@@ -19,6 +19,7 @@ export const LogEvents = {
   llmResponse: 'llm.response',
   llmRetry: 'llm.retry',
   llmRateLimit: 'llm.rate_limit',
+  llmSlowFallback: 'llm.slow_fallback',
   sseEvent: 'sse.event',
 } as const;
 

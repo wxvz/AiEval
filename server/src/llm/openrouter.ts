@@ -16,6 +16,7 @@ export function createOpenRouterProvider(): LlmProvider {
           'HTTP-Referer': 'http://localhost:4200',
           'X-Title': 'AiEval',
         },
+        signal: options?.signal,
         body: JSON.stringify({
           model,
           messages,

@@ -1,8 +1,11 @@
+import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent, logPromptSnippet } from '../logging/logger.js';
+import { isSlowRequestError, resolveGroqModelForCall } from './groq-fallback.js';
 import { completeWithRetry, type CompleteContext } from './rate-limit.js';
 import { JSON_RETRY_SYSTEM } from './prompts.js';
 import { parseJsonText } from './parse-json.js';
+import { tryResolveGroq } from './provider.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 export async function chat(
@@ -24,10 +27,45 @@ export async function chat(
     logPromptSnippet(context.runId, context.evaluationId, 'user', userContent);
   }
 
-  return completeWithRetry(
-    () => provider.complete(model, messages, { json: context.json }),
-    { ...context, provider: provider.name, model },
-  );
+  const slowSignal =
+    provider.name !== 'groq' ? AbortSignal.timeout(config.llmSlowFallbackMs) : undefined;
+
+  try {
+    return await completeWithRetry(
+      () => provider.complete(model, messages, { json: context.json, signal: slowSignal }),
+      { ...context, provider: provider.name, model },
+    );
+  } catch (error) {
+    if (!isSlowRequestError(error) || provider.name === 'groq' || !context.currentSetup) {
+      throw error;
+    }
+
+    const groqSetup = await tryResolveGroq();
+
+    if (!groqSetup) {
+      throw error;
+    }
+
+    const groqModel = resolveGroqModelForCall(context.currentSetup, groqSetup, model);
+    const durationMs = config.llmSlowFallbackMs;
+
+    logEvent('warn', LogEvents.llmSlowFallback, {
+      ...context,
+      from: provider.name,
+      to: 'groq',
+      model,
+      groqModel,
+      durationMs,
+      message: `Request exceeded ${durationMs}ms; retrying on Groq`,
+    });
+
+    context.onGroqFallback?.(groqSetup);
+
+    return completeWithRetry(
+      () => groqSetup.provider.complete(groqModel, messages, { json: context.json }),
+      { ...context, provider: 'groq', model: groqModel },
+    );
+  }
 }
 
 export async function chatJson<T>(

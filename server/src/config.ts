@@ -32,6 +32,7 @@ export const config = {
   llmInterCallDelayMs: Number(process.env['LLM_INTER_CALL_DELAY_MS'] ?? 200),
   llmConcurrency: Number(process.env['LLM_CONCURRENCY'] ?? 3),
   llmRequestTimeoutMs: Number(process.env['LLM_REQUEST_TIMEOUT_MS'] ?? 15 * 60 * 1000),
+  llmSlowFallbackMs: Number(process.env['LLM_SLOW_FALLBACK_MS'] ?? 3 * 60 * 1000),
   llmMaxRetries: Number(process.env['LLM_MAX_RETRIES'] ?? 2),
   llmBackoffBaseMs: Number(process.env['LLM_BACKOFF_BASE_MS'] ?? 500),
   logLevel: parseLogLevel(process.env['LOG_LEVEL']),

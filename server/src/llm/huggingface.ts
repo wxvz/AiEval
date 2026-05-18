@@ -11,13 +11,14 @@ function toPrompt(messages: ChatMessage[]): string {
 export function createHuggingFaceProvider(): LlmProvider {
   return {
     name: 'huggingface',
-    async complete(model, messages) {
+    async complete(model, messages, options) {
       const response = await llmFetch(`https://api-inference.huggingface.co/models/${model}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.huggingFaceApiKey}`,
         },
+        signal: options?.signal,
         body: JSON.stringify({
           inputs: toPrompt(messages),
           parameters: { max_new_tokens: 1024, return_full_text: false },

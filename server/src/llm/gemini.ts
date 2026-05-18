@@ -30,6 +30,7 @@ export function createGeminiProvider(): LlmProvider {
       const response = await llmFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: options?.signal,
         body: JSON.stringify({
           ...(systemInstruction ? { systemInstruction } : {}),
           contents,

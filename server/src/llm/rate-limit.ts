@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
+import type { ResolvedLlmSetup } from './types.js';
 
 let lastCallAt = 0;
 
@@ -33,6 +34,8 @@ export interface CompleteContext {
   provider?: string;
   model?: string;
   step?: string;
+  currentSetup?: ResolvedLlmSetup;
+  onGroqFallback?: (groqSetup: ResolvedLlmSetup) => void;
 }
 
 export async function completeWithRetry(

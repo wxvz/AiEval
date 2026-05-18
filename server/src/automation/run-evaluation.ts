@@ -12,6 +12,7 @@ import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
 import { jsonToSentences } from '../format/json-to-sentences.js';
 import { chat, chatJson } from '../llm/chat.js';
+import type { CompleteContext } from '../llm/rate-limit.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
 import {
   buildImprovedPrompt,
@@ -72,6 +73,36 @@ function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): voi
   onProgress(event);
 }
 
+function createLlmCallContext(
+  setup: ResolvedLlmSetup,
+  runId: string,
+  evaluationId: string,
+  onProgress: ProgressCallback,
+): CompleteContext {
+  let switchedToGroq = false;
+
+  return {
+    runId,
+    evaluationId,
+    currentSetup: setup,
+    onGroqFallback: (groqSetup) => {
+      if (switchedToGroq || setup.providerName === 'groq') {
+        return;
+      }
+
+      switchedToGroq = true;
+      const from = setup.providerName;
+      Object.assign(setup, groqSetup);
+      logEvent('warn', LogEvents.automationProviderFallback, {
+        runId,
+        evaluationId,
+        message: `Fallback from ${from} to groq after slow response`,
+      });
+      emit(onProgress, { type: 'provider_fallback', from, to: 'groq' });
+    },
+  };
+}
+
 function parseScores(
   raw: unknown,
   criteria: RubricCriterion[],
@@ -125,6 +156,7 @@ async function generateAnswers(
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  llmCtx: CompleteContext,
 ): Promise<Answer[]> {
   const total = setup.answerModels.length;
   const generateMessages: ChatMessage[] = [
@@ -151,8 +183,7 @@ async function generateAnswers(
 
     const start = Date.now();
     const content = await chat(setup.provider, modelRef.model, generateMessages, {
-      runId,
-      evaluationId,
+      ...llmCtx,
       step: 'generating',
     });
 
@@ -188,6 +219,7 @@ async function scoreAnswers(
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  llmCtx: CompleteContext,
 ): Promise<Answer[]> {
   const judgeSystem: ChatMessage = {
     role: 'system',
@@ -209,7 +241,7 @@ async function scoreAnswers(
       setup.provider,
       setup.judgeModel.model,
       [judgeSystem, { role: 'user', content: buildScorePrompt(scoreContext, answer) }],
-      { runId, evaluationId, step: 'scoring' },
+      { ...llmCtx, step: 'scoring' },
       (raw) => parseScores(raw, criteria, answer.scores),
     );
 
@@ -237,6 +269,7 @@ async function synthesizeImproved(
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  llmCtx: CompleteContext,
 ): Promise<ImprovedAnswer> {
   assertNotCancelled(signal, 'improved');
 
@@ -255,7 +288,7 @@ async function synthesizeImproved(
       { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
       { role: 'user', content: improvedPrompt },
     ],
-    { runId, evaluationId, step: 'improved' },
+    { ...llmCtx, step: 'improved' },
     parseImprovedAnswer,
   );
 
@@ -285,6 +318,7 @@ async function runWithSetup(
   }
 
   const scoreContext = buildScorePromptContext(prompt, criteria);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress);
 
   const answers = await generateAnswers(
     setup,
@@ -294,6 +328,7 @@ async function runWithSetup(
     runId,
     onProgress,
     signal,
+    llmCtx,
   );
   const scored = await scoreAnswers(
     setup,
@@ -304,6 +339,7 @@ async function runWithSetup(
     runId,
     onProgress,
     signal,
+    llmCtx,
   );
 
   const winnerResult = pickWinner(scored);
@@ -340,6 +376,7 @@ async function runWithSetup(
     runId,
     onProgress,
     signal,
+    llmCtx,
   );
 
   const now = new Date().toISOString();

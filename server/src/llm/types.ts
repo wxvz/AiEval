@@ -12,9 +12,14 @@ export interface ModelRef {
   label: string;
 }
 
+export interface LlmCompleteOptions {
+  json?: boolean;
+  signal?: AbortSignal;
+}
+
 export interface LlmProvider {
   readonly name: ProviderName;
-  complete(model: string, messages: ChatMessage[], options?: { json?: boolean }): Promise<string>;
+  complete(model: string, messages: ChatMessage[], options?: LlmCompleteOptions): Promise<string>;
 }
 
 export interface ResolvedLlmSetup {
