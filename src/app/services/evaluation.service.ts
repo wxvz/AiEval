@@ -272,6 +272,7 @@ export class EvaluationService {
     eventSource: EventSource;
     runState: { cancelledByUser: boolean };
     runId?: string;
+    clearTimer: () => void;
   } | null = null;
 
   private clearActiveAutomation(): void {
@@ -290,6 +291,7 @@ export class EvaluationService {
       active.runState.cancelledByUser = true;
     }
 
+    active.clearTimer();
     active.eventSource.close();
 
     const { evaluationId, runId } = active;
@@ -337,21 +339,32 @@ export class EvaluationService {
 
       const eventSource = new EventSource(url);
       const runState = { cancelledByUser: false };
-      this.activeAutomation = { evaluationId, eventSource, runState };
-      this.automatingEvaluationId.set(evaluationId);
       const timeoutMs = 10 * 60 * 1000;
       let settled = false;
-      const timeoutId = setTimeout(() => {
-        if (this.activeAutomation?.eventSource === eventSource) {
-          this.clearActiveAutomation();
-          eventSource.close();
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const clearTimer = () => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
         }
-        const message = 'Automation timed out after 10 minutes.';
-        callbacks?.onStatus?.('failed');
-        if (callbacks?.operationFeedback) {
-          this.feedback.error(message);
+      };
+
+      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer };
+      this.automatingEvaluationId.set(evaluationId);
+
+      timeoutId = setTimeout(() => {
+        if (settled) {
+          return;
         }
-        reject(new Error(message));
+
+        finish(() => {
+          const message = 'Automation timed out after 10 minutes.';
+          callbacks?.onStatus?.('failed');
+          if (callbacks?.operationFeedback) {
+            this.feedback.error(message);
+          }
+          reject(new Error(message));
+        });
       }, timeoutMs);
 
       const finish = (handler: () => void) => {
@@ -360,7 +373,7 @@ export class EvaluationService {
         }
 
         settled = true;
-        clearTimeout(timeoutId);
+        clearTimer();
 
         if (this.activeAutomation?.eventSource === eventSource) {
           this.clearActiveAutomation();
@@ -390,6 +403,38 @@ export class EvaluationService {
 
           if (event.type === 'status') {
             callbacks?.onStatus?.(event.status);
+            return;
+          }
+
+          if (event.type === 'complete') {
+            try {
+              callbacks?.onProgress?.(event);
+            } finally {
+              finish(() => {
+                callbacks?.onStatus?.('completed');
+                this.replaceEvaluation(event.evaluation);
+                if (callbacks?.operationFeedback) {
+                  this.feedback.success(callbacks.operationFeedback.success);
+                }
+                resolve(event.evaluation);
+              });
+            }
+            return;
+          }
+
+          if (event.type === 'error') {
+            try {
+              callbacks?.onProgress?.(event);
+            } finally {
+              finish(() => {
+                callbacks?.onStatus?.(event.status);
+                const errorMessage = event.message;
+                if (callbacks?.operationFeedback && event.status !== 'cancelled') {
+                  this.feedback.error(errorMessage);
+                }
+                reject(new Error(errorMessage));
+              });
+            }
             return;
           }
 
@@ -433,29 +478,6 @@ export class EvaluationService {
             })();
 
             return;
-          }
-
-          if (event.type === 'complete') {
-            finish(() => {
-              callbacks?.onStatus?.('completed');
-              this.replaceEvaluation(event.evaluation);
-              if (callbacks?.operationFeedback) {
-                this.feedback.success(callbacks.operationFeedback.success);
-              }
-              resolve(event.evaluation);
-            });
-            return;
-          }
-
-          if (event.type === 'error') {
-            finish(() => {
-              callbacks?.onStatus?.(event.status);
-              const errorMessage = event.message;
-              if (callbacks?.operationFeedback && event.status !== 'cancelled') {
-                this.feedback.error(errorMessage);
-              }
-              reject(new Error(errorMessage));
-            });
           }
         });
       };

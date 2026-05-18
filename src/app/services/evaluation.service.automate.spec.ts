@@ -31,6 +31,7 @@ describe('EvaluationService.automate', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     httpMock.verify();
   });
@@ -272,6 +273,8 @@ describe('EvaluationService.automate', () => {
       }),
     } as MessageEvent);
 
+    await Promise.resolve();
+
     const choiceReq = httpMock.expectOne('/api/evaluations/eval-1/automate/provider-choice');
     expect(choiceReq.request.body).toEqual({ useCloud: true, runId: 'run-slow-1' });
     choiceReq.flush({ accepted: true });
@@ -285,6 +288,91 @@ describe('EvaluationService.automate', () => {
     } as MessageEvent);
 
     await automatePromise;
+  });
+
+  it('clears client timeout when complete event is received', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'complete',
+              status: 'completed',
+              evaluation: { ...evaluation, automatedAt: 'now' },
+            }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    await service.automate('eval-1');
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it('clears prior client timeout when automate is superseded', async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+    const runId = 'run-supersede-timeout';
+    const instances: Array<{
+      onmessage: ((event: MessageEvent) => void) | null;
+      close: ReturnType<typeof vi.fn>;
+    }> = [];
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+      close = vi.fn(() => {
+        queueMicrotask(() => this.onerror?.());
+      });
+
+      constructor(public url: string) {
+        instances.push(this);
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const firstPromise = service.automate('eval-1');
+    await Promise.resolve();
+
+    clearTimeoutSpy.mockClear();
+
+    const secondPromise = service.automate('eval-1');
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    cancelReq.flush({ cancelled: true });
+
+    await expect(firstPromise).rejects.toThrow('Automation cancelled.');
+
+    instances[1].onmessage!({
+      data: JSON.stringify({
+        type: 'complete',
+        status: 'completed',
+        evaluation: { ...evaluation, automatedAt: 'now' },
+      }),
+    } as MessageEvent);
+
+    await secondPromise;
+    clearTimeoutSpy.mockRestore();
   });
 
   it('invokes onStatus for status, complete, error, and cancel events', async () => {
