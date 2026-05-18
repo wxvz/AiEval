@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -10,7 +11,7 @@ async function openAiCompatibleComplete(
   messages: ChatMessage[],
   options?: { json?: boolean },
 ): Promise<string> {
-  const response = await fetch(url, {
+  const response = await llmFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
@@ -7,7 +8,7 @@ export function createOpenRouterProvider(): LlmProvider {
   return {
     name: 'openrouter',
     async complete(model, messages, options) {
-      const response = await fetch(OPENROUTER_URL, {
+      const response = await llmFetch(OPENROUTER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

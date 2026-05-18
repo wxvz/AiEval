@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 function toPrompt(messages: ChatMessage[]): string {
@@ -11,7 +12,7 @@ export function createHuggingFaceProvider(): LlmProvider {
   return {
     name: 'huggingface',
     async complete(model, messages) {
-      const response = await fetch(`https://api-inference.huggingface.co/models/${model}`, {
+      const response = await llmFetch(`https://api-inference.huggingface.co/models/${model}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,11 +1,12 @@
 import { config } from '../config.js';
+import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 export function createOllamaProvider(): LlmProvider {
   return {
     name: 'ollama',
     async complete(model, messages, options) {
-      const response = await fetch(`${config.ollamaBaseUrl}/api/chat`, {
+      const response = await llmFetch(`${config.ollamaBaseUrl}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

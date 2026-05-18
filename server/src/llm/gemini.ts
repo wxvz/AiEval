@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 function toGeminiContents(messages: ChatMessage[]): {
@@ -26,7 +27,7 @@ export function createGeminiProvider(): LlmProvider {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.geminiApiKey}`;
       const { systemInstruction, contents } = toGeminiContents(messages);
 
-      const response = await fetch(url, {
+      const response = await llmFetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
