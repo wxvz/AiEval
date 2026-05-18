@@ -18,6 +18,8 @@ import {
   buildScorePrompt,
   buildScorePromptContext,
   GENERATE_SYSTEM,
+  JUDGE_IMPROVED_SYSTEM,
+  JUDGE_SCORE_SYSTEM,
   parseImprovedAnswer,
   type ScorePromptContext,
 } from '../llm/prompts.js';
@@ -189,7 +191,7 @@ async function scoreAnswers(
 ): Promise<Answer[]> {
   const judgeSystem: ChatMessage = {
     role: 'system',
-    content: 'You are a strict evaluation judge. Return JSON only.',
+    content: JUDGE_SCORE_SYSTEM,
   };
 
   return mapWithConcurrency(answers, config.llmConcurrency, async (answer) => {
@@ -250,7 +252,7 @@ async function synthesizeImproved(
     setup.provider,
     setup.judgeModel.model,
     [
-      { role: 'system', content: 'You synthesize improved answers. Return JSON only.' },
+      { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
       { role: 'user', content: improvedPrompt },
     ],
     { runId, evaluationId, step: 'improved' },

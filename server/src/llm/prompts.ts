@@ -2,10 +2,16 @@ import { jsonToSentences } from '../format/json-to-sentences.js';
 import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluation.js';
 
 export const GENERATE_SYSTEM =
-  'You are a helpful assistant. Answer the user prompt clearly and concisely.';
+  'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
+
+export const JUDGE_SCORE_SYSTEM =
+  'You are an impartial rubric judge. Score one model answer at a time using only the rubric and the answer text—do not compare to other models. Return valid JSON only, matching the schema in the user message exactly.';
+
+export const JUDGE_IMPROVED_SYSTEM =
+  'You synthesize an improved answer after multi-model comparison. Return valid JSON only, matching the schema in the user message exactly. finalAnswer must be a polished, standalone reply to the original user prompt—not meta commentary about the evaluation.';
 
 export const JSON_RETRY_SYSTEM =
-  'You must respond with valid JSON only. No markdown, no code fences, no explanation outside the JSON object.';
+  'Your previous response was not valid JSON. Reply with a single JSON object only—no markdown fences, no commentary before or after—and match the schema described in the user message.';
 
 export function formatCriteriaBlock(criteria: RubricCriterion[]): string {
   return criteria
@@ -14,6 +20,20 @@ export function formatCriteriaBlock(criteria: RubricCriterion[]): string {
         `- id: ${c.id}, name: ${c.name}, maxPoints: ${c.maxPoints}${c.description ? `, description: ${c.description}` : ''}`,
     )
     .join('\n');
+}
+
+function formatAnswerSummary(answer: Answer): string {
+  const total = answer.scores.reduce((s, sc) => s + sc.points, 0);
+  const max = answer.scores.reduce((s, sc) => s + sc.maxPoints, 0);
+  const scoreLines = answer.scores
+    .map((s) => `  - ${s.criterionName}: ${s.points}/${s.maxPoints}`)
+    .join('\n');
+
+  return `### ${answer.label} (total ${total}/${max})${answer.isWinner ? ' [WINNER]' : ''}
+Scores:
+${scoreLines}
+
+${answer.content}`;
 }
 
 export interface ScorePromptContext {
@@ -29,29 +49,36 @@ export function buildScorePromptContext(
 
   return {
     criteriaIds,
-    header: `You are an evaluation judge. Score each model answer against the rubric.
+    header: `Role: Impartial evaluator. Score the model answer below against each rubric criterion.
 
-User prompt:
+Original user prompt (what the answer should address):
 ${prompt}
 
-Rubric criteria:
+Rubric (score each criterion independently):
 ${formatCriteriaBlock(criteria)}
 
-Return JSON only:
+Scoring rules:
+- For each criterion, assign points from 0 through maxPoints (integers preferred).
+- Base scores only on this answer and the criterion name/description—ignore other models.
+- Use the full range: reserve maxPoints for strong performance; use 0 when clearly failed.
+- notes (optional): one short sentence citing specific evidence from the answer; omit if nothing useful to add.
+
+Required JSON shape (no other keys, no markdown):
 {
   "scores": [
-    { "criterionId": "<id>", "points": <0 to maxPoints>, "notes": "<optional brief note>" }
+    { "criterionId": "<id>", "points": <number>, "notes": "<optional>" }
   ]
 }
 
-Use criterion ids: ${criteriaIds.join(', ')}`,
+Include exactly one object per criterion id: ${criteriaIds.join(', ')}`,
   };
 }
 
 export function buildScorePrompt(context: ScorePromptContext, answer: Answer): string {
   return `${context.header}
 
-Model answer (${answer.label}):
+---
+Model answer to score (${answer.label}):
 ${answer.content}`;
 }
 
@@ -61,35 +88,35 @@ export function buildImprovedPrompt(
   answers: Answer[],
   winner: Answer,
 ): string {
-  const summaries = answers
-    .map((a) => {
-      const total = a.scores.reduce((s, sc) => s + sc.points, 0);
-      const max = a.scores.reduce((s, sc) => s + sc.maxPoints, 0);
-      return `### ${a.label} (total ${total}/${max})${a.isWinner ? ' [WINNER]' : ''}\n${a.content}`;
-    })
-    .join('\n\n');
+  const summaries = answers.map(formatAnswerSummary).join('\n\n');
 
-  const criteriaNames = criteria.map((c) => c.name).join(', ');
-
-  return `You are helping improve an AI response after comparing multiple model answers.
+  return `You are improving the best candidate answer after comparing multiple model outputs.
 
 Original user prompt:
 ${prompt}
 
-Criteria used: ${criteriaNames}
+Rubric criteria (what a strong final answer should satisfy):
+${formatCriteriaBlock(criteria)}
 
-All model answers:
+All model answers (with rubric scores):
 ${summaries}
 
-Winner: ${winner.label}
+Winner by total score: ${winner.label}
+
+Task:
+1. winningAnswer — briefly why this answer scored highest on the rubric.
+2. strengths — what the winner did well.
+3. weaknesses — gaps or errors to fix in the winner.
+4. usefulFromOthers — specific ideas from non-winning answers worth merging.
+5. finalAnswer — one improved reply that fully addresses the original user prompt; fix weaknesses, keep strengths, and selectively merge useful ideas. Write for the end user, not as a report about models or scores.
 
 Return JSON only matching this shape:
 {
-  "winningAnswer": "<summary of why winner won>",
-  "strengths": "<winner strengths>",
-  "weaknesses": "<winner weaknesses>",
-  "usefulFromOthers": "<ideas from non-winning answers>",
-  "finalAnswer": "<improved final response to the user prompt>"
+  "winningAnswer": "<string>",
+  "strengths": "<string>",
+  "weaknesses": "<string>",
+  "usefulFromOthers": "<string>",
+  "finalAnswer": "<string>"
 }`;
 }
 
