@@ -87,25 +87,47 @@
         </button>
       </div>
 
-      @if (automating()) {
-        <div class="card mb-3 border-primary">
+      @if (showAutomationStatus()) {
+        <div
+          class="card mb-3"
+          [class.border-primary]="automating()"
+          [class.border-success]="automationOutcome() === 'success'"
+          [class.border-danger]="automationOutcome() === 'error'"
+        >
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-              <app-loading-spinner />
-              <button
-                type="button"
-                class="btn btn-outline-danger btn-sm"
-                (click)="onStopAutomation()"
-              >
-                Stop automation
-              </button>
-            </div>
-            <p class="text-muted small mb-2">Generating and scoring answers. This may take a few minutes.</p>
+            @if (automating()) {
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <app-loading-spinner />
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="onStopAutomation()"
+                >
+                  Stop automation
+                </button>
+              </div>
+              <p class="text-muted small mb-2">
+                Generating and scoring answers. This may take a few minutes.
+              </p>
+            } @else if (automationOutcome() === 'success') {
+              <p class="text-success small mb-2">Automation finished successfully.</p>
+            } @else if (automationOutcome() === 'error') {
+              <p class="text-danger small mb-2">Automation did not complete.</p>
+            }
             <ul class="small mb-0 ps-3">
               @for (step of progressSteps(); track $index) {
                 <li>{{ step }}</li>
               }
             </ul>
+            @if (!automating() && automationOutcome() !== 'idle') {
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm mt-3"
+                (click)="onDismissAutomationStatus()"
+              >
+                Dismiss
+              </button>
+            }
           </div>
         </div>
       }

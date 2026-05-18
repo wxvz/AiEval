@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -31,6 +31,7 @@ export interface OperationFeedback {
 export class EvaluationService {
   private readonly http = inject(HttpClient);
   private readonly feedback = inject(FeedbackService);
+  private readonly ngZone = inject(NgZone);
 
   private readonly evaluationsSignal = signal<Evaluation[]>([]);
   private readonly loadingSignal = signal(true);
@@ -373,82 +374,98 @@ export class EvaluationService {
         handler();
       };
 
+      const runInZone = (handler: () => void): void => {
+        this.ngZone.run(handler);
+      };
+
       eventSource.onmessage = (messageEvent) => {
-        let event: AutomationProgressEvent;
+        runInZone(() => {
+          let event: AutomationProgressEvent;
 
-        try {
-          event = JSON.parse(messageEvent.data as string) as AutomationProgressEvent;
-        } catch {
-          return;
-        }
+          try {
+            event = JSON.parse(messageEvent.data as string) as AutomationProgressEvent;
+          } catch {
+            return;
+          }
 
-        if ('runId' in event && typeof event.runId === 'string' && this.activeAutomation) {
-          this.activeAutomation.runId = event.runId;
-        }
+          if ('runId' in event && typeof event.runId === 'string' && this.activeAutomation) {
+            this.activeAutomation.runId = event.runId;
+          }
 
-        callbacks?.onProgress?.(event);
+          callbacks?.onProgress?.(event);
 
-        if (event.type === 'slow_provider_prompt') {
-          void (async () => {
-            try {
-              const useCloud = callbacks?.onSlowProviderPrompt
-                ? await callbacks.onSlowProviderPrompt(event)
-                : false;
+          if (event.type === 'slow_provider_prompt') {
+            void (async () => {
+              try {
+                const useCloud = callbacks?.onSlowProviderPrompt
+                  ? await this.ngZone.run(() => callbacks.onSlowProviderPrompt!(event))
+                  : false;
 
-              await firstValueFrom(
-                this.http.post<{ accepted: boolean }>(
-                  `${API}/${evaluationId}/automate/provider-choice`,
-                  { useCloud, runId: event.runId },
-                ),
-              );
-            } catch {
-              finish(() => {
-                reject(new Error('Could not submit provider choice.'));
-              });
-            }
-          })();
+                const response = await firstValueFrom(
+                  this.http.post<{ accepted: boolean }>(
+                    `${API}/${evaluationId}/automate/provider-choice`,
+                    { useCloud, runId: event.runId },
+                  ),
+                );
 
-          return;
-        }
+                if (!response.accepted) {
+                  const message = 'Automation already ended; please run again.';
+                  this.feedback.error(message);
+                  finish(() => {
+                    reject(new Error(message));
+                  });
+                }
+              } catch {
+                finish(() => {
+                  reject(new Error('Could not submit provider choice.'));
+                });
+              }
+            })();
 
-        if (event.type === 'complete') {
+            return;
+          }
+
+          if (event.type === 'complete') {
+            finish(() => {
+              this.replaceEvaluation(event.evaluation);
+              if (callbacks?.operationFeedback) {
+                this.feedback.success(callbacks.operationFeedback.success);
+              }
+              resolve(event.evaluation);
+            });
+            return;
+          }
+
+          if (event.type === 'error') {
+            finish(() => {
+              const errorMessage = event.message;
+              if (
+                callbacks?.operationFeedback &&
+                !errorMessage.toLowerCase().includes('cancelled')
+              ) {
+                this.feedback.error(errorMessage);
+              }
+              reject(new Error(errorMessage));
+            });
+          }
+        });
+      };
+
+      eventSource.onerror = () => {
+        runInZone(() => {
           finish(() => {
-            this.replaceEvaluation(event.evaluation);
+            if (runState.cancelledByUser) {
+              reject(new Error('Automation cancelled.'));
+              return;
+            }
+
+            const errorMessage =
+              callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
             if (callbacks?.operationFeedback) {
-              this.feedback.success(callbacks.operationFeedback.success);
-            }
-            resolve(event.evaluation);
-          });
-          return;
-        }
-
-        if (event.type === 'error') {
-          finish(() => {
-            const errorMessage = event.message;
-            if (
-              callbacks?.operationFeedback &&
-              !errorMessage.toLowerCase().includes('cancelled')
-            ) {
               this.feedback.error(errorMessage);
             }
             reject(new Error(errorMessage));
           });
-        }
-      };
-
-      eventSource.onerror = () => {
-        finish(() => {
-          if (runState.cancelledByUser) {
-            reject(new Error('Automation cancelled.'));
-            return;
-          }
-
-          const errorMessage =
-            callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
-          if (callbacks?.operationFeedback) {
-            this.feedback.error(errorMessage);
-          }
-          reject(new Error(errorMessage));
         });
       };
     });

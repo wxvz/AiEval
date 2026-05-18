@@ -82,6 +82,7 @@ function createLlmCallContext(
   signal: AbortSignal,
 ): CompleteContext {
   let switchedToCloud = false;
+  let providerChoicePromise: Promise<boolean> | null = null;
   const ctx: CompleteContext = {
     runId,
     evaluationId,
@@ -89,15 +90,21 @@ function createLlmCallContext(
     currentSetup: setup,
     skipSlowFallback: false,
     requestProviderChoice: async ({ currentProvider, cloudProvider }) => {
-      emit(onProgress, {
-        type: 'slow_provider_prompt',
-        runId,
-        currentProvider,
-        cloudProvider,
-        elapsedLabel: providerChoiceTimeoutLabel(),
-      });
+      if (!providerChoicePromise) {
+        emit(onProgress, {
+          type: 'slow_provider_prompt',
+          runId,
+          currentProvider,
+          cloudProvider,
+          elapsedLabel: providerChoiceTimeoutLabel(),
+        });
 
-      return waitForProviderChoice(evaluationId, runId);
+        providerChoicePromise = waitForProviderChoice(evaluationId, runId).finally(() => {
+          providerChoicePromise = null;
+        });
+      }
+
+      return providerChoicePromise;
     },
     onCloudProviderSwitch: (cloudSetup) => {
       if (switchedToCloud || setup.providerName === cloudSetup.providerName) {

@@ -25,6 +25,8 @@ declare const bootstrap: {
   };
 };
 
+type AutomationOutcome = 'idle' | 'running' | 'success' | 'error';
+
 @Component({
   selector: 'app-edit-evaluation-page',
   imports: [
@@ -53,6 +55,10 @@ export class EditEvaluationPage {
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = computed(() =>
     this.evaluationService.isAutomating(this.evaluationId),
+  );
+  protected readonly automationOutcome = signal<AutomationOutcome>('idle');
+  protected readonly showAutomationStatus = computed(
+    () => this.automating() || this.automationOutcome() !== 'idle',
   );
   protected readonly progressSteps = signal<string[]>([]);
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
@@ -220,12 +226,19 @@ export class EditEvaluationPage {
   }
 
   protected onStopAutomation(): void {
-    this.resolveProviderChoicePending(false);
+    this.cancelProviderChoicePrompt();
     this.evaluationService.cancelAutomation(this.evaluationId);
+    this.automationOutcome.set('error');
     this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
   }
 
+  protected onDismissAutomationStatus(): void {
+    this.automationOutcome.set('idle');
+    this.progressSteps.set([]);
+  }
+
   private async runAutomate(force: boolean): Promise<void> {
+    this.automationOutcome.set('running');
     this.progressSteps.set(['Starting automation…']);
 
     try {
@@ -243,8 +256,17 @@ export class EditEvaluationPage {
           },
         },
       );
-    } catch {
-      // feedback handled in service
+      this.automationOutcome.set('success');
+    } catch (error) {
+      this.cancelProviderChoicePrompt();
+      this.automationOutcome.set('error');
+      const message = error instanceof Error ? error.message : 'Automation failed.';
+      this.progressSteps.update((steps) => {
+        const last = steps[steps.length - 1];
+        const label = `Error: ${message}`;
+
+        return last === label ? steps : [...steps, label];
+      });
     }
   }
 
@@ -284,12 +306,20 @@ export class EditEvaluationPage {
   }
 
   private resolveProviderChoice(useCloud: boolean): void {
+    this.dismissProviderChoiceModal();
+    this.resolveProviderChoicePending(useCloud);
+  }
+
+  private cancelProviderChoicePrompt(): void {
+    this.dismissProviderChoiceModal();
+    this.resolveProviderChoicePending(false);
+  }
+
+  private dismissProviderChoiceModal(): void {
     const modalElement = document.getElementById('providerChoiceModal');
 
     if (modalElement) {
       bootstrap.Modal.getOrCreateInstance(modalElement).hide();
     }
-
-    this.resolveProviderChoicePending(useCloud);
   }
 }

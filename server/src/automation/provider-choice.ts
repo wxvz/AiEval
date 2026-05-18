@@ -2,6 +2,7 @@ import { config } from '../config.js';
 
 interface PendingProviderChoice {
   runId: string;
+  promise: Promise<boolean>;
   resolve: (useCloud: boolean) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
@@ -14,25 +15,38 @@ const CHOICE_TIMEOUT_MS = 30 * 60 * 1000;
 export function waitForProviderChoice(evaluationId: string, runId: string): Promise<boolean> {
   const existing = pendingByEvaluationId.get(evaluationId);
 
+  if (existing?.runId === runId) {
+    return existing.promise;
+  }
+
   if (existing) {
     existing.reject(new Error('Provider choice superseded.'));
     clearTimeout(existing.timer);
     pendingByEvaluationId.delete(evaluationId);
   }
 
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      pendingByEvaluationId.delete(evaluationId);
-      reject(new Error('Provider choice timed out.'));
-    }, CHOICE_TIMEOUT_MS);
+  let resolve!: (useCloud: boolean) => void;
+  let reject!: (error: Error) => void;
 
-    pendingByEvaluationId.set(evaluationId, {
-      runId,
-      resolve,
-      reject,
-      timer,
-    });
+  const promise = new Promise<boolean>((res, rej) => {
+    resolve = res;
+    reject = rej;
   });
+
+  const timer = setTimeout(() => {
+    pendingByEvaluationId.delete(evaluationId);
+    reject(new Error('Provider choice timed out.'));
+  }, CHOICE_TIMEOUT_MS);
+
+  pendingByEvaluationId.set(evaluationId, {
+    runId,
+    promise,
+    resolve,
+    reject,
+    timer,
+  });
+
+  return promise;
 }
 
 export function submitProviderChoice(
