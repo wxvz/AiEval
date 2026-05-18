@@ -1,14 +1,23 @@
 @if (!evaluation()) {
   <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
-  <a routerLink="/" class="btn btn-link px-0">Back to dashboard</a>
+  @if (automating()) {
+    <span class="btn btn-link px-0 disabled" aria-disabled="true">Back to dashboard</span>
+  } @else {
+    <a routerLink="/" class="btn btn-link px-0">Back to dashboard</a>
+  }
 } @else {
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">Edit: {{ evaluation()!.title }}</h1>
     <div class="d-flex gap-2">
-      <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">Compare</a>
-      <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'improved']">
-        Improved
-      </a>
+      @if (automating()) {
+        <span class="btn btn-outline-primary btn-sm disabled" aria-disabled="true">Compare</span>
+        <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">Improved</span>
+      } @else {
+        <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">Compare</a>
+        <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'improved']">
+          Improved
+        </a>
+      }
     </div>
   </div>
 
@@ -126,5 +135,16 @@
     confirmClass="btn-primary"
     (confirmed)="onRerunConfirmed()"
     (cancelled)="onRerunCancelled()"
+  />
+
+  <app-confirm-delete-modal
+    modalId="confirmLeaveDuringAutomationModal"
+    title="Leave during automation?"
+    message="Automation is still running. Leaving this page will cancel the run."
+    confirmLabel="Leave"
+    cancelLabel="Stay"
+    confirmClass="btn-warning"
+    (confirmed)="onLeaveConfirmed()"
+    (cancelled)="onLeaveCancelled()"
   />
 }

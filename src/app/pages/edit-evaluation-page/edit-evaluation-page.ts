@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, HostListener, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AnswerCard } from '../../components/answer-card/answer-card';
@@ -48,9 +48,12 @@ export class EditEvaluationPage {
 
   private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
   private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
+  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly automating = signal(false);
+  protected readonly automating = computed(() =>
+    this.evaluationService.isAutomating(this.evaluationId),
+  );
   protected readonly progressSteps = signal<string[]>([]);
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
   protected readonly activeCriteria = computed(() => {
@@ -68,6 +71,30 @@ export class EditEvaluationPage {
 
     return !!current?.prompt.trim() && !this.automating();
   });
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.automating()) {
+      event.preventDefault();
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.automating()) {
+      return true;
+    }
+
+    return new Promise((resolve) => {
+      this.pendingLeaveResolve = resolve;
+      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
+
+      if (modalElement) {
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+      } else {
+        resolve(false);
+      }
+    });
+  }
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
     this.evaluationService.update(this.evaluationId, value, {
@@ -172,6 +199,18 @@ export class EditEvaluationPage {
     // modal dismissed
   }
 
+  protected onLeaveConfirmed(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId);
+    this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
+    this.pendingLeaveResolve?.(true);
+    this.pendingLeaveResolve = null;
+  }
+
+  protected onLeaveCancelled(): void {
+    this.pendingLeaveResolve?.(false);
+    this.pendingLeaveResolve = null;
+  }
+
   protected onProviderChoiceCloud(): void {
     this.resolveProviderChoice(true);
   }
@@ -181,13 +220,12 @@ export class EditEvaluationPage {
   }
 
   protected onStopAutomation(): void {
+    this.resolveProviderChoicePending(false);
     this.evaluationService.cancelAutomation(this.evaluationId);
-    this.automating.set(false);
     this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
   }
 
   private async runAutomate(force: boolean): Promise<void> {
-    this.automating.set(true);
     this.progressSteps.set(['Starting automation…']);
 
     try {
@@ -207,8 +245,6 @@ export class EditEvaluationPage {
       );
     } catch {
       // feedback handled in service
-    } finally {
-      this.automating.set(false);
     }
   }
 
@@ -226,7 +262,7 @@ export class EditEvaluationPage {
       const modal = this.providerChoiceModal();
 
       if (!modal) {
-        resolve(false);
+        this.resolveProviderChoicePending(false);
         return;
       }
 
@@ -236,9 +272,15 @@ export class EditEvaluationPage {
       if (modalElement) {
         bootstrap.Modal.getOrCreateInstance(modalElement).show();
       } else {
-        resolve(false);
+        this.resolveProviderChoicePending(false);
       }
     });
+  }
+
+  private resolveProviderChoicePending(useCloud: boolean): void {
+    const resolve = this.pendingProviderChoiceResolve;
+    this.pendingProviderChoiceResolve = null;
+    resolve?.(useCloud);
   }
 
   private resolveProviderChoice(useCloud: boolean): void {
@@ -248,7 +290,6 @@ export class EditEvaluationPage {
       bootstrap.Modal.getOrCreateInstance(modalElement).hide();
     }
 
-    this.pendingProviderChoiceResolve?.(useCloud);
-    this.pendingProviderChoiceResolve = null;
+    this.resolveProviderChoicePending(useCloud);
   }
 }

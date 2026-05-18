@@ -12,6 +12,7 @@ export class ConfirmDeleteModal {
   readonly message = input('Are you sure you want to delete this item?');
   readonly confirmLabel = input('Delete');
   readonly confirmClass = input('btn-danger');
+  readonly cancelLabel = input('Cancel');
 
   readonly confirmed = output<void>();
   readonly cancelled = output<void>();

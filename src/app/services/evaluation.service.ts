@@ -42,6 +42,14 @@ export class EvaluationService {
 
   readonly count = computed(() => this.evaluationsSignal().length);
 
+  readonly automatingEvaluationId = signal<string | null>(null);
+
+  isAutomating(evaluationId?: string): boolean {
+    const id = this.automatingEvaluationId();
+
+    return evaluationId ? id === evaluationId : id !== null;
+  }
+
   loadFromApi(): Promise<void> {
     this.loadingSignal.set(true);
     this.loadErrorSignal.set(null);
@@ -261,15 +269,45 @@ export class EvaluationService {
     evaluationId: string;
     eventSource: EventSource;
     runState: { cancelledByUser: boolean };
+    runId?: string;
   } | null = null;
 
-  cancelAutomation(evaluationId: string): void {
+  private clearActiveAutomation(): void {
+    this.activeAutomation = null;
+    this.automatingEvaluationId.set(null);
+  }
+
+  private disposeActiveAutomation(notifyServer: boolean): void {
     const active = this.activeAutomation;
 
-    if (active?.evaluationId === evaluationId) {
+    if (!active) {
+      return;
+    }
+
+    if (notifyServer) {
       active.runState.cancelledByUser = true;
-      active.eventSource.close();
-      this.activeAutomation = null;
+    }
+
+    active.eventSource.close();
+
+    const { evaluationId, runId } = active;
+    this.clearActiveAutomation();
+
+    if (notifyServer) {
+      void firstValueFrom(
+        this.http.post<{ cancelled: boolean }>(`${API}/${evaluationId}/automate/cancel`, {
+          ...(runId ? { runId } : {}),
+        }),
+      ).catch(() => {
+        // no active server run (already finished or never started)
+      });
+    }
+  }
+
+  cancelAutomation(evaluationId: string): void {
+    if (this.activeAutomation?.evaluationId === evaluationId) {
+      this.disposeActiveAutomation(true);
+      return;
     }
 
     void firstValueFrom(
@@ -299,14 +337,19 @@ export class EvaluationService {
     const url = `${API}/${evaluationId}/automate/stream?${params.toString()}`;
 
     return new Promise((resolve, reject) => {
+      this.disposeActiveAutomation(true);
+
       const eventSource = new EventSource(url);
       const runState = { cancelledByUser: false };
       this.activeAutomation = { evaluationId, eventSource, runState };
+      this.automatingEvaluationId.set(evaluationId);
       const timeoutMs = 10 * 60 * 1000;
       let settled = false;
       const timeoutId = setTimeout(() => {
-        this.activeAutomation = null;
-        eventSource.close();
+        if (this.activeAutomation?.eventSource === eventSource) {
+          this.clearActiveAutomation();
+          eventSource.close();
+        }
         const message = 'Automation timed out after 10 minutes.';
         if (callbacks?.operationFeedback) {
           this.feedback.error(message);
@@ -321,8 +364,12 @@ export class EvaluationService {
 
         settled = true;
         clearTimeout(timeoutId);
-        this.activeAutomation = null;
-        eventSource.close();
+
+        if (this.activeAutomation?.eventSource === eventSource) {
+          this.clearActiveAutomation();
+          eventSource.close();
+        }
+
         handler();
       };
 
@@ -333,6 +380,10 @@ export class EvaluationService {
           event = JSON.parse(messageEvent.data as string) as AutomationProgressEvent;
         } catch {
           return;
+        }
+
+        if ('runId' in event && typeof event.runId === 'string' && this.activeAutomation) {
+          this.activeAutomation.runId = event.runId;
         }
 
         callbacks?.onProgress?.(event);

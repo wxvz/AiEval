@@ -9,7 +9,9 @@
         <p class="mb-0">{{ message() }}</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="onCancel()">Cancel</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="onCancel()">
+          {{ cancelLabel() }}
+        </button>
         <button
           type="button"
           [class]="'btn ' + confirmClass()"
