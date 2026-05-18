@@ -29,8 +29,8 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
     fast: {
       answer: [
         'llama-3.1-8b-instant',
-        'llama-3.1-8b-instant',
         'meta-llama/llama-4-scout-17b-16e-instruct',
+        'qwen/qwen3-32b',
       ],
       judge: 'llama-3.1-8b-instant',
     },

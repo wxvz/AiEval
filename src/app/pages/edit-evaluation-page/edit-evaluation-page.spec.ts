@@ -65,6 +65,18 @@ describe('EditEvaluationPage.canDeactivate', () => {
     expect(page.canDeactivate()).toBe(true);
   });
 
+  it('sets returnValue on beforeunload when automating', () => {
+    evaluationService.automatingEvaluationId.set('eval-1');
+    const event = new Event('beforeunload') as BeforeUnloadEvent;
+    const preventDefault = vi.spyOn(event, 'preventDefault');
+
+    page.onBeforeUnload(event);
+
+    expect(preventDefault).toHaveBeenCalled();
+    // jsdom coerces '' to true; browsers use the assigned string for the dialog.
+    expect(event.returnValue).toBeTruthy();
+  });
+
   it('returns a promise that resolves false when user stays', async () => {
     evaluationService.automatingEvaluationId.set('eval-1');
 

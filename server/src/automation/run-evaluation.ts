@@ -4,9 +4,12 @@ import { config } from '../config.js';
 import { getEvaluationsCollection } from '../db.js';
 import { getActiveCriteria } from './criteria.js';
 import {
-  clampScore,
+  allAnswersHaveEqualTotals,
+  computeTotalPoints,
   initialScoresForCriteria,
+  parseJudgePointsValue,
   pickWinner,
+  scaleAnswerScores,
 } from './scores.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
@@ -15,15 +18,18 @@ import { chat, chatJson } from '../llm/chat.js';
 import type { CompleteContext } from '../llm/rate-limit.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
 import {
+  buildComparativeRankPrompt,
   buildImprovedPrompt,
   buildScorePrompt,
   buildScorePromptContext,
   GENERATE_SYSTEM,
   JUDGE_IMPROVED_SYSTEM,
+  JUDGE_RANK_SYSTEM,
   JUDGE_SCORE_SYSTEM,
   parseImprovedAnswer,
   type ScorePromptContext,
 } from '../llm/prompts.js';
+import { stripModelArtifacts } from '../llm/sanitize-model-output.js';
 import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
 import {
   clearAutomationRun,
@@ -153,10 +159,7 @@ function parseScores(
         (entry as ScoreEntry).criterionId === criterion.id,
     );
 
-    const points = clampScore(
-      typeof match?.points === 'number' ? match.points : 0,
-      criterion.maxPoints,
-    );
+    const points = parseJudgePointsValue(match?.points, criterion.maxPoints);
 
     const notesRaw = match?.notes ?? existingScore?.notes;
     const notes =
@@ -217,7 +220,7 @@ async function generateAnswers(
       id: crypto.randomUUID(),
       evaluationId,
       label: modelRef.label,
-      content,
+      content: stripModelArtifacts(content),
       scores: initialScoresForCriteria(criteria),
     };
 
@@ -239,6 +242,7 @@ async function generateAnswers(
 async function scoreAnswers(
   setup: ResolvedLlmSetup,
   evaluationId: string,
+  prompt: string,
   scoreContext: ScorePromptContext,
   criteria: RubricCriterion[],
   answers: Answer[],
@@ -252,7 +256,7 @@ async function scoreAnswers(
     content: JUDGE_SCORE_SYSTEM,
   };
 
-  return mapWithConcurrency(answers, config.llmConcurrency, async (answer) => {
+  const scored = await mapWithConcurrency(answers, config.llmConcurrency, async (answer) => {
     assertNotCancelled(signal, 'scoring');
 
     emit(onProgress, { type: 'scoring', answerId: answer.id, label: answer.label });
@@ -282,6 +286,113 @@ async function scoreAnswers(
     emit(onProgress, { type: 'scored', answerId: answer.id, totalPoints });
 
     return { ...answer, scores };
+  });
+
+  return rebalanceTiedScores(
+    setup,
+    evaluationId,
+    prompt,
+    criteria,
+    scored,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+  );
+}
+
+interface ComparativeRanking {
+  answerId: string;
+  qualityPercent: number;
+}
+
+function parseComparativeRankings(raw: unknown, answerIds: string[]): ComparativeRanking[] {
+  if (!raw || typeof raw !== 'object' || !('rankings' in raw)) {
+    throw new Error('Invalid comparative ranking JSON');
+  }
+
+  const entries = (raw as { rankings: unknown }).rankings;
+
+  if (!Array.isArray(entries)) {
+    throw new Error('Invalid comparative rankings array');
+  }
+
+  const byId = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (typeof entry !== 'object' || entry === null) {
+      continue;
+    }
+
+    const answerId = (entry as { answerId?: unknown }).answerId;
+    const qualityPercent = (entry as { qualityPercent?: unknown }).qualityPercent;
+
+    if (typeof answerId === 'string' && typeof qualityPercent === 'number') {
+      byId.set(answerId, qualityPercent);
+    }
+  }
+
+  return answerIds.map((answerId) => ({
+    answerId,
+    qualityPercent: byId.get(answerId) ?? 0,
+  }));
+}
+
+async function rebalanceTiedScores(
+  setup: ResolvedLlmSetup,
+  evaluationId: string,
+  prompt: string,
+  criteria: RubricCriterion[],
+  answers: Answer[],
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+  llmCtx: CompleteContext,
+): Promise<Answer[]> {
+  if (!allAnswersHaveEqualTotals(answers)) {
+    return answers;
+  }
+
+  assertNotCancelled(signal, 'scoring');
+
+  const rankings = await chatJson(
+    setup.provider,
+    setup.judgeModel.model,
+    [
+      { role: 'system', content: JUDGE_RANK_SYSTEM },
+      { role: 'user', content: buildComparativeRankPrompt(prompt, criteria, answers) },
+    ],
+    { ...llmCtx, step: 'scoring' },
+    (raw) => parseComparativeRankings(raw, answers.map((answer) => answer.id)),
+  );
+
+  const bestPercent = Math.max(...rankings.map((entry) => entry.qualityPercent));
+
+  if (bestPercent <= 0 || new Set(rankings.map((entry) => entry.qualityPercent)).size === 1) {
+    return answers;
+  }
+
+  logEvent('info', LogEvents.automationScored, {
+    runId,
+    evaluationId,
+    step: 'scoring',
+    message: 'Rebalanced tied scores using comparative ranking',
+  });
+
+  return answers.map((answer) => {
+    const qualityPercent = rankings.find((entry) => entry.answerId === answer.id)?.qualityPercent ?? 0;
+    const factor = qualityPercent / bestPercent;
+
+    if (factor === 1) {
+      return answer;
+    }
+
+    const scaled = scaleAnswerScores(answer, factor);
+    const totalPoints = computeTotalPoints(scaled.scores);
+
+    emit(onProgress, { type: 'scored', answerId: answer.id, totalPoints });
+
+    return scaled;
   });
 }
 
@@ -359,6 +470,7 @@ async function runWithSetup(
   const scored = await scoreAnswers(
     setup,
     evaluationId,
+    prompt,
     scoreContext,
     criteria,
     answers,

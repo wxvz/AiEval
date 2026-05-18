@@ -82,6 +82,7 @@ export class EditEvaluationPage {
   onBeforeUnload(event: BeforeUnloadEvent): void {
     if (this.automating()) {
       event.preventDefault();
+      event.returnValue = '';
     }
   }
 

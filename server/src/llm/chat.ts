@@ -94,7 +94,7 @@ export async function chat(
         () =>
           cloudSetup.provider.complete(cloudModel, messages, {
             json: context.json,
-            signal: context.abortSignal,
+            signal: mergeSignals(context.abortSignal),
           }),
         { ...context, provider: cloudSetup.providerName, model: cloudModel },
       );
@@ -110,7 +110,10 @@ export async function chat(
 
     return completeWithRetry(
       () =>
-        provider.complete(model, messages, { json: context.json, signal: context.abortSignal }),
+        provider.complete(model, messages, {
+          json: context.json,
+          signal: mergeSignals(context.abortSignal),
+        }),
       { ...context, provider: provider.name, model },
     );
   }

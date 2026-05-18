@@ -1,4 +1,5 @@
 import { jsonToSentences } from '../format/json-to-sentences.js';
+import { stripModelArtifacts } from './sanitize-model-output.js';
 import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluation.js';
 
 export const GENERATE_SYSTEM =
@@ -33,7 +34,50 @@ function formatAnswerSummary(answer: Answer): string {
 Scores:
 ${scoreLines}
 
-${answer.content}`;
+${stripModelArtifacts(answer.content)}`;
+}
+
+export const JUDGE_RANK_SYSTEM =
+  'You compare multiple model answers on the same rubric. Return valid JSON only, matching the schema in the user message exactly.';
+
+export function buildComparativeRankPrompt(
+  prompt: string,
+  criteria: RubricCriterion[],
+  answers: Answer[],
+): string {
+  const summaries = answers
+    .map((answer) => {
+      const total = answer.scores.reduce((sum, score) => sum + score.points, 0);
+      const max = answer.scores.reduce((sum, score) => sum + score.maxPoints, 0);
+
+      return `- id: ${answer.id}, label: ${answer.label}, currentTotal: ${total}/${max}
+${stripModelArtifacts(answer.content).slice(0, 1200)}`;
+    })
+    .join('\n\n');
+
+  return `The answers below were scored independently but ended with identical totals. Rank them by overall rubric quality.
+
+Original user prompt:
+${prompt}
+
+Rubric:
+${formatCriteriaBlock(criteria)}
+
+Answers:
+${summaries}
+
+Return JSON only:
+{
+  "rankings": [
+    { "answerId": "<id>", "qualityPercent": <number 0-100> }
+  ]
+}
+
+Rules:
+- Include every answer id exactly once.
+- qualityPercent reflects overall rubric strength (higher is better).
+- Rankings must differ—do not assign the same qualityPercent to every answer.
+- The best answer should have a clearly higher qualityPercent than the weakest.`;
 }
 
 export interface ScorePromptContext {
@@ -58,9 +102,11 @@ Rubric (score each criterion independently):
 ${formatCriteriaBlock(criteria)}
 
 Scoring rules:
-- For each criterion, assign points from 0 through maxPoints (integers preferred).
+- For each criterion, assign integer points from 0 through maxPoints (not percentages).
+- points must be on the rubric scale (e.g. 0–5), never 0–100 unless maxPoints is 100.
 - Base scores only on this answer and the criterion name/description—ignore other models.
 - Use the full range: reserve maxPoints for strong performance; use 0 when clearly failed.
+- Discriminate quality—avoid giving every criterion the same middling score unless deserved.
 - notes (optional): one short sentence citing specific evidence from the answer; omit if nothing useful to add.
 
 Required JSON shape (no other keys, no markdown):
@@ -79,7 +125,7 @@ export function buildScorePrompt(context: ScorePromptContext, answer: Answer): s
 
 ---
 Model answer to score (${answer.label}):
-${answer.content}`;
+${stripModelArtifacts(answer.content)}`;
 }
 
 export function buildImprovedPrompt(
@@ -130,7 +176,7 @@ function readImprovedField(
     return undefined;
   }
 
-  const text = jsonToSentences(value);
+  const text = stripModelArtifacts(jsonToSentences(value));
   return text || undefined;
 }
 
