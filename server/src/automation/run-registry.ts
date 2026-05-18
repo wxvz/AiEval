@@ -12,6 +12,7 @@ export function registerAutomationRun(evaluationId: string, runId: string): Abor
 
   if (existing) {
     existing.abortController.abort();
+    clearProviderChoice(evaluationId);
   }
 
   const abortController = new AbortController();

@@ -80,22 +80,96 @@ function toLabel(model: string): string {
   return short.replace(':free', '').replace(/-instruct$/, '');
 }
 
-function parseModelList(raw: string): string[] | null {
+const PROVIDER_NAMES: ProviderName[] = [
+  'ollama',
+  'groq',
+  'openrouter',
+  'gemini',
+  'huggingface',
+];
+
+function isProviderName(value: string): value is ProviderName {
+  return (PROVIDER_NAMES as string[]).includes(value);
+}
+
+interface ModelEntry {
+  provider?: ProviderName;
+  model: string;
+}
+
+function parseModelEntry(segment: string): ModelEntry | null {
+  const trimmed = segment.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const colon = trimmed.indexOf(':');
+
+  if (colon < 0) {
+    return { model: trimmed };
+  }
+
+  const prefix = trimmed.slice(0, colon).trim();
+
+  if (isProviderName(prefix)) {
+    const model = trimmed.slice(colon + 1).trim();
+
+    return model.length > 0 ? { provider: prefix, model } : null;
+  }
+
+  return { model: trimmed };
+}
+
+function parseModelEntries(raw: string): ModelEntry[] | null {
   const trimmed = raw.trim();
 
   if (!trimmed) {
     return null;
   }
 
-  const models = trimmed
+  const entries = trimmed
     .split(',')
-    .map((entry) => {
-      const colon = entry.indexOf(':');
-      return colon >= 0 ? entry.slice(colon + 1).trim() : entry.trim();
-    })
-    .filter((model) => model.length > 0);
+    .map(parseModelEntry)
+    .filter((entry): entry is ModelEntry => entry !== null);
 
-  return models.length > 0 ? models : null;
+  return entries.length > 0 ? entries : null;
+}
+
+function resolveModelsFromEntries(
+  entries: ModelEntry[] | null,
+  providerName: ProviderName,
+  fallback: string[],
+): string[] {
+  if (!entries) {
+    return fallback;
+  }
+
+  const models = entries
+    .filter((entry) => !entry.provider || entry.provider === providerName)
+    .map((entry) => entry.model);
+
+  return models.length > 0 ? models : fallback;
+}
+
+function resolveJudgeModel(raw: string, providerName: ProviderName, fallback: string): string {
+  const trimmed = raw.trim();
+
+  if (!trimmed) {
+    return fallback;
+  }
+
+  const entry = parseModelEntry(trimmed);
+
+  if (!entry) {
+    return fallback;
+  }
+
+  if (entry.provider && entry.provider !== providerName) {
+    return fallback;
+  }
+
+  return entry.model;
 }
 
 export function resolveModelsForProvider(providerName: ProviderName): {
@@ -103,13 +177,9 @@ export function resolveModelsForProvider(providerName: ProviderName): {
   judgeModel: ModelRef;
 } {
   const preset = PRESETS[providerName][config.llmPreset];
-  const customAnswers = parseModelList(config.llmAnswerModels);
-  const customJudge = config.llmJudgeModel.trim();
-  const judgeFromEnv =
-    customJudge.includes(':') ? customJudge.slice(customJudge.indexOf(':') + 1).trim() : customJudge;
-
-  const answerIds = customAnswers ?? preset.answer;
-  const judgeId = judgeFromEnv || preset.judge;
+  const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
+  const answerIds = resolveModelsFromEntries(customAnswerEntries, providerName, preset.answer);
+  const judgeId = resolveJudgeModel(config.llmJudgeModel, providerName, preset.judge);
 
   return {
     answerModels: answerIds.map((model) => ({ model, label: toLabel(model) })),

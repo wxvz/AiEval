@@ -101,4 +101,23 @@ describe('chat slow fallback', () => {
     expect(result).toBe('local-response');
     expect(onPreferLocalProvider).toHaveBeenCalled();
   });
+
+  it('passes abortSignal through to provider.complete', async () => {
+    const abortController = new AbortController();
+    const complete = vi.fn().mockImplementation(
+      (_model, _messages, options?: { signal?: AbortSignal }) => {
+        expect(options?.signal).toBe(abortController.signal);
+        return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'));
+      },
+    );
+    const provider: LlmProvider = { name: 'groq', complete };
+
+    await expect(
+      chat(provider, 'llama-3.1-8b-instant', [{ role: 'user', content: 'hi' }], {
+        abortSignal: abortController.signal,
+      }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+
+    expect(complete).toHaveBeenCalled();
+  });
 });

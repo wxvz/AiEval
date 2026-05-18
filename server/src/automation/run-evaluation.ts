@@ -79,11 +79,13 @@ function createLlmCallContext(
   runId: string,
   evaluationId: string,
   onProgress: ProgressCallback,
+  signal: AbortSignal,
 ): CompleteContext {
   let switchedToCloud = false;
   const ctx: CompleteContext = {
     runId,
     evaluationId,
+    abortSignal: signal,
     currentSetup: setup,
     skipSlowFallback: false,
     requestProviderChoice: async ({ currentProvider, cloudProvider }) => {
@@ -335,7 +337,7 @@ async function runWithSetup(
   }
 
   const scoreContext = buildScorePromptContext(prompt, criteria);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
 
   const answers = await generateAnswers(
     setup,

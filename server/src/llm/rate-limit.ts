@@ -49,6 +49,7 @@ export interface CompleteContext {
   }) => Promise<boolean>;
   onCloudProviderSwitch?: (cloudSetup: ResolvedLlmSetup) => void;
   onPreferLocalProvider?: () => void;
+  abortSignal?: AbortSignal;
 }
 
 export async function completeWithRetry(

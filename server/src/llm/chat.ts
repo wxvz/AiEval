@@ -8,6 +8,20 @@ import { parseJsonText } from './parse-json.js';
 import { resolveFirstCloudProvider } from './provider.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
+function mergeSignals(...signals: (AbortSignal | undefined)[]): AbortSignal | undefined {
+  const active = signals.filter((signal): signal is AbortSignal => !!signal);
+
+  if (active.length === 0) {
+    return undefined;
+  }
+
+  if (active.length === 1) {
+    return active[0];
+  }
+
+  return AbortSignal.any(active);
+}
+
 export async function chat(
   provider: LlmProvider,
   model: string,
@@ -31,10 +45,11 @@ export async function chat(
     provider.name === 'ollama' && !context.skipSlowFallback
       ? AbortSignal.timeout(config.llmSlowFallbackMs)
       : undefined;
+  const requestSignal = mergeSignals(context.abortSignal, slowSignal);
 
   try {
     return await completeWithRetry(
-      () => provider.complete(model, messages, { json: context.json, signal: slowSignal }),
+      () => provider.complete(model, messages, { json: context.json, signal: requestSignal }),
       { ...context, provider: provider.name, model },
     );
   } catch (error) {
@@ -76,7 +91,11 @@ export async function chat(
       context.onCloudProviderSwitch?.(cloudSetup);
 
       return completeWithRetry(
-        () => cloudSetup.provider.complete(cloudModel, messages, { json: context.json }),
+        () =>
+          cloudSetup.provider.complete(cloudModel, messages, {
+            json: context.json,
+            signal: context.abortSignal,
+          }),
         { ...context, provider: cloudSetup.providerName, model: cloudModel },
       );
     }
@@ -90,7 +109,8 @@ export async function chat(
     context.onPreferLocalProvider?.();
 
     return completeWithRetry(
-      () => provider.complete(model, messages, { json: context.json }),
+      () =>
+        provider.complete(model, messages, { json: context.json, signal: context.abortSignal }),
       { ...context, provider: provider.name, model },
     );
   }

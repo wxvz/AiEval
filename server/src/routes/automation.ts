@@ -23,10 +23,9 @@ function writeSse(res: import('express').Response, data: unknown): void {
 export function createAutomationRouter(): Router {
   const router = Router({ mergeParams: true });
 
-  async function handleAutomate(
+  async function handleAutomateStream(
     req: import('express').Request,
     res: import('express').Response,
-    stream: boolean,
   ): Promise<void> {
     const idParam = req.params['id'];
     const evaluationIdParam = Array.isArray(idParam) ? idParam[0] : (idParam ?? '');
@@ -44,10 +43,12 @@ export function createAutomationRouter(): Router {
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
     const onProgress = (event: Parameters<typeof writeSse>[1]) => {
-      if (stream) {
-        logEvent('debug', LogEvents.sseEvent, { runId, evaluationId, type: (event as { type: string }).type });
-        writeSse(res, event);
-      }
+      logEvent('debug', LogEvents.sseEvent, {
+        runId,
+        evaluationId,
+        type: (event as { type: string }).type,
+      });
+      writeSse(res, event);
     };
 
     const onClientDisconnect = () => {
@@ -57,25 +58,23 @@ export function createAutomationRouter(): Router {
     };
 
     try {
-      if (stream) {
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.flushHeaders?.();
-        req.on('close', onClientDisconnect);
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders?.();
+      req.on('close', onClientDisconnect);
 
-        heartbeat = setInterval(() => {
-          res.write(': heartbeat\n\n');
-        }, HEARTBEAT_MS);
+      heartbeat = setInterval(() => {
+        res.write(': heartbeat\n\n');
+      }, HEARTBEAT_MS);
 
-        timeout = setTimeout(() => {
-          cancelAutomationRun(evaluationId, runId);
-          writeSse(res, { type: 'error', message: 'Automation timed out', step: 'generating' });
-          res.end();
-        }, AUTOMATE_TIMEOUT_MS);
-      }
+      timeout = setTimeout(() => {
+        cancelAutomationRun(evaluationId, runId);
+        writeSse(res, { type: 'error', message: 'Automation timed out', step: 'generating' });
+        res.end();
+      }, AUTOMATE_TIMEOUT_MS);
 
-      const evaluation = await runEvaluationAutomation({
+      await runEvaluationAutomation({
         evaluationObjectId: objectId,
         runId,
         force,
@@ -86,12 +85,7 @@ export function createAutomationRouter(): Router {
         clearTimeout(timeout);
       }
 
-      if (stream) {
-        res.end();
-        return;
-      }
-
-      res.json(evaluation);
+      res.end();
     } catch (error) {
       if (timeout) {
         clearTimeout(timeout);
@@ -100,23 +94,9 @@ export function createAutomationRouter(): Router {
       const step =
         error instanceof AutomationError ? error.step : ('generating' as const);
       const message = error instanceof Error ? error.message : 'Automation failed';
-      const status = message.includes('not found')
-        ? 404
-        : message.includes('cancelled')
-          ? 499
-          : message.includes('force=true')
-            ? 409
-            : message.includes('No LLM provider')
-              ? 503
-              : 502;
 
-      if (stream) {
-        writeSse(res, { type: 'error', message, step });
-        res.end();
-        return;
-      }
-
-      res.status(status).json({ message, step });
+      writeSse(res, { type: 'error', message, step });
+      res.end();
     } finally {
       if (heartbeat) {
         clearInterval(heartbeat);
@@ -124,12 +104,8 @@ export function createAutomationRouter(): Router {
     }
   }
 
-  router.post('/:id/automate', (req, res, next) => {
-    void handleAutomate(req, res, false).catch(next);
-  });
-
   router.get('/:id/automate/stream', (req, res, next) => {
-    void handleAutomate(req, res, true).catch(next);
+    void handleAutomateStream(req, res).catch(next);
   });
 
   router.post('/:id/automate/provider-choice', (req, res) => {

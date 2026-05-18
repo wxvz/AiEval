@@ -44,7 +44,7 @@ Switching back to default criteria uses the built-in rubric for scoring; your cu
 
 1. On the **Edit** page, enter a prompt (required).
 2. Click **Run automated evaluation**.
-3. Watch progress as the server generates three model answers, scores them, picks a winner, and drafts an improved answer.
+3. Watch live SSE progress as the server generates three model answers, scores them, picks a winner, and drafts an improved answer.
 4. Open **Compare** to review or edit AI-generated scores (a banner appears when scores were automated).
 5. Open **Improved** to review the synthesized final answer.
 
