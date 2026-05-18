@@ -1,6 +1,7 @@
 export const LogEvents = {
   httpRequest: 'http.request',
   httpError: 'http.error',
+  startupPreflight: 'startup.preflight',
   automationStarted: 'automation.started',
   automationProviderResolved: 'automation.provider_resolved',
   automationProviderFallback: 'automation.provider_fallback',

@@ -36,6 +36,7 @@ export const config = {
   logFormat: process.env['LOG_FORMAT'] === 'pretty' ? 'pretty' : 'json',
   logFile: process.env['LOG_FILE'] ?? '',
   logPrompts: process.env['LOG_PROMPTS'] === 'true',
+  startupPreflight: process.env['STARTUP_PREFLIGHT'] !== 'false',
 } as const;
 
 export function assertConfig(): void {

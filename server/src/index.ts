@@ -8,6 +8,7 @@ import { logEvent } from './logging/logger.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { createAutomationRouter } from './routes/automation.js';
 import { createEvaluationsRouter } from './routes/evaluations.js';
+import { runStartupPreflight } from './startup/preflight.js';
 
 assertConfig();
 
@@ -23,6 +24,7 @@ app.get('/api/health', (_req, res) => {
 
 async function start(): Promise<void> {
   await connectDb();
+  await runStartupPreflight();
 
   app.use('/api/evaluations', createAutomationRouter());
   app.use('/api/evaluations', createEvaluationsRouter());

@@ -9,6 +9,15 @@ import { createOllamaProvider, isOllamaHealthy } from './ollama.js';
 import { createOpenRouterProvider, hasOpenRouterCredentials } from './openrouter.js';
 import type { LlmProvider, ProviderName, ResolvedLlmSetup } from './types.js';
 
+export type ProviderProbeStatus =
+  | {
+      name: ProviderName;
+      status: 'ready';
+      answerModels: string[];
+      judgeModel: string;
+    }
+  | { name: ProviderName; status: 'unavailable'; reason: string };
+
 function createProvider(name: ProviderName): LlmProvider {
   switch (name) {
     case 'ollama':
@@ -82,6 +91,47 @@ export async function resolveNextProvider(
 
     if (resolved) {
       return resolved;
+    }
+  }
+
+  return null;
+}
+
+async function probeProvider(name: ProviderName): Promise<ProviderProbeStatus> {
+  if (name === 'ollama') {
+    if (!(await isOllamaHealthy())) {
+      return { name, status: 'unavailable', reason: 'not reachable' };
+    }
+  } else if (name === 'groq' && !hasGroqCredentials()) {
+    return { name, status: 'unavailable', reason: 'API key not set' };
+  } else if (name === 'openrouter' && !hasOpenRouterCredentials()) {
+    return { name, status: 'unavailable', reason: 'API key not set' };
+  } else if (name === 'gemini' && !hasGeminiCredentials()) {
+    return { name, status: 'unavailable', reason: 'API key not set' };
+  } else if (name === 'huggingface' && !hasHuggingFaceCredentials()) {
+    return { name, status: 'unavailable', reason: 'API key not set' };
+  }
+
+  const { answerModels, judgeModel } = resolveModelsForProvider(name);
+
+  return {
+    name,
+    status: 'ready',
+    answerModels: answerModels.map((model) => model.model),
+    judgeModel: judgeModel.model,
+  };
+}
+
+export async function probeAllProviders(): Promise<ProviderProbeStatus[]> {
+  return Promise.all(PROVIDER_ORDER.map((name) => probeProvider(name)));
+}
+
+export async function probeActiveProvider(): Promise<ProviderProbeStatus | null> {
+  for (const name of PROVIDER_ORDER) {
+    const probe = await probeProvider(name);
+
+    if (probe.status === 'ready') {
+      return probe;
     }
   }
 
