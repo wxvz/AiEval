@@ -56,11 +56,19 @@ If answers already exist, confirm **Replace and run** to clear answers, winner, 
 
 ```bash
 brew install ollama
+ollama serve          # keep this running (API at http://localhost:11434)
+```
+
+In another terminal, pull the models:
+
+```bash
 ollama pull llama3.2:3b
 ollama pull qwen2.5:3b
 ollama pull gemma2:2b
-ollama pull llama3.1:8b
+ollama pull llama3.1:8b   # judge (balanced preset)
 ```
+
+On macOS, opening the **Ollama** app from Applications also starts the server, so you may not need a separate `ollama serve` terminal.
 
 **Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited.
 
@@ -129,6 +137,7 @@ cp .env.example .env
 | `LLM_JUDGE_MODEL` | Override judge `provider:model` |
 | `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` (default: `info`) |
 | `LOG_FILE` | Optional path to append NDJSON logs |
+| `STARTUP_PREFLIGHT` | Print MongoDB and LLM provider status on API boot (default: `true`) |
 
 ### Run locally
 
@@ -147,6 +156,8 @@ npm start
 
 - Frontend: [http://localhost:4200/](http://localhost:4200/) (proxies `/api` to the backend)
 - API: [http://localhost:3000/api](http://localhost:3000/api)
+
+On startup, the API prints a checklist of MongoDB and LLM provider readiness (Ollama reachability, cloud API keys, and which provider automation would use). Set `STARTUP_PREFLIGHT=false` to skip this probe.
 
 Evaluations are stored in the `evaluations` collection. The API creates an index on `updatedAt` when it connects.
 
