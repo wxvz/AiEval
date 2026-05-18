@@ -69,7 +69,7 @@ export function createAutomationRouter(): Router {
         res.write(': heartbeat\n\n');
       }, HEARTBEAT_MS);
 
-      writeSse(res, { type: 'status', status: 'running' });
+      writeSse(res, { type: 'status', status: 'running', runId });
 
       timeout = setTimeout(() => {
         cancelAutomationRun(evaluationId, runId);
@@ -133,8 +133,13 @@ export function createAutomationRouter(): Router {
       return;
     }
 
+    if (typeof body.runId !== 'string' || body.runId.length === 0) {
+      res.status(400).json({ message: 'runId (string) is required.' });
+      return;
+    }
+
     const evaluationId = objectId.toString();
-    const runId = typeof body.runId === 'string' ? body.runId : undefined;
+    const runId = body.runId;
     const accepted = submitProviderChoice(evaluationId, runId, body.useCloud);
 
     if (!accepted) {
@@ -160,9 +165,15 @@ export function createAutomationRouter(): Router {
       return;
     }
 
-    const evaluationId = objectId.toString();
     const body = req.body as { runId?: string } | undefined;
-    const runId = typeof body?.runId === 'string' ? body.runId : undefined;
+
+    if (typeof body?.runId !== 'string' || body.runId.length === 0) {
+      res.status(400).json({ message: 'runId (string) is required.' });
+      return;
+    }
+
+    const evaluationId = objectId.toString();
+    const runId = body.runId;
     const cancelled = cancelAutomationRun(evaluationId, runId);
 
     if (!cancelled) {

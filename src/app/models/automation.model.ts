@@ -35,7 +35,7 @@ export type AutomationProgressEvent =
   | { type: 'winner_picked'; answerId: string; label: string }
   | { type: 'improved_generating' }
   | { type: 'improved_done' }
-  | { type: 'status'; status: AutomationRunStatus }
+  | { type: 'status'; status: AutomationRunStatus; runId?: string }
   | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
   | {
       type: 'error';

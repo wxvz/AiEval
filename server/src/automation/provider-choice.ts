@@ -51,7 +51,7 @@ export function waitForProviderChoice(evaluationId: string, runId: string): Prom
 
 export function submitProviderChoice(
   evaluationId: string,
-  runId: string | undefined,
+  runId: string,
   useCloud: boolean,
 ): boolean {
   const pending = pendingByEvaluationId.get(evaluationId);
@@ -60,7 +60,7 @@ export function submitProviderChoice(
     return false;
   }
 
-  if (runId && pending.runId !== runId) {
+  if (!runId || pending.runId !== runId) {
     return false;
   }
 

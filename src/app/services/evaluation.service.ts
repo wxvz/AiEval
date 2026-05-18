@@ -295,10 +295,10 @@ export class EvaluationService {
     const { evaluationId, runId } = active;
     this.clearActiveAutomation();
 
-    if (notifyServer) {
+    if (notifyServer && runId) {
       void firstValueFrom(
         this.http.post<{ cancelled: boolean }>(`${API}/${evaluationId}/automate/cancel`, {
-          ...(runId ? { runId } : {}),
+          runId,
         }),
       ).catch(() => {
         // no active server run (already finished or never started)
@@ -309,14 +309,7 @@ export class EvaluationService {
   cancelAutomation(evaluationId: string): void {
     if (this.activeAutomation?.evaluationId === evaluationId) {
       this.disposeActiveAutomation(true);
-      return;
     }
-
-    void firstValueFrom(
-      this.http.post<{ cancelled: boolean }>(`${API}/${evaluationId}/automate/cancel`, {}),
-    ).catch(() => {
-      // no active server run (already finished or never started)
-    });
   }
 
   automate(
@@ -404,6 +397,15 @@ export class EvaluationService {
 
           if (event.type === 'slow_provider_prompt') {
             void (async () => {
+              const runId = event.runId ?? this.activeAutomation?.runId;
+
+              if (!runId) {
+                finish(() => {
+                  reject(new Error('Could not submit provider choice: missing run id.'));
+                });
+                return;
+              }
+
               try {
                 const useCloud = callbacks?.onSlowProviderPrompt
                   ? await this.ngZone.run(() => callbacks.onSlowProviderPrompt!(event))
@@ -412,7 +414,7 @@ export class EvaluationService {
                 const response = await firstValueFrom(
                   this.http.post<{ accepted: boolean }>(
                     `${API}/${evaluationId}/automate/provider-choice`,
-                    { useCloud, runId: event.runId },
+                    { useCloud, runId },
                   ),
                 );
 

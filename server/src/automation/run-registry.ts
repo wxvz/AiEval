@@ -20,14 +20,14 @@ export function registerAutomationRun(evaluationId: string, runId: string): Abor
   return abortController.signal;
 }
 
-export function cancelAutomationRun(evaluationId: string, runId?: string): boolean {
+export function cancelAutomationRun(evaluationId: string, runId: string): boolean {
   const active = activeByEvaluationId.get(evaluationId);
 
   if (!active) {
     return false;
   }
 
-  if (runId && active.runId !== runId) {
+  if (!runId || active.runId !== runId) {
     return false;
   }
 

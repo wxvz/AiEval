@@ -112,12 +112,18 @@ describe('EvaluationService.automate', () => {
   });
 
   it('clears automatingEvaluationId when automation is cancelled', async () => {
+    const runId = 'run-cancel-test';
+
     class MockEventSource {
       onmessage: ((event: MessageEvent) => void) | null = null;
       onerror: (() => void) | null = null;
 
       constructor(public url: string) {
-        // keep connection open until cancelled
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
       }
 
       close(): void {
@@ -131,9 +137,12 @@ describe('EvaluationService.automate', () => {
 
     expect(service.automatingEvaluationId()).toBe('eval-1');
 
+    await Promise.resolve();
+
     service.cancelAutomation('eval-1');
 
     const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    expect(cancelReq.request.body).toEqual({ runId });
     cancelReq.flush({ cancelled: true });
 
     await expect(automatePromise).rejects.toThrow('Automation cancelled.');
@@ -170,6 +179,7 @@ describe('EvaluationService.automate', () => {
   });
 
   it('closes prior EventSource and cancels server run when automate is called again', async () => {
+    const runId = 'run-supersede-test';
     const instances: Array<{
       onmessage: ((event: MessageEvent) => void) | null;
       close: ReturnType<typeof vi.fn>;
@@ -184,6 +194,11 @@ describe('EvaluationService.automate', () => {
 
       constructor(public url: string) {
         instances.push(this);
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
       }
     }
 
@@ -192,11 +207,14 @@ describe('EvaluationService.automate', () => {
     const firstPromise = service.automate('eval-1');
     expect(instances).toHaveLength(1);
 
+    await Promise.resolve();
+
     const secondPromise = service.automate('eval-1');
 
     expect(instances[0].close).toHaveBeenCalled();
 
     const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    expect(cancelReq.request.body).toEqual({ runId });
     cancelReq.flush({ cancelled: true });
 
     await expect(firstPromise).rejects.toThrow('Automation cancelled.');
@@ -213,6 +231,60 @@ describe('EvaluationService.automate', () => {
 
     expect(result.automatedAt).toBe('now');
     expect(instances[1].close).toHaveBeenCalled();
+  });
+
+  it('posts provider choice with runId on slow_provider_prompt', async () => {
+    type MockSource = {
+      onmessage: ((event: MessageEvent) => void) | null;
+      onerror: (() => void) | null;
+      url: string;
+      close: () => void;
+    };
+
+    let mockInstance: MockSource | null = null;
+
+    class MockEventSource implements MockSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        mockInstance = this;
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const automatePromise = service.automate('eval-1', {}, {
+      onSlowProviderPrompt: async () => true,
+    });
+
+    mockInstance!.onmessage!({
+      data: JSON.stringify({
+        type: 'slow_provider_prompt',
+        runId: 'run-slow-1',
+        currentProvider: 'local',
+        cloudProvider: 'groq',
+        elapsedLabel: '2 minutes',
+      }),
+    } as MessageEvent);
+
+    const choiceReq = httpMock.expectOne('/api/evaluations/eval-1/automate/provider-choice');
+    expect(choiceReq.request.body).toEqual({ useCloud: true, runId: 'run-slow-1' });
+    choiceReq.flush({ accepted: true });
+
+    mockInstance!.onmessage!({
+      data: JSON.stringify({
+        type: 'complete',
+        status: 'completed',
+        evaluation: { ...evaluation, automatedAt: 'now' },
+      }),
+    } as MessageEvent);
+
+    await automatePromise;
   });
 
   it('invokes onStatus for status, complete, error, and cancel events', async () => {
