@@ -12,6 +12,7 @@ export const LogEvents = {
   automationWinnerPicked: 'automation.winner_picked',
   automationImprovedGenerating: 'automation.improved_generating',
   automationImprovedDone: 'automation.improved_done',
+  automationPipelineStep: 'automation.pipeline_step',
   automationComplete: 'automation.complete',
   automationCancelled: 'automation.cancelled',
   automationFailed: 'automation.failed',
