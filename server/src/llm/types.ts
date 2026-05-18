@@ -31,6 +31,14 @@ export interface ResolvedLlmSetup {
 
 export type AutomationStep = 'generating' | 'scoring' | 'improved' | 'provider';
 
+export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+
+export function automationStatusFromError(
+  message: string,
+): Extract<AutomationRunStatus, 'failed' | 'cancelled'> {
+  return message.toLowerCase().includes('cancelled') ? 'cancelled' : 'failed';
+}
+
 export type AutomationProgressEvent =
   | { type: 'provider_resolved'; provider: string; models: string[] }
   | { type: 'provider_fallback'; from: string; to: string }
@@ -44,12 +52,18 @@ export type AutomationProgressEvent =
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }
-  | { type: 'scored'; answerId: string; totalPoints: number }
+  | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
   | { type: 'winner_picked'; answerId: string; label: string }
   | { type: 'improved_generating' }
   | { type: 'improved_done' }
-  | { type: 'complete'; evaluation: Evaluation }
-  | { type: 'error'; message: string; step: AutomationStep };
+  | { type: 'status'; status: AutomationRunStatus }
+  | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
+  | {
+      type: 'error';
+      message: string;
+      step: AutomationStep;
+      status: Extract<AutomationRunStatus, 'failed' | 'cancelled'>;
+    };
 
 export type ProgressCallback = (event: AutomationProgressEvent) => void;
 

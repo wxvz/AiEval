@@ -7,6 +7,12 @@
   </div>
   <div class="card-body">
     <p class="card-text mb-3">{{ answer().content }}</p>
+    @if (answer().notes) {
+      <div class="mb-3">
+        <div class="small text-muted mb-1">Judge notes</div>
+        <p class="small mb-0 text-secondary">{{ answer().notes }}</p>
+      </div>
+    }
     <app-score-summary [summary]="summary()" />
     <button type="button" class="btn btn-sm btn-outline-danger mt-3" (click)="removeRequested.emit(answer().id)">
       Remove

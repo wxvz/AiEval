@@ -1,3 +1,9 @@
+import {
+  formatRubricBlock,
+  usesDiscreteAnchors,
+  usesStandardFivePointAnchors,
+  usesStandardOneThreeFiveAnchors,
+} from '../automation/rubric-anchors.js';
 import { jsonToSentences } from '../format/json-to-sentences.js';
 import { stripModelArtifacts } from './sanitize-model-output.js';
 import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluation.js';
@@ -6,7 +12,7 @@ export const GENERATE_SYSTEM =
   'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
 export const JUDGE_SCORE_SYSTEM =
-  'You are an impartial rubric judge. Score one model answer at a time using only the rubric and the answer text—do not compare to other models. Return valid JSON only, matching the schema in the user message exactly.';
+  'You are an impartial rubric judge. Score one model answer at a time using only the rubric anchors and the answer text—do not compare to other models. When the rubric lists discrete score anchors, pick the single anchor that best fits; do not invent scores outside those anchors. Return valid JSON only, matching the schema in the user message exactly.';
 
 export const JUDGE_IMPROVED_SYSTEM =
   'You synthesize an improved answer after multi-model comparison. Return valid JSON only, matching the schema in the user message exactly. finalAnswer must be a polished, standalone reply to the original user prompt—not meta commentary about the evaluation.';
@@ -85,11 +91,37 @@ export interface ScorePromptContext {
   criteriaIds: string[];
 }
 
+function buildScoringRules(criteria: RubricCriterion[]): string {
+  const anchorRules = usesDiscreteAnchors(criteria)
+    ? usesStandardOneThreeFiveAnchors(criteria)
+      ? `- For each criterion, assign exactly one of these point values: 1, 3, or 5 (maxPoints is 5). Never use 0, 2, or 4.
+- Match the rubric anchor whose description best fits the answer; if between two anchors, choose the lower score.
+- In notes, start with the chosen score and anchor gist (e.g. "3 — mostly correct but missing precision: …").`
+      : usesStandardFivePointAnchors(criteria)
+        ? `- For each criterion, assign exactly one integer from 1 through 5 (maxPoints is 5). Never use 0.
+- Match the rubric anchor whose description best fits the answer; if between two anchors, choose the lower score.
+- In notes, start with the chosen score and anchor gist (e.g. "4 — mostly correct with minor missing precision: …").`
+        : `- For each criterion with listed anchors, assign exactly one of that criterion's anchor point values—never invent intermediate scores.
+- Match the rubric anchor whose description best fits the answer; if between two anchors, choose the lower score.
+- In notes, start with the chosen score and anchor gist.`
+    : `- For each criterion, assign integer points from 0 through maxPoints (not percentages).
+- points must be on the rubric scale, never 0–100 unless maxPoints is 100.
+- Use the full range: reserve maxPoints for strong performance; use 0 when clearly failed.`;
+
+  return `Scoring rules:
+${anchorRules}
+- Base scores only on this answer and the rubric—ignore other models.
+- Discriminate quality—avoid giving every criterion the same score unless deserved.
+- notes: one short sentence per criterion citing specific evidence from the answer.
+- answerNotes: required—2–3 sentences summarizing overall rubric performance for this answer (strengths, gaps, rationale).`;
+}
+
 export function buildScorePromptContext(
   prompt: string,
   criteria: RubricCriterion[],
 ): ScorePromptContext {
   const criteriaIds = criteria.map((c) => c.id);
+  const rubricBlock = formatRubricBlock(criteria);
 
   return {
     criteriaIds,
@@ -98,21 +130,16 @@ export function buildScorePromptContext(
 Original user prompt (what the answer should address):
 ${prompt}
 
-Rubric (score each criterion independently):
-${formatCriteriaBlock(criteria)}
+Rubric (score each criterion independently; use the anchor descriptions):
+${rubricBlock}
 
-Scoring rules:
-- For each criterion, assign integer points from 0 through maxPoints (not percentages).
-- points must be on the rubric scale (e.g. 0–5), never 0–100 unless maxPoints is 100.
-- Base scores only on this answer and the criterion name/description—ignore other models.
-- Use the full range: reserve maxPoints for strong performance; use 0 when clearly failed.
-- Discriminate quality—avoid giving every criterion the same middling score unless deserved.
-- notes (optional): one short sentence citing specific evidence from the answer; omit if nothing useful to add.
+${buildScoringRules(criteria)}
 
 Required JSON shape (no other keys, no markdown):
 {
+  "answerNotes": "<brief overall rationale>",
   "scores": [
-    { "criterionId": "<id>", "points": <number>, "notes": "<optional>" }
+    { "criterionId": "<id>", "points": <number>, "notes": "<brief evidence>" }
   ]
 }
 

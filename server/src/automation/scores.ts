@@ -1,4 +1,78 @@
+import { BUILT_IN_ANCHOR_POINTS, getDiscreteAnchorPoints } from './rubric-anchors.js';
+import { jsonToSentences } from '../format/json-to-sentences.js';
 import type { RubricCriterion, Score } from '../types/evaluation.js';
+
+interface JudgeScoreEntry {
+  criterionId: string;
+  points: unknown;
+  notes?: unknown;
+}
+
+export interface ParsedJudgeScoreResponse {
+  scores: Score[];
+  answerNotes?: string;
+}
+
+function readJudgeNotes(value: unknown): string | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = jsonToSentences(value);
+  return text || undefined;
+}
+
+export function parseJudgeScoreResponse(
+  raw: unknown,
+  criteria: RubricCriterion[],
+  existingScores: Score[],
+): ParsedJudgeScoreResponse {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Invalid scores JSON');
+  }
+
+  const record = raw as Record<string, unknown>;
+  const answerNotes =
+    readJudgeNotes(record.answerNotes) ??
+    readJudgeNotes(record.notes);
+
+  if (!('scores' in record)) {
+    throw new Error('Invalid scores JSON');
+  }
+
+  const entries = record.scores;
+
+  if (!Array.isArray(entries)) {
+    throw new Error('Invalid scores array');
+  }
+
+  const scores = criteria.map((criterion) => {
+    const existingScore = existingScores.find((score) => score.criterionId === criterion.id);
+    const match = entries.find(
+      (entry): entry is JudgeScoreEntry =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        (entry as JudgeScoreEntry).criterionId === criterion.id,
+    );
+
+    const anchorPoints = getDiscreteAnchorPoints(criterion, criteria);
+    const points = parseJudgePointsValue(match?.points, criterion.maxPoints, anchorPoints);
+    const notes = readJudgeNotes(match?.notes) ?? existingScore?.notes;
+
+    return {
+      criterionId: criterion.id,
+      criterionName: criterion.name,
+      points,
+      maxPoints: criterion.maxPoints,
+      ...(notes ? { notes } : {}),
+    };
+  });
+
+  return {
+    scores,
+    ...(answerNotes ? { answerNotes } : {}),
+  };
+}
 
 export function initialScoresForCriteria(criteria: RubricCriterion[]): Score[] {
   return criteria.map((criterion) => ({
@@ -17,10 +91,54 @@ export function clampScore(points: number, maxPoints: number): number {
   return Math.min(Math.max(points, 0), maxPoints);
 }
 
+/** Snap judge output to discrete anchors, or clamp when no anchors apply. */
+export function snapToAnchorPoints(
+  points: number,
+  maxPoints: number,
+  anchorPoints: readonly number[] = [],
+): number {
+  const discreteAnchors = anchorPoints.filter((anchor) => Number.isFinite(anchor));
+
+  if (discreteAnchors.length > 0) {
+    const clamped = clampScore(points, maxPoints);
+    const floor = Math.min(...discreteAnchors);
+    const normalized = clamped <= 0 ? floor : clamped;
+
+    let best = discreteAnchors[0]!;
+    let bestDistance = Math.abs(normalized - best);
+
+    for (const anchor of discreteAnchors) {
+      const distance = Math.abs(normalized - anchor);
+
+      if (distance < bestDistance || (distance === bestDistance && anchor < best)) {
+        best = anchor;
+        bestDistance = distance;
+      }
+    }
+
+    return best;
+  }
+
+  return clampScore(points, maxPoints);
+}
+
+/** Snap to built-in 1–5 anchors when maxPoints is 5. */
+export function snapToBuiltInAnchors(points: number, maxPoints: number): number {
+  if (maxPoints !== 5) {
+    return clampScore(points, maxPoints);
+  }
+
+  return snapToAnchorPoints(points, maxPoints, BUILT_IN_ANCHOR_POINTS);
+}
+
 /** Parse judge point values that may be absolute, fractional, or percentage-scaled. */
-export function parseJudgePointsValue(value: unknown, maxPoints: number): number {
+export function parseJudgePointsValue(
+  value: unknown,
+  maxPoints: number,
+  anchorPoints: readonly number[] = [],
+): number {
   if (typeof value === 'number') {
-    return normalizeJudgePoints(value, maxPoints);
+    return normalizeJudgePoints(value, maxPoints, anchorPoints);
   }
 
   if (typeof value === 'string') {
@@ -28,13 +146,13 @@ export function parseJudgePointsValue(value: unknown, maxPoints: number): number
     const percentMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s*%$/);
 
     if (percentMatch) {
-      return normalizeJudgePoints(Number(percentMatch[1]), maxPoints);
+      return normalizeJudgePoints(Number(percentMatch[1]), maxPoints, anchorPoints);
     }
 
     const parsed = Number(trimmed);
 
     if (Number.isFinite(parsed)) {
-      return normalizeJudgePoints(parsed, maxPoints);
+      return normalizeJudgePoints(parsed, maxPoints, anchorPoints);
     }
   }
 
@@ -45,24 +163,30 @@ export function parseJudgePointsValue(value: unknown, maxPoints: number): number
  * Judges sometimes return 0–100 percentages instead of 0..maxPoints.
  * Values above maxPoints but ≤100 are treated as percent of maxPoints.
  */
-export function normalizeJudgePoints(points: number, maxPoints: number): number {
+export function normalizeJudgePoints(
+  points: number,
+  maxPoints: number,
+  anchorPoints: readonly number[] = [],
+): number {
   if (!Number.isFinite(points) || maxPoints <= 0) {
     return 0;
   }
 
+  let normalized: number;
+
   if (points > maxPoints) {
     if (points <= 100) {
-      return clampScore(Math.round((points / 100) * maxPoints), maxPoints);
+      normalized = clampScore(Math.round((points / 100) * maxPoints), maxPoints);
+    } else {
+      normalized = clampScore(points, maxPoints);
     }
-
-    return clampScore(points, maxPoints);
+  } else if (points > 0 && points < 1) {
+    normalized = clampScore(Math.round(points * maxPoints), maxPoints);
+  } else {
+    normalized = clampScore(points, maxPoints);
   }
 
-  if (points > 0 && points < 1) {
-    return clampScore(Math.round(points * maxPoints), maxPoints);
-  }
-
-  return clampScore(points, maxPoints);
+  return snapToAnchorPoints(normalized, maxPoints, anchorPoints);
 }
 
 export function computeTotalPoints(scores: Score[]): number {

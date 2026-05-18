@@ -45,6 +45,7 @@ describe('EvaluationService.automate', () => {
           this.onmessage?.({
             data: JSON.stringify({
               type: 'complete',
+              status: 'completed',
               evaluation: { ...evaluation, automatedAt: 'now' },
             }),
           } as MessageEvent);
@@ -99,6 +100,7 @@ describe('EvaluationService.automate', () => {
     mockInstance!.onmessage!({
       data: JSON.stringify({
         type: 'complete',
+        status: 'completed',
         evaluation: { ...evaluation, automatedAt: 'now' },
       }),
     } as MessageEvent);
@@ -146,7 +148,12 @@ describe('EvaluationService.automate', () => {
       constructor(public url: string) {
         queueMicrotask(() => {
           this.onmessage?.({
-            data: JSON.stringify({ type: 'error', message: 'Provider failed' }),
+            data: JSON.stringify({
+              type: 'error',
+              message: 'Provider failed',
+              step: 'generating',
+              status: 'failed',
+            }),
           } as MessageEvent);
         });
       }
@@ -197,6 +204,7 @@ describe('EvaluationService.automate', () => {
     instances[1].onmessage!({
       data: JSON.stringify({
         type: 'complete',
+        status: 'completed',
         evaluation: { ...evaluation, automatedAt: 'now' },
       }),
     } as MessageEvent);
@@ -205,5 +213,42 @@ describe('EvaluationService.automate', () => {
 
     expect(result.automatedAt).toBe('now');
     expect(instances[1].close).toHaveBeenCalled();
+  });
+
+  it('invokes onStatus for status, complete, error, and cancel events', async () => {
+    const statuses: string[] = [];
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running' }),
+          } as MessageEvent);
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'error',
+              message: 'Automation cancelled.',
+              step: 'generating',
+              status: 'cancelled',
+            }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    await expect(
+      service.automate('eval-1', {}, { onStatus: (status) => statuses.push(status) }),
+    ).rejects.toThrow('Automation cancelled.');
+
+    expect(statuses).toEqual(['running', 'cancelled']);
   });
 });

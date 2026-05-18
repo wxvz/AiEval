@@ -91,8 +91,8 @@
         <div
           class="card mb-3"
           [class.border-primary]="automating()"
-          [class.border-success]="automationOutcome() === 'success'"
-          [class.border-danger]="automationOutcome() === 'error'"
+          [class.border-success]="automationOutcome().status === 'completed'"
+          [class.border-danger]="automationOutcome().status === 'failed' || automationOutcome().status === 'cancelled'"
         >
           <div class="card-body">
             @if (automating()) {
@@ -109,9 +109,11 @@
               <p class="text-muted small mb-2">
                 Generating and scoring answers. This may take a few minutes.
               </p>
-            } @else if (automationOutcome() === 'success') {
+            } @else if (automationOutcome().status === 'completed') {
               <p class="text-success small mb-2">Automation finished successfully.</p>
-            } @else if (automationOutcome() === 'error') {
+            } @else if (automationOutcome().status === 'cancelled') {
+              <p class="text-danger small mb-2">Automation was cancelled.</p>
+            } @else if (automationOutcome().status === 'failed') {
               <p class="text-danger small mb-2">Automation did not complete.</p>
             }
             <ul class="small mb-0 ps-3">
@@ -119,7 +121,7 @@
                 <li>{{ step }}</li>
               }
             </ul>
-            @if (!automating() && automationOutcome() !== 'idle') {
+            @if (!automating() && automationOutcome().status !== 'idle') {
               <button
                 type="button"
                 class="btn btn-outline-secondary btn-sm mt-3"

@@ -1,5 +1,23 @@
 import { Evaluation } from './evaluation.model';
 
+/** Terminal and in-flight automation states surfaced in the UI and SSE stream. */
+export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+
+/** UI state for the automation status card on the edit evaluation page. */
+export type AutomationOutcomeStatus = AutomationRunStatus | 'idle';
+
+export interface AutomationOutcome {
+  status: AutomationOutcomeStatus;
+}
+
+export const idleAutomationOutcome = (): AutomationOutcome => ({ status: 'idle' });
+
+export function automationStatusFromError(
+  message: string,
+): Extract<AutomationRunStatus, 'failed' | 'cancelled'> {
+  return message.toLowerCase().includes('cancelled') ? 'cancelled' : 'failed';
+}
+
 export type AutomationProgressEvent =
   | { type: 'provider_resolved'; provider: string; models: string[] }
   | { type: 'provider_fallback'; from: string; to: string }
@@ -13,12 +31,18 @@ export type AutomationProgressEvent =
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }
-  | { type: 'scored'; answerId: string; totalPoints: number }
+  | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
   | { type: 'winner_picked'; answerId: string; label: string }
   | { type: 'improved_generating' }
   | { type: 'improved_done' }
-  | { type: 'complete'; evaluation: Evaluation }
-  | { type: 'error'; message: string; step: string };
+  | { type: 'status'; status: AutomationRunStatus }
+  | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
+  | {
+      type: 'error';
+      message: string;
+      step: string;
+      status: Extract<AutomationRunStatus, 'failed' | 'cancelled'>;
+    };
 
 export function automationProgressLabel(event: AutomationProgressEvent): string {
   switch (event.type) {
@@ -37,13 +61,17 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
     case 'scoring':
       return `Scoring ${event.label}…`;
     case 'scored':
-      return `Scored answer (${event.totalPoints} pts)`;
+      return event.notes
+        ? `Scored answer (${event.totalPoints} pts): ${event.notes}`
+        : `Scored answer (${event.totalPoints} pts)`;
     case 'winner_picked':
       return `Winner: ${event.label}`;
     case 'improved_generating':
       return 'Drafting improved answer…';
     case 'improved_done':
       return 'Improved answer ready';
+    case 'status':
+      return '';
     case 'complete':
       return 'Automation complete';
     case 'error':

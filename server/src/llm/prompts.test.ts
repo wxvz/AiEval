@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_CRITERIA } from '../automation/criteria.js';
 import {
   buildImprovedPrompt,
   buildScorePrompt,
@@ -29,8 +30,9 @@ describe('system prompts', () => {
     expect(GENERATE_SYSTEM).toMatch(/rubric|scoring/i);
   });
 
-  it('instructs judge to score in isolation', () => {
+  it('instructs judge to score in isolation with anchors', () => {
     expect(JUDGE_SCORE_SYSTEM).toMatch(/one model answer/i);
+    expect(JUDGE_SCORE_SYSTEM).toMatch(/discrete score anchors/i);
     expect(JUDGE_SCORE_SYSTEM).toMatch(/JSON/i);
   });
 });
@@ -53,6 +55,74 @@ describe('buildScorePromptContext', () => {
   it('lists every criterion id in the header', () => {
     const context = buildScorePromptContext('User prompt', criteria);
     expect(context.header).toContain('c1, c2');
+  });
+
+  it('requires answerNotes in the judge score schema', () => {
+    const context = buildScorePromptContext('User prompt', criteria);
+    expect(context.header).toContain('answerNotes');
+    expect(context.header).toMatch(/required/i);
+  });
+
+  it('includes 1–5 anchor instructions for default rubric', () => {
+    const context = buildScorePromptContext(
+      'Summarize the causes and effects of urban heat islands.',
+      DEFAULT_CRITERIA,
+    );
+
+    expect(context.header).toContain('assign exactly one integer from 1 through 5');
+    expect(context.header).toContain('Fully correct with no misleading claims');
+    expect(context.header).toContain('Answers all parts of the prompt fully');
+    expect(context.header).toMatch(/chosen score and anchor gist/i);
+  });
+
+  it('uses continuous scale rules for non-anchor criteria', () => {
+    const context = buildScorePromptContext('User prompt', [
+      { id: 'x', name: 'Quality', maxPoints: 10 },
+    ]);
+
+    expect(context.header).toContain('0 through maxPoints');
+    expect(context.header).not.toContain('assign exactly one of these point values');
+  });
+
+  it('builds judge prompt from custom criteria with descriptions', () => {
+    const context = buildScorePromptContext('User prompt', [
+      {
+        id: 'depth',
+        name: 'Depth',
+        maxPoints: 10,
+        description: 'How thoroughly the answer explores the topic.',
+      },
+    ]);
+
+    expect(context.header).toContain('Depth');
+    expect(context.header).toContain('How thoroughly');
+    expect(context.header).toContain('0 through maxPoints');
+    expect(context.header).not.toContain('Fully correct with no misleading claims');
+  });
+
+  it('uses custom anchor descriptions when present', () => {
+    const context = buildScorePromptContext('User prompt', [
+      {
+        id: 'tone',
+        name: 'Tone',
+        maxPoints: 5,
+        description: '5 = Professional; 3 = Neutral; 1 = Rude',
+      },
+    ]);
+
+    expect(context.header).toContain('5 = Professional');
+    expect(context.header).toContain('assign exactly one of these point values: 1, 3, or 5');
+  });
+
+  it('does not apply built-in anchor rules to unrelated five-point criteria', () => {
+    const context = buildScorePromptContext('User prompt', [
+      { id: 'a', name: 'Argument', maxPoints: 5 },
+      { id: 'b', name: 'Evidence', maxPoints: 5 },
+    ]);
+
+    expect(context.header).not.toContain('Fully correct with no misleading claims');
+    expect(context.header).toContain('0 through maxPoints');
+    expect(context.header).not.toContain('assign exactly one of these point values: 1, 3, or 5');
   });
 });
 

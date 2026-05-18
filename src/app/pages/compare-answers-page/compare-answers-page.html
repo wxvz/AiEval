@@ -111,6 +111,9 @@
                   [value]="scoreFor(answer, criterion.id) ?? ''"
                   (input)="onScoreInput(answer, criterion, $event)"
                 />
+                @if (criterionNotesFor(answer, criterion.id); as criterionNotes) {
+                  <p class="text-muted small mb-0 mt-2">{{ criterionNotes }}</p>
+                }
               </div>
             </div>
           </div>

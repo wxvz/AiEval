@@ -7,13 +7,12 @@ import {
   allAnswersHaveEqualTotals,
   computeTotalPoints,
   initialScoresForCriteria,
-  parseJudgePointsValue,
+  parseJudgeScoreResponse,
   pickWinner,
   scaleAnswerScores,
 } from './scores.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
-import { jsonToSentences } from '../format/json-to-sentences.js';
 import { chat, chatJson } from '../llm/chat.js';
 import type { CompleteContext } from '../llm/rate-limit.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
@@ -51,7 +50,6 @@ import type {
   EvaluationDocument,
   ImprovedAnswer,
   RubricCriterion,
-  Score,
 } from '../types/evaluation.js';
 
 export class AutomationError extends Error {
@@ -68,12 +66,6 @@ function assertNotCancelled(signal: AbortSignal, step: AutomationStep): void {
   if (isAutomationCancelled(signal)) {
     throw new AutomationError('Automation cancelled.', step);
   }
-}
-
-interface ScoreEntry {
-  criterionId: string;
-  points: number;
-  notes?: string;
 }
 
 function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): void {
@@ -133,48 +125,6 @@ function createLlmCallContext(
   };
 
   return ctx;
-}
-
-function parseScores(
-  raw: unknown,
-  criteria: RubricCriterion[],
-  existing: Score[],
-): Score[] {
-  if (!raw || typeof raw !== 'object' || !('scores' in raw)) {
-    throw new Error('Invalid scores JSON');
-  }
-
-  const entries = (raw as { scores: unknown }).scores;
-
-  if (!Array.isArray(entries)) {
-    throw new Error('Invalid scores array');
-  }
-
-  return criteria.map((criterion) => {
-    const existingScore = existing.find((s) => s.criterionId === criterion.id);
-    const match = entries.find(
-      (entry): entry is ScoreEntry =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        (entry as ScoreEntry).criterionId === criterion.id,
-    );
-
-    const points = parseJudgePointsValue(match?.points, criterion.maxPoints);
-
-    const notesRaw = match?.notes ?? existingScore?.notes;
-    const notes =
-      notesRaw !== undefined && notesRaw !== null
-        ? jsonToSentences(notesRaw) || undefined
-        : undefined;
-
-    return {
-      criterionId: criterion.id,
-      criterionName: criterion.name,
-      points,
-      maxPoints: criterion.maxPoints,
-      ...(notes ? { notes } : {}),
-    };
-  });
 }
 
 async function generateAnswers(
@@ -267,15 +217,15 @@ async function scoreAnswers(
       step: 'scoring',
     });
 
-    const scores = await chatJson(
+    const judged = await chatJson(
       setup.provider,
       setup.judgeModel.model,
       [judgeSystem, { role: 'user', content: buildScorePrompt(scoreContext, answer) }],
       { ...llmCtx, step: 'scoring' },
-      (raw) => parseScores(raw, criteria, answer.scores),
+      (raw) => parseJudgeScoreResponse(raw, criteria, answer.scores),
     );
 
-    const totalPoints = scores.reduce((sum, s) => sum + s.points, 0);
+    const totalPoints = judged.scores.reduce((sum, s) => sum + s.points, 0);
     logEvent('info', LogEvents.automationScored, {
       runId,
       evaluationId,
@@ -283,9 +233,18 @@ async function scoreAnswers(
       totalPoints,
       step: 'scoring',
     });
-    emit(onProgress, { type: 'scored', answerId: answer.id, totalPoints });
+    emit(onProgress, {
+      type: 'scored',
+      answerId: answer.id,
+      totalPoints,
+      ...(judged.answerNotes ? { notes: judged.answerNotes } : {}),
+    });
 
-    return { ...answer, scores };
+    return {
+      ...answer,
+      scores: judged.scores,
+      ...(judged.answerNotes ? { notes: judged.answerNotes } : {}),
+    };
   });
 
   return rebalanceTiedScores(
@@ -538,7 +497,7 @@ async function runWithSetup(
 
   const evaluation = toApiEvaluation(result);
   logEvent('info', LogEvents.automationComplete, { runId, evaluationId, automatedAt: now });
-  emit(onProgress, { type: 'complete', evaluation });
+  emit(onProgress, { type: 'complete', evaluation, status: 'completed' });
 
   return evaluation;
 }

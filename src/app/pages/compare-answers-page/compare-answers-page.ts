@@ -131,6 +131,12 @@ export class CompareAnswersPage {
     return score?.points ?? null;
   }
 
+  protected criterionNotesFor(answer: Answer, criterionId: string): string | null {
+    const score = answer.scores.find((item) => item.criterionId === criterionId);
+
+    return score?.notes?.trim() ? score.notes : null;
+  }
+
   protected onNotesInput(answer: Answer, event: Event): void {
     const textarea = event.target as HTMLTextAreaElement;
 

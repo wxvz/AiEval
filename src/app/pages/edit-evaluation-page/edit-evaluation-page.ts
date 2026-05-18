@@ -16,7 +16,15 @@ import {
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
-import { automationProgressLabel, AutomationProgressEvent, CriteriaMode } from '../../models';
+import {
+  automationProgressLabel,
+  automationStatusFromError,
+  AutomationOutcome,
+  AutomationProgressEvent,
+  AutomationRunStatus,
+  CriteriaMode,
+  idleAutomationOutcome,
+} from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
 declare const bootstrap: {
@@ -24,8 +32,6 @@ declare const bootstrap: {
     getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
   };
 };
-
-type AutomationOutcome = 'idle' | 'running' | 'success' | 'error';
 
 @Component({
   selector: 'app-edit-evaluation-page',
@@ -56,9 +62,9 @@ export class EditEvaluationPage {
   protected readonly automating = computed(() =>
     this.evaluationService.isAutomating(this.evaluationId),
   );
-  protected readonly automationOutcome = signal<AutomationOutcome>('idle');
+  protected readonly automationOutcome = signal<AutomationOutcome>(idleAutomationOutcome());
   protected readonly showAutomationStatus = computed(
-    () => this.automating() || this.automationOutcome() !== 'idle',
+    () => this.automating() || this.automationOutcome().status !== 'idle',
   );
   protected readonly progressSteps = signal<string[]>([]);
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
@@ -229,17 +235,21 @@ export class EditEvaluationPage {
   protected onStopAutomation(): void {
     this.cancelProviderChoicePrompt();
     this.evaluationService.cancelAutomation(this.evaluationId);
-    this.automationOutcome.set('error');
+    this.automationOutcome.set({ status: 'cancelled' });
     this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
   }
 
   protected onDismissAutomationStatus(): void {
-    this.automationOutcome.set('idle');
+    this.automationOutcome.set(idleAutomationOutcome());
     this.progressSteps.set([]);
   }
 
+  private setAutomationStatus(status: AutomationRunStatus): void {
+    this.automationOutcome.set({ status });
+  }
+
   private async runAutomate(force: boolean): Promise<void> {
-    this.automationOutcome.set('running');
+    this.setAutomationStatus('running');
     this.progressSteps.set(['Starting automation…']);
 
     try {
@@ -247,8 +257,15 @@ export class EditEvaluationPage {
         this.evaluationId,
         { force },
         {
+          onStatus: (status) => this.setAutomationStatus(status),
           onProgress: (event) => {
-            this.progressSteps.update((steps) => [...steps, automationProgressLabel(event)]);
+            const label = automationProgressLabel(event);
+
+            if (!label) {
+              return;
+            }
+
+            this.progressSteps.update((steps) => [...steps, label]);
           },
           onSlowProviderPrompt: (event) => this.promptProviderChoice(event),
           operationFeedback: {
@@ -257,11 +274,15 @@ export class EditEvaluationPage {
           },
         },
       );
-      this.automationOutcome.set('success');
     } catch (error) {
       this.cancelProviderChoicePrompt();
-      this.automationOutcome.set('error');
       const message = error instanceof Error ? error.message : 'Automation failed.';
+      const status = automationStatusFromError(message);
+
+      if (this.automationOutcome().status !== status) {
+        this.setAutomationStatus(status);
+      }
+
       this.progressSteps.update((steps) => {
         const last = steps[steps.length - 1];
         const label = `Error: ${message}`;

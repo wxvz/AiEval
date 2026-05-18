@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { submitProviderChoice } from '../automation/provider-choice.js';
 import { cancelAutomationRun } from '../automation/run-registry.js';
 import { AutomationError, runEvaluationAutomation } from '../automation/run-evaluation.js';
+import { automationStatusFromError } from '../llm/types.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
 import { parseObjectId } from '../serialization.js';
@@ -68,9 +69,16 @@ export function createAutomationRouter(): Router {
         res.write(': heartbeat\n\n');
       }, HEARTBEAT_MS);
 
+      writeSse(res, { type: 'status', status: 'running' });
+
       timeout = setTimeout(() => {
         cancelAutomationRun(evaluationId, runId);
-        writeSse(res, { type: 'error', message: 'Automation timed out', step: 'generating' });
+        writeSse(res, {
+          type: 'error',
+          message: 'Automation timed out',
+          step: 'generating',
+          status: 'failed',
+        });
         res.end();
       }, AUTOMATE_TIMEOUT_MS);
 
@@ -95,7 +103,7 @@ export function createAutomationRouter(): Router {
         error instanceof AutomationError ? error.step : ('generating' as const);
       const message = error instanceof Error ? error.message : 'Automation failed';
 
-      writeSse(res, { type: 'error', message, step });
+      writeSse(res, { type: 'error', message, step, status: automationStatusFromError(message) });
       res.end();
     } finally {
       if (heartbeat) {

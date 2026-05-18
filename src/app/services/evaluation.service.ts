@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import {
   Answer,
   AutomationProgressEvent,
+  AutomationRunStatus,
   CriteriaMode,
   CreateAnswerDto,
   CreateCriterionDto,
@@ -323,6 +324,7 @@ export class EvaluationService {
     options: { force?: boolean } = {},
     callbacks?: {
       onProgress?: (event: AutomationProgressEvent) => void;
+      onStatus?: (status: AutomationRunStatus) => void;
       onSlowProviderPrompt?: (
         event: Extract<AutomationProgressEvent, { type: 'slow_provider_prompt' }>,
       ) => Promise<boolean>;
@@ -352,6 +354,7 @@ export class EvaluationService {
           eventSource.close();
         }
         const message = 'Automation timed out after 10 minutes.';
+        callbacks?.onStatus?.('failed');
         if (callbacks?.operationFeedback) {
           this.feedback.error(message);
         }
@@ -392,6 +395,11 @@ export class EvaluationService {
             this.activeAutomation.runId = event.runId;
           }
 
+          if (event.type === 'status') {
+            callbacks?.onStatus?.(event.status);
+            return;
+          }
+
           callbacks?.onProgress?.(event);
 
           if (event.type === 'slow_provider_prompt') {
@@ -427,6 +435,7 @@ export class EvaluationService {
 
           if (event.type === 'complete') {
             finish(() => {
+              callbacks?.onStatus?.('completed');
               this.replaceEvaluation(event.evaluation);
               if (callbacks?.operationFeedback) {
                 this.feedback.success(callbacks.operationFeedback.success);
@@ -438,11 +447,9 @@ export class EvaluationService {
 
           if (event.type === 'error') {
             finish(() => {
+              callbacks?.onStatus?.(event.status);
               const errorMessage = event.message;
-              if (
-                callbacks?.operationFeedback &&
-                !errorMessage.toLowerCase().includes('cancelled')
-              ) {
+              if (callbacks?.operationFeedback && event.status !== 'cancelled') {
                 this.feedback.error(errorMessage);
               }
               reject(new Error(errorMessage));
@@ -455,10 +462,12 @@ export class EvaluationService {
         runInZone(() => {
           finish(() => {
             if (runState.cancelledByUser) {
+              callbacks?.onStatus?.('cancelled');
               reject(new Error('Automation cancelled.'));
               return;
             }
 
+            callbacks?.onStatus?.('failed');
             const errorMessage =
               callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
             if (callbacks?.operationFeedback) {
