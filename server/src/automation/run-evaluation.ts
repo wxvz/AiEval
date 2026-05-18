@@ -40,8 +40,6 @@ import type {
   AutomationStep,
   ChatMessage,
   ProgressCallback,
-  ModelRef,
-  ProviderName,
   ResolvedLlmSetup,
 } from '../llm/types.js';
 import { toApiEvaluation } from '../serialization.js';
@@ -98,19 +96,6 @@ function logAutomationStepComplete(
       message: 'Automation complete',
     });
   }
-}
-
-/** OpenRouter free router is rate-limited; parallel calls often abort or hang. */
-function resolveAnswerConcurrency(providerName: ProviderName, answerModels: ModelRef[]): number {
-  if (
-    providerName === 'openrouter' &&
-    answerModels.length > 0 &&
-    answerModels.every((entry) => entry.model === 'openrouter/free')
-  ) {
-    return 1;
-  }
-
-  return config.llmConcurrency;
 }
 
 function createLlmCallContext(
@@ -184,9 +169,7 @@ async function generateAnswers(
     { role: 'user', content: prompt },
   ];
 
-  const concurrency = resolveAnswerConcurrency(setup.providerName, setup.answerModels);
-
-  return mapWithConcurrency(setup.answerModels, concurrency, async (modelRef, index) => {
+  return mapWithConcurrency(setup.answerModels, config.llmConcurrency, async (modelRef, index) => {
     assertNotCancelled(signal, 'generating');
 
     emit(onProgress, {
