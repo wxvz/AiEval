@@ -1,6 +1,6 @@
 import { BUILT_IN_ANCHOR_POINTS, getDiscreteAnchorPoints } from './rubric-anchors.js';
 import { jsonToSentences } from '../format/json-to-sentences.js';
-import type { RubricCriterion, Score } from '../types/evaluation.js';
+import type { Answer, RubricCriterion, Score } from '../types/evaluation.js';
 
 interface JudgeScoreEntry {
   criterionId: string;
@@ -72,6 +72,111 @@ export function parseJudgeScoreResponse(
     scores,
     ...(answerNotes ? { answerNotes } : {}),
   };
+}
+
+export interface ParsedBatchJudgeScoreRow extends ParsedJudgeScoreResponse {
+  answerId: string;
+}
+
+function readAnswerId(entry: Record<string, unknown>): string | undefined {
+  const id = entry.answerId;
+
+  if (typeof id === 'string' && id.trim()) {
+    return id.trim();
+  }
+
+  return undefined;
+}
+
+function readAnswerIndex(entry: Record<string, unknown>): number | undefined {
+  const idx = entry.answerIndex;
+
+  if (typeof idx === 'number' && Number.isFinite(idx)) {
+    return Math.trunc(idx);
+  }
+
+  if (typeof idx === 'string') {
+    const parsed = Number(idx.trim());
+
+    if (Number.isFinite(parsed)) {
+      return Math.trunc(parsed);
+    }
+  }
+
+  return undefined;
+}
+
+/** Merge judge batch JSON into input answer order; throws if any answer is missing or duplicated. */
+export function parseJudgeBatchScoreResponse(
+  raw: unknown,
+  criteria: RubricCriterion[],
+  answers: Answer[],
+): ParsedBatchJudgeScoreRow[] {
+  if (!raw || typeof raw !== 'object') {
+    throw new Error('Invalid batch scores JSON');
+  }
+
+  const record = raw as Record<string, unknown>;
+  const list = record.answers;
+
+  if (!Array.isArray(list)) {
+    throw new Error('Invalid batch scores answers array');
+  }
+
+  const consumed = new Set<number>();
+  const merged = new Map<string, ParsedJudgeScoreResponse>();
+
+  for (const item of list) {
+    if (typeof item !== 'object' || item === null) {
+      continue;
+    }
+
+    const row = item as Record<string, unknown>;
+    let answerId = readAnswerId(row);
+    const answerIndex = readAnswerIndex(row);
+
+    if (!answerId && answerIndex !== undefined) {
+      const zeroBased = answerIndex - 1;
+
+      if (zeroBased >= 0 && zeroBased < answers.length) {
+        answerId = answers[zeroBased]!.id;
+      }
+    }
+
+    if (!answerId) {
+      continue;
+    }
+
+    const indexInRun = answers.findIndex((a) => a.id === answerId);
+
+    if (indexInRun < 0) {
+      throw new Error(`Unknown answerId in batch judge JSON: ${answerId}`);
+    }
+
+    if (consumed.has(indexInRun)) {
+      throw new Error(`Duplicate judge scores for answer ${answerId}`);
+    }
+
+    consumed.add(indexInRun);
+
+    const existingScores = answers[indexInRun]!.scores;
+    const parsed = parseJudgeScoreResponse(row, criteria, existingScores);
+    merged.set(answerId, parsed);
+  }
+
+  return answers.map((answer, index) => {
+    const parsed = merged.get(answer.id);
+
+    if (!parsed) {
+      throw new Error(`Missing judge scores for answer index ${index + 1} (${answer.id})`);
+    }
+
+    return {
+      answerId: answer.id,
+      scores: parsed.scores,
+      ...(parsed.answerNotes ? { answerNotes: parsed.answerNotes } : {}),
+    };
+  });
 }
 
 export function initialScoresForCriteria(criteria: RubricCriterion[]): Score[] {

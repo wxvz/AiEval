@@ -11,8 +11,12 @@ import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluatio
 export const GENERATE_SYSTEM =
   'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
+/** @deprecated Prefer {@link JUDGE_BATCH_SCORE_SYSTEM}; kept for tests / tooling that still build single-answer prompts. */
 export const JUDGE_SCORE_SYSTEM =
   'You are an impartial rubric judge. Score one model answer at a time using only the rubric anchors and the answer text—do not compare to other models. When the rubric lists discrete score anchors, pick the single anchor that best fits; do not invent scores outside those anchors. Return valid JSON only, matching the schema in the user message exactly.';
+
+export const JUDGE_BATCH_SCORE_SYSTEM =
+  'You are an impartial rubric judge. Multiple candidate answers are indexed together—read and compare them, then score each answer separately against the rubric anchors. Use comparison only to calibrate discrimination when anchors alone would blur differences; each criterion score must still match the anchor definitions for that answer text (no invented anchor values). Return valid JSON only, matching the schema in the user message exactly.';
 
 export const JUDGE_IMPROVED_SYSTEM =
   'You synthesize an improved answer after multi-model comparison. Return valid JSON only, matching the schema in the user message exactly. finalAnswer must be a polished, standalone reply to the original user prompt—not meta commentary about the evaluation.';
@@ -61,7 +65,7 @@ ${stripModelArtifacts(answer.content).slice(0, 1200)}`;
     })
     .join('\n\n');
 
-  return `The answers below were scored independently but ended with identical totals. Rank them by overall rubric quality.
+  return `The answers below share the same total rubric score. Rank them by overall rubric quality.
 
 Original user prompt:
 ${prompt}
@@ -91,7 +95,7 @@ export interface ScorePromptContext {
   criteriaIds: string[];
 }
 
-function buildScoringRules(criteria: RubricCriterion[]): string {
+function buildScoringRules(criteria: RubricCriterion[], comparative: boolean): string {
   const anchorRules = usesDiscreteAnchors(criteria)
     ? usesStandardOneThreeFiveAnchors(criteria)
       ? `- For each criterion, assign exactly one of these point values: 1, 3, or 5 (maxPoints is 5). Never use 0, 2, or 4.
@@ -108,12 +112,16 @@ function buildScoringRules(criteria: RubricCriterion[]): string {
 - points must be on the rubric scale, never 0–100 unless maxPoints is 100.
 - Use the full range: reserve maxPoints for strong performance; use 0 when clearly failed.`;
 
+  const calibrationRule = comparative
+    ? `- All indexed answers appear together. Compare them to calibrate scores when differences matter under the rubric; still ground each criterion score in that answer's own text versus the anchors (do not inflate weak answers just to spread totals).`
+    : `- Base scores only on this answer and the rubric—ignore other models.`;
+
   return `Scoring rules:
 ${anchorRules}
-- Base scores only on this answer and the rubric—ignore other models.
+${calibrationRule}
 - Discriminate quality—avoid giving every criterion the same score unless deserved.
 - notes: one short sentence per criterion citing specific evidence from the answer.
-- answerNotes: required—2–3 sentences summarizing overall rubric performance for this answer (strengths, gaps, rationale).`;
+- answerNotes: required per answer—2–3 sentences summarizing overall rubric performance (strengths, gaps, rationale).`;
 }
 
 export function buildScorePromptContext(
@@ -133,7 +141,7 @@ ${prompt}
 Rubric (score each criterion independently; use the anchor descriptions):
 ${rubricBlock}
 
-${buildScoringRules(criteria)}
+${buildScoringRules(criteria, false)}
 
 Required JSON shape (no other keys, no markdown):
 {
@@ -153,6 +161,56 @@ export function buildScorePrompt(context: ScorePromptContext, answer: Answer): s
 ---
 Model answer to score (${answer.label}):
 ${stripModelArtifacts(answer.content)}`;
+}
+
+/**
+ * One user message: rubric + every candidate answer with stable indices for comparative scoring.
+ */
+export function buildBatchScorePrompt(prompt: string, criteria: RubricCriterion[], answers: Answer[]): string {
+  const criteriaIds = criteria.map((c) => c.id);
+  const rubricBlock = formatRubricBlock(criteria);
+
+  const indexedBlocks = answers
+    .map((answer, index) => {
+      const n = index + 1;
+
+      return `### Answer ${n} (index ${n})
+- answerId: ${answer.id}
+- modelLabel: ${answer.label}
+
+${stripModelArtifacts(answer.content)}`;
+    })
+    .join('\n\n');
+
+  return `Role: Impartial evaluator. Score every indexed candidate answer against each rubric criterion.
+
+Original user prompt (what each answer should address):
+${prompt}
+
+Rubric (score each criterion independently per answer; use the anchor descriptions):
+${rubricBlock}
+
+${buildScoringRules(criteria, true)}
+
+Indexed candidate answers:
+${indexedBlocks}
+
+Required JSON shape (no other keys, no markdown):
+{
+  "answers": [
+    {
+      "answerIndex": <1-based index, must match "Answer N">,
+      "answerId": "<same uuid as listed>",
+      "answerNotes": "<brief overall rationale>",
+      "scores": [
+        { "criterionId": "<id>", "points": <number>, "notes": "<brief evidence>" }
+      ]
+    }
+  ]
+}
+
+Include exactly one object per indexed answer (${answers.length} total), in any order.
+For each answer object, include exactly one score row per criterion id: ${criteriaIds.join(', ')}`;
 }
 
 export function buildImprovedPrompt(

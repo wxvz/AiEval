@@ -4,7 +4,9 @@ import { DEFAULT_CRITERIA } from './criteria.js';
 import {
   allAnswersHaveEqualTotals,
   clampScore,
+  initialScoresForCriteria,
   normalizeJudgePoints,
+  parseJudgeBatchScoreResponse,
   parseJudgePointsValue,
   parseJudgeScoreResponse,
   pickWinner,
@@ -12,7 +14,7 @@ import {
   snapToAnchorPoints,
   snapToBuiltInAnchors,
 } from './scores.js';
-import type { RubricCriterion, Score } from '../types/evaluation.js';
+import type { Answer, RubricCriterion, Score } from '../types/evaluation.js';
 
 const criteria: RubricCriterion[] = [
   { id: 'c1', name: 'Accuracy', maxPoints: 5 },
@@ -167,6 +169,128 @@ describe('scores', () => {
 
     expect(parsed.scores[0]?.points).toBe(4);
     expect(parsed.scores[0]?.notes).toBe('Prior note');
+  });
+
+  it('parses batch judge JSON by answerId in output order', () => {
+    const answers: Answer[] = [
+      {
+        id: 'a1',
+        evaluationId: 'e',
+        label: 'M1',
+        content: '',
+        scores: initialScoresForCriteria(criteria),
+      },
+      {
+        id: 'a2',
+        evaluationId: 'e',
+        label: 'M2',
+        content: '',
+        scores: initialScoresForCriteria(criteria),
+      },
+    ];
+
+    const merged = parseJudgeBatchScoreResponse(
+      {
+        answers: [
+          {
+            answerIndex: 2,
+            answerId: 'a2',
+            answerNotes: 'B ok',
+            scores: [
+              { criterionId: 'c1', points: 3, notes: 'n' },
+              { criterionId: 'c2', points: 5, notes: 'n2' },
+            ],
+          },
+          {
+            answerIndex: 1,
+            answerId: 'a1',
+            answerNotes: 'A ok',
+            scores: [
+              { criterionId: 'c1', points: 5, notes: 'x' },
+              { criterionId: 'c2', points: 3, notes: 'y' },
+            ],
+          },
+        ],
+      },
+      criteria,
+      answers,
+    );
+
+    expect(merged).toHaveLength(2);
+    expect(merged[0]?.answerId).toBe('a1');
+    expect(merged[0]?.scores[0]?.points).toBe(5);
+    expect(merged[0]?.answerNotes).toBe('A ok');
+    expect(merged[1]?.answerId).toBe('a2');
+    expect(merged[1]?.scores[1]?.points).toBe(5);
+  });
+
+  it('resolves batch row by answerIndex when answerId omitted', () => {
+    const answers: Answer[] = [
+      {
+        id: 'id-one',
+        evaluationId: 'e',
+        label: 'M1',
+        content: '',
+        scores: initialScoresForCriteria(criteria),
+      },
+    ];
+
+    const merged = parseJudgeBatchScoreResponse(
+      {
+        answers: [
+          {
+            answerIndex: 1,
+            scores: [
+              { criterionId: 'c1', points: 4 },
+              { criterionId: 'c2', points: 4 },
+            ],
+          },
+        ],
+      },
+      criteria,
+      answers,
+    );
+
+    expect(merged[0]?.answerId).toBe('id-one');
+    expect(merged[0]?.scores[0]?.points).toBe(4);
+  });
+
+  it('throws when batch JSON omits an answer', () => {
+    const answers: Answer[] = [
+      {
+        id: 'x',
+        evaluationId: 'e',
+        label: 'M1',
+        content: '',
+        scores: initialScoresForCriteria(criteria),
+      },
+      {
+        id: 'y',
+        evaluationId: 'e',
+        label: 'M2',
+        content: '',
+        scores: initialScoresForCriteria(criteria),
+      },
+    ];
+
+    expect(() =>
+      parseJudgeBatchScoreResponse(
+        {
+          answers: [
+            {
+              answerId: 'x',
+              answerNotes: 'only one',
+              scores: [
+                { criterionId: 'c1', points: 5 },
+                { criterionId: 'c2', points: 5 },
+              ],
+            },
+          ],
+        },
+        criteria,
+        answers,
+      ),
+    ).toThrow(/Missing judge scores/);
   });
 
   it('scales scores by factor', () => {

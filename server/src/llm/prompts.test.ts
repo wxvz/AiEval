@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_CRITERIA } from '../automation/criteria.js';
 import {
+  buildBatchScorePrompt,
   buildImprovedPrompt,
   buildScorePrompt,
   buildScorePromptContext,
   GENERATE_SYSTEM,
+  JUDGE_BATCH_SCORE_SYSTEM,
   JUDGE_SCORE_SYSTEM,
   parseImprovedAnswer,
 } from './prompts.js';
@@ -30,10 +32,15 @@ describe('system prompts', () => {
     expect(GENERATE_SYSTEM).toMatch(/rubric|scoring/i);
   });
 
-  it('instructs judge to score in isolation with anchors', () => {
+  it('instructs batch judge to compare indexed answers with anchors', () => {
+    expect(JUDGE_BATCH_SCORE_SYSTEM).toMatch(/indexed/i);
+    expect(JUDGE_BATCH_SCORE_SYSTEM).toMatch(/compare/i);
+    expect(JUDGE_BATCH_SCORE_SYSTEM).toMatch(/anchor/i);
+    expect(JUDGE_BATCH_SCORE_SYSTEM).toMatch(/JSON/i);
+  });
+
+  it('keeps legacy single-answer judge wording for tooling', () => {
     expect(JUDGE_SCORE_SYSTEM).toMatch(/one model answer/i);
-    expect(JUDGE_SCORE_SYSTEM).toMatch(/discrete score anchors/i);
-    expect(JUDGE_SCORE_SYSTEM).toMatch(/JSON/i);
   });
 });
 
@@ -123,6 +130,20 @@ describe('buildScorePromptContext', () => {
     expect(context.header).not.toContain('Fully correct with no misleading claims');
     expect(context.header).toContain('0 through maxPoints');
     expect(context.header).not.toContain('assign exactly one of these point values: 1, 3, or 5');
+  });
+});
+
+describe('buildBatchScorePrompt', () => {
+  it('indexes answers with ids and requests batched answers JSON', () => {
+    const a2: Answer = { ...answer, id: 'a2', label: 'Model B', content: 'Second' };
+    const text = buildBatchScorePrompt('User prompt', criteria, [answer, a2]);
+
+    expect(text).toContain('Answer 1');
+    expect(text).toContain('Answer 2');
+    expect(text).toContain('answerId: a1');
+    expect(text).toContain('answerId: a2');
+    expect(text).toMatch(/"answers"\s*:/);
+    expect(text).toMatch(/Compare them to calibrate/i);
   });
 });
 

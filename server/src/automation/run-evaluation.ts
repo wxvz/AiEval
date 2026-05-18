@@ -7,7 +7,7 @@ import {
   allAnswersHaveEqualTotals,
   computeTotalPoints,
   initialScoresForCriteria,
-  parseJudgeScoreResponse,
+  parseJudgeBatchScoreResponse,
   pickWinner,
   scaleAnswerScores,
 } from './scores.js';
@@ -17,16 +17,14 @@ import { chat, chatJson } from '../llm/chat.js';
 import type { CompleteContext } from '../llm/rate-limit.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
 import {
+  buildBatchScorePrompt,
   buildComparativeRankPrompt,
   buildImprovedPrompt,
-  buildScorePrompt,
-  buildScorePromptContext,
   GENERATE_SYSTEM,
+  JUDGE_BATCH_SCORE_SYSTEM,
   JUDGE_IMPROVED_SYSTEM,
   JUDGE_RANK_SYSTEM,
-  JUDGE_SCORE_SYSTEM,
   parseImprovedAnswer,
-  type ScorePromptContext,
 } from '../llm/prompts.js';
 import { stripModelArtifacts } from '../llm/sanitize-model-output.js';
 import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
@@ -73,6 +71,18 @@ function assertNotCancelled(signal: AbortSignal, step: AutomationStep): void {
 
 function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): void {
   onProgress(event);
+}
+
+const PIPELINE_STEPS = ['generating', 'scoring', 'improved'] as const satisfies readonly AutomationStep[];
+
+function logAutomationStepComplete(completed: (typeof PIPELINE_STEPS)[number]): void {
+  const i = PIPELINE_STEPS.indexOf(completed);
+  const next = PIPELINE_STEPS[i + 1];
+  if (next) {
+    console.log(`Next step: ${next}`);
+  } else {
+    console.log('Automation complete');
+  }
 }
 
 /** OpenRouter free router is rate-limited; parallel calls often abort or hang. */
@@ -213,7 +223,6 @@ async function scoreAnswers(
   setup: ResolvedLlmSetup,
   evaluationId: string,
   prompt: string,
-  scoreContext: ScorePromptContext,
   criteria: RubricCriterion[],
   answers: Answer[],
   runId: string,
@@ -221,14 +230,9 @@ async function scoreAnswers(
   signal: AbortSignal,
   llmCtx: CompleteContext,
 ): Promise<Answer[]> {
-  const judgeSystem: ChatMessage = {
-    role: 'system',
-    content: JUDGE_SCORE_SYSTEM,
-  };
+  assertNotCancelled(signal, 'scoring');
 
-  const scored = await mapWithConcurrency(answers, config.llmConcurrency, async (answer) => {
-    assertNotCancelled(signal, 'scoring');
-
+  for (const answer of answers) {
     emit(onProgress, { type: 'scoring', answerId: answer.id, label: answer.label });
     logEvent('info', LogEvents.automationScoring, {
       runId,
@@ -236,16 +240,27 @@ async function scoreAnswers(
       answerId: answer.id,
       step: 'scoring',
     });
+  }
 
-    const judged = await chatJson(
-      setup.provider,
-      setup.judgeModel.model,
-      [judgeSystem, { role: 'user', content: buildScorePrompt(scoreContext, answer) }],
-      { ...llmCtx, step: 'scoring' },
-      (raw) => parseJudgeScoreResponse(raw, criteria, answer.scores),
-    );
+  const judgeSystem: ChatMessage = {
+    role: 'system',
+    content: JUDGE_BATCH_SCORE_SYSTEM,
+  };
 
-    const totalPoints = judged.scores.reduce((sum, s) => sum + s.points, 0);
+  const userContent = buildBatchScorePrompt(prompt, criteria, answers);
+
+  const rows = await chatJson(
+    setup.provider,
+    setup.judgeModel.model,
+    [judgeSystem, { role: 'user', content: userContent }],
+    { ...llmCtx, step: 'scoring' },
+    (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
+  );
+
+  const scored = rows.map((row, index) => {
+    const answer = answers[index]!;
+    const totalPoints = row.scores.reduce((sum, s) => sum + s.points, 0);
+
     logEvent('info', LogEvents.automationScored, {
       runId,
       evaluationId,
@@ -257,13 +272,13 @@ async function scoreAnswers(
       type: 'scored',
       answerId: answer.id,
       totalPoints,
-      ...(judged.answerNotes ? { notes: judged.answerNotes } : {}),
+      ...(row.answerNotes ? { notes: row.answerNotes } : {}),
     });
 
     return {
       ...answer,
-      scores: judged.scores,
-      ...(judged.answerNotes ? { notes: judged.answerNotes } : {}),
+      scores: row.scores,
+      ...(row.answerNotes ? { notes: row.answerNotes } : {}),
     };
   });
 
@@ -433,7 +448,6 @@ async function runWithSetup(
     throw new AutomationError('At least one rubric criterion is required.', 'scoring');
   }
 
-  const scoreContext = buildScorePromptContext(prompt, criteria);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
 
   const answers = await generateAnswers(
@@ -446,11 +460,12 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
+  logAutomationStepComplete('generating');
+
   const scored = await scoreAnswers(
     setup,
     evaluationId,
     prompt,
-    scoreContext,
     criteria,
     answers,
     runId,
@@ -458,6 +473,7 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
+  logAutomationStepComplete('scoring');
 
   const winnerResult = pickWinner(scored);
 
@@ -495,6 +511,7 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
+  logAutomationStepComplete('improved');
 
   const now = new Date().toISOString();
   const update = {
