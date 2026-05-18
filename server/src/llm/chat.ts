@@ -6,7 +6,7 @@ import { completeWithRetry, type CompleteContext } from './rate-limit.js';
 import { JSON_RETRY_SYSTEM } from './prompts.js';
 import { parseJsonText } from './parse-json.js';
 import { resolveFirstCloudProvider } from './provider.js';
-import type { ChatMessage, LlmProvider } from './types.js';
+import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
 
 function mergeSignals(...signals: (AbortSignal | undefined)[]): AbortSignal | undefined {
   const active = signals.filter((signal): signal is AbortSignal => !!signal);
@@ -27,7 +27,7 @@ export async function chat(
   model: string,
   messages: ChatMessage[],
   context: CompleteContext & { json?: boolean },
-): Promise<string> {
+): Promise<LlmCompletion> {
   const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
 
   logEvent('info', LogEvents.llmRequest, {
@@ -49,7 +49,8 @@ export async function chat(
 
   try {
     return await completeWithRetry(
-      () => provider.complete(model, messages, { json: context.json, signal: requestSignal }),
+      async () =>
+        provider.complete(model, messages, { json: context.json, signal: requestSignal }),
       { ...context, provider: provider.name, model },
     );
   } catch (error) {
@@ -91,7 +92,7 @@ export async function chat(
       context.onCloudProviderSwitch?.(cloudSetup);
 
       return completeWithRetry(
-        () =>
+        async () =>
           cloudSetup.provider.complete(cloudModel, messages, {
             json: context.json,
             signal: mergeSignals(context.abortSignal),
@@ -109,7 +110,7 @@ export async function chat(
     context.onPreferLocalProvider?.();
 
     return completeWithRetry(
-      () =>
+      async () =>
         provider.complete(model, messages, {
           json: context.json,
           signal: mergeSignals(context.abortSignal),
@@ -127,8 +128,8 @@ export async function chatJson<T>(
   parse: (raw: unknown) => T,
 ): Promise<T> {
   try {
-    const text = await chat(provider, model, messages, { ...context, json: true });
-    return parse(parseJsonText<unknown>(text));
+    const completion = await chat(provider, model, messages, { ...context, json: true });
+    return parse(parseJsonText<unknown>(completion.text));
   } catch (firstError) {
     logEvent('warn', LogEvents.llmRetry, {
       ...context,
@@ -142,7 +143,7 @@ export async function chatJson<T>(
       { role: 'system', content: JSON_RETRY_SYSTEM },
       ...messages.filter((m) => m.role !== 'system'),
     ];
-    const text = await chat(provider, model, retryMessages, { ...context, json: true });
-    return parse(parseJsonText<unknown>(text));
+    const completion = await chat(provider, model, retryMessages, { ...context, json: true });
+    return parse(parseJsonText<unknown>(completion.text));
   }
 }

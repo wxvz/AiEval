@@ -23,7 +23,7 @@ export function createOllamaProvider(): LlmProvider {
       }
 
       const body = (await response.json()) as { message?: { content?: string } };
-      return body.message?.content?.trim() ?? '';
+      return { text: body.message?.content?.trim() ?? '' };
     },
   };
 }

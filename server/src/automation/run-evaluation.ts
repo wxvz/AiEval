@@ -35,12 +35,15 @@ import {
   isAutomationCancelled,
   registerAutomationRun,
 } from './run-registry.js';
+import { modelIdToLabel } from '../llm/model-presets.js';
 import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
 import type {
   AutomationProgressEvent,
   AutomationStep,
   ChatMessage,
   ProgressCallback,
+  ModelRef,
+  ProviderName,
   ResolvedLlmSetup,
 } from '../llm/types.js';
 import { toApiEvaluation } from '../serialization.js';
@@ -70,6 +73,19 @@ function assertNotCancelled(signal: AbortSignal, step: AutomationStep): void {
 
 function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): void {
   onProgress(event);
+}
+
+/** OpenRouter free router is rate-limited; parallel calls often abort or hang. */
+function resolveAnswerConcurrency(providerName: ProviderName, answerModels: ModelRef[]): number {
+  if (
+    providerName === 'openrouter' &&
+    answerModels.length > 0 &&
+    answerModels.every((entry) => entry.model === 'openrouter/free')
+  ) {
+    return 1;
+  }
+
+  return config.llmConcurrency;
 }
 
 function createLlmCallContext(
@@ -143,7 +159,9 @@ async function generateAnswers(
     { role: 'user', content: prompt },
   ];
 
-  return mapWithConcurrency(setup.answerModels, config.llmConcurrency, async (modelRef, index) => {
+  const concurrency = resolveAnswerConcurrency(setup.providerName, setup.answerModels);
+
+  return mapWithConcurrency(setup.answerModels, concurrency, async (modelRef, index) => {
     assertNotCancelled(signal, 'generating');
 
     emit(onProgress, {
@@ -161,16 +179,17 @@ async function generateAnswers(
     });
 
     const start = Date.now();
-    const content = await chat(setup.provider, modelRef.model, generateMessages, {
+    const completion = await chat(setup.provider, modelRef.model, generateMessages, {
       ...llmCtx,
       step: 'generating',
     });
+    const label = modelIdToLabel(completion.resolvedModel ?? modelRef.model);
 
     const answer: Answer = {
       id: crypto.randomUUID(),
       evaluationId,
-      label: modelRef.label,
-      content: stripModelArtifacts(content),
+      label,
+      content: stripModelArtifacts(completion.text),
       scores: initialScoresForCriteria(criteria),
     };
 
@@ -179,6 +198,7 @@ async function generateAnswers(
       evaluationId,
       provider: setup.providerName,
       model: modelRef.model,
+      ...(completion.resolvedModel ? { resolvedModel: completion.resolvedModel } : {}),
       step: 'generating',
       durationMs: Date.now() - start,
       answerId: answer.id,

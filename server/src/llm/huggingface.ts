@@ -34,10 +34,10 @@ export function createHuggingFaceProvider(): LlmProvider {
         | { generated_text?: string };
 
       if (Array.isArray(body)) {
-        return body[0]?.generated_text?.trim() ?? '';
+        return { text: body[0]?.generated_text?.trim() ?? '' };
       }
 
-      return body.generated_text?.trim() ?? '';
+      return { text: body.generated_text?.trim() ?? '' };
     },
   };
 }

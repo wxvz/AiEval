@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
-import type { ResolvedLlmSetup } from './types.js';
+import type { LlmCompletion, ResolvedLlmSetup } from './types.js';
 
 let lastCallAt = 0;
 let interCallDelayMutex: Promise<void> = Promise.resolve();
@@ -53,9 +53,9 @@ export interface CompleteContext {
 }
 
 export async function completeWithRetry(
-  fn: () => Promise<string>,
+  fn: () => Promise<LlmCompletion>,
   context: CompleteContext,
-): Promise<string> {
+): Promise<LlmCompletion> {
   let attempt = 0;
 
   while (true) {
@@ -67,7 +67,7 @@ export async function completeWithRetry(
       logEvent('info', LogEvents.llmResponse, {
         ...context,
         durationMs: Date.now() - start,
-        outputLength: result.length,
+        outputLength: result.text.length,
       });
       return result;
     } catch (error) {

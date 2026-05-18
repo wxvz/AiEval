@@ -1,6 +1,6 @@
 import { config } from '../config.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmProvider } from './types.js';
+import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
 
 function toGeminiContents(messages: ChatMessage[]): {
   systemInstruction?: { parts: { text: string }[] };
@@ -49,7 +49,7 @@ export function createGeminiProvider(): LlmProvider {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
       };
 
-      return body.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+      return { text: body.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '' };
     },
   };
 }

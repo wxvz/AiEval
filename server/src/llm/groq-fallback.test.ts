@@ -10,7 +10,7 @@ function mockSetup(
 ): ResolvedLlmSetup {
   return {
     providerName,
-    provider: { name: providerName, complete: async () => '' },
+    provider: { name: providerName, complete: async () => ({ text: '' }) },
     answerModels: answerModels.map((model) => ({ model, label: model })),
     judgeModel: { model: judgeModel, label: judgeModel },
   };

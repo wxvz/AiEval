@@ -30,7 +30,7 @@ describe('chat slow fallback', () => {
 
   const groqProvider: LlmProvider = {
     name: 'groq',
-    complete: async () => 'groq-response',
+    complete: async () => ({ text: 'groq-response' }),
   };
 
   const ollamaSetup: ResolvedLlmSetup = {
@@ -64,14 +64,14 @@ describe('chat slow fallback', () => {
       onCloudProviderSwitch,
     });
 
-    expect(result).toBe('groq-response');
+    expect(result.text).toBe('groq-response');
     expect(onCloudProviderSwitch).toHaveBeenCalledWith(groqSetup);
   });
 
   it('retries locally without a timeout when the user keeps Ollama', async () => {
     const fastLocal: LlmProvider = {
       name: 'ollama',
-      complete: async () => 'local-response',
+      complete: async () => ({ text: 'local-response' }),
     };
     const onPreferLocalProvider = vi.fn();
     let calls = 0;
@@ -98,7 +98,7 @@ describe('chat slow fallback', () => {
       },
     );
 
-    expect(result).toBe('local-response');
+    expect(result.text).toBe('local-response');
     expect(onPreferLocalProvider).toHaveBeenCalled();
   });
 

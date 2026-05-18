@@ -17,9 +17,19 @@ export interface LlmCompleteOptions {
   signal?: AbortSignal;
 }
 
+export interface LlmCompletion {
+  text: string;
+  /** Populated when the provider routes to a different model (e.g. OpenRouter `openrouter/free`). */
+  resolvedModel?: string;
+}
+
 export interface LlmProvider {
   readonly name: ProviderName;
-  complete(model: string, messages: ChatMessage[], options?: LlmCompleteOptions): Promise<string>;
+  complete(
+    model: string,
+    messages: ChatMessage[],
+    options?: LlmCompleteOptions,
+  ): Promise<LlmCompletion>;
 }
 
 export interface ResolvedLlmSetup {

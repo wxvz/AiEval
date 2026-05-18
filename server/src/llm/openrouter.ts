@@ -1,8 +1,14 @@
 import { config } from '../config.js';
+import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmProvider } from './types.js';
+import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+interface OpenRouterChatResponse {
+  model?: string;
+  choices?: { message?: { content?: string } }[];
+}
 
 export function createOpenRouterProvider(): LlmProvider {
   return {
@@ -26,14 +32,17 @@ export function createOpenRouterProvider(): LlmProvider {
       });
 
       if (!response.ok) {
-        throw new Error(`OpenRouter request failed: ${response.status}`);
+        await throwLlmHttpError('OpenRouter request failed', response);
       }
 
-      const body = (await response.json()) as {
-        choices?: { message?: { content?: string } }[];
-      };
+      const body = (await response.json()) as OpenRouterChatResponse;
+      const text = body.choices?.[0]?.message?.content?.trim() ?? '';
+      const resolvedModel =
+        typeof body.model === 'string' && body.model.length > 0 && body.model !== model
+          ? body.model
+          : undefined;
 
-      return body.choices?.[0]?.message?.content?.trim() ?? '';
+      return { text, ...(resolvedModel ? { resolvedModel } : {}) };
     },
   };
 }

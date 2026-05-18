@@ -83,7 +83,8 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
   },
 };
 
-function toLabel(model: string): string {
+/** Short display label for a provider model id (answer cards, progress UI). */
+export function modelIdToLabel(model: string): string {
   const short = model.includes('/') ? (model.split('/').pop() ?? model) : model;
   return short.replace(':free', '').replace(/-instruct$/, '');
 }
@@ -190,7 +191,7 @@ export function resolveModelsForProvider(providerName: ProviderName): {
   const judgeId = resolveJudgeModel(config.llmJudgeModel, providerName, preset.judge);
 
   return {
-    answerModels: answerIds.map((model) => ({ model, label: toLabel(model) })),
-    judgeModel: { model: judgeId, label: toLabel(judgeId) },
+    answerModels: answerIds.map((model) => ({ model, label: modelIdToLabel(model) })),
+    judgeModel: { model: judgeId, label: modelIdToLabel(judgeId) },
   };
 }
