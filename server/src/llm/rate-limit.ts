@@ -4,20 +4,27 @@ import { logEvent } from '../logging/logger.js';
 import type { ResolvedLlmSetup } from './types.js';
 
 let lastCallAt = 0;
+let interCallDelayMutex: Promise<void> = Promise.resolve();
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitInterCallDelay(): Promise<void> {
-  const elapsed = Date.now() - lastCallAt;
-  const wait = config.llmInterCallDelayMs - elapsed;
+  const run = async (): Promise<void> => {
+    const elapsed = Date.now() - lastCallAt;
+    const wait = config.llmInterCallDelayMs - elapsed;
 
-  if (wait > 0) {
-    await delay(wait);
-  }
+    if (wait > 0) {
+      await delay(wait);
+    }
 
-  lastCallAt = Date.now();
+    lastCallAt = Date.now();
+  };
+
+  const slot = interCallDelayMutex.then(run, run);
+  interCallDelayMutex = slot.catch(() => {});
+  await slot;
 }
 
 function isRateLimitError(error: unknown): boolean {

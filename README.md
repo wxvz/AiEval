@@ -130,6 +130,8 @@ cp .env.example .env
 | `OLLAMA_BASE_URL` | Ollama API URL (default: `http://localhost:11434`) |
 | `GROQ_API_KEY` | Groq API key (free tier) |
 | `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_HTTP_REFERER` | Referer sent to OpenRouter (default: `http://localhost:4200`) |
+| `OPENROUTER_APP_TITLE` | App title sent to OpenRouter (default: `AiEval`) |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
 | `LLM_PRESET` | `balanced` or `fast` (default: `balanced`) |

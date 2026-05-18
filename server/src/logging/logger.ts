@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync } from 'node:fs';
+import { appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { config } from '../config.js';
@@ -11,8 +11,41 @@ const LEVEL_ORDER: Record<LogLevel, number> = {
   error: 3,
 };
 
+let logFileWriteQueue: Promise<void> = Promise.resolve();
+let logFileDirReady: Promise<void> | null = null;
+
 function shouldLog(level: LogLevel): boolean {
   return LEVEL_ORDER[level] >= LEVEL_ORDER[config.logLevel];
+}
+
+function ensureLogFileDir(): Promise<void> {
+  if (!config.logFile) {
+    return Promise.resolve();
+  }
+
+  if (!logFileDirReady) {
+    logFileDirReady = mkdir(dirname(config.logFile), { recursive: true }).then(
+      () => undefined,
+      () => undefined,
+    );
+  }
+
+  return logFileDirReady;
+}
+
+function enqueueLogFileWrite(line: string): void {
+  if (!config.logFile) {
+    return;
+  }
+
+  logFileWriteQueue = logFileWriteQueue
+    .then(async () => {
+      await ensureLogFileDir();
+      await appendFile(config.logFile, `${line}\n`, 'utf8');
+    })
+    .catch(() => {
+      // ignore file write errors
+    });
 }
 
 function writeLine(payload: Record<string, unknown>): void {
@@ -22,15 +55,7 @@ function writeLine(payload: Record<string, unknown>): void {
       : JSON.stringify(payload);
 
   process.stdout.write(`${line}\n`);
-
-  if (config.logFile) {
-    try {
-      mkdirSync(dirname(config.logFile), { recursive: true });
-      appendFileSync(config.logFile, `${line}\n`, 'utf8');
-    } catch {
-      // ignore file write errors
-    }
-  }
+  enqueueLogFileWrite(line);
 }
 
 export function logEvent(level: LogLevel, event: LogEventName, context: LogContext = {}): void {

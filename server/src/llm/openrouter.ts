@@ -13,8 +13,8 @@ export function createOpenRouterProvider(): LlmProvider {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${config.openRouterApiKey}`,
-          'HTTP-Referer': 'http://localhost:4200',
-          'X-Title': 'AiEval',
+          'HTTP-Referer': config.openRouterHttpReferer,
+          'X-Title': config.openRouterAppTitle,
         },
         signal: options?.signal,
         body: JSON.stringify({

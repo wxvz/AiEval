@@ -87,10 +87,15 @@ function parseModelList(raw: string): string[] | null {
     return null;
   }
 
-  return trimmed.split(',').map((entry) => {
-    const colon = entry.indexOf(':');
-    return colon >= 0 ? entry.slice(colon + 1).trim() : entry.trim();
-  });
+  const models = trimmed
+    .split(',')
+    .map((entry) => {
+      const colon = entry.indexOf(':');
+      return colon >= 0 ? entry.slice(colon + 1).trim() : entry.trim();
+    })
+    .filter((model) => model.length > 0);
+
+  return models.length > 0 ? models : null;
 }
 
 export function resolveModelsForProvider(providerName: ProviderName): {

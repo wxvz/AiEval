@@ -257,14 +257,17 @@ export class EvaluationService {
     return changed ? updated : undefined;
   }
 
-  private activeAutomation: { evaluationId: string; eventSource: EventSource } | null = null;
-  private automationStoppedByUser = false;
+  private activeAutomation: {
+    evaluationId: string;
+    eventSource: EventSource;
+    runState: { cancelledByUser: boolean };
+  } | null = null;
 
   cancelAutomation(evaluationId: string): void {
     const active = this.activeAutomation;
 
     if (active?.evaluationId === evaluationId) {
-      this.automationStoppedByUser = true;
+      active.runState.cancelledByUser = true;
       active.eventSource.close();
       this.activeAutomation = null;
     }
@@ -297,7 +300,8 @@ export class EvaluationService {
 
     return new Promise((resolve, reject) => {
       const eventSource = new EventSource(url);
-      this.activeAutomation = { evaluationId, eventSource };
+      const runState = { cancelledByUser: false };
+      this.activeAutomation = { evaluationId, eventSource, runState };
       const timeoutMs = 10 * 60 * 1000;
       let settled = false;
       const timeoutId = setTimeout(() => {
@@ -383,8 +387,7 @@ export class EvaluationService {
 
       eventSource.onerror = () => {
         finish(() => {
-          if (this.automationStoppedByUser) {
-            this.automationStoppedByUser = false;
+          if (runState.cancelledByUser) {
             reject(new Error('Automation cancelled.'));
             return;
           }
