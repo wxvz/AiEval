@@ -30,6 +30,7 @@ export const config = {
   llmAnswerModels: process.env['LLM_ANSWER_MODELS'] ?? '',
   llmJudgeModel: process.env['LLM_JUDGE_MODEL'] ?? '',
   llmInterCallDelayMs: Number(process.env['LLM_INTER_CALL_DELAY_MS'] ?? 200),
+  llmConcurrency: Number(process.env['LLM_CONCURRENCY'] ?? 3),
   llmMaxRetries: Number(process.env['LLM_MAX_RETRIES'] ?? 2),
   llmBackoffBaseMs: Number(process.env['LLM_BACKOFF_BASE_MS'] ?? 500),
   logLevel: parseLogLevel(process.env['LOG_LEVEL']),

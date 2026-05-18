@@ -10,17 +10,27 @@ import {
 } from './scores.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
+import { jsonToSentences } from '../format/json-to-sentences.js';
 import { chat, chatJson } from '../llm/chat.js';
+import { mapWithConcurrency } from '../util/concurrency.js';
 import {
   buildImprovedPrompt,
   buildScorePrompt,
+  buildScorePromptContext,
   GENERATE_SYSTEM,
   parseImprovedAnswer,
+  type ScorePromptContext,
 } from '../llm/prompts.js';
+import {
+  clearAutomationRun,
+  isAutomationCancelled,
+  registerAutomationRun,
+} from './run-registry.js';
 import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
 import type {
   AutomationProgressEvent,
   AutomationStep,
+  ChatMessage,
   ProgressCallback,
   ResolvedLlmSetup,
 } from '../llm/types.js';
@@ -41,6 +51,12 @@ export class AutomationError extends Error {
   ) {
     super(message);
     this.name = 'AutomationError';
+  }
+}
+
+function assertNotCancelled(signal: AbortSignal, step: AutomationStep): void {
+  if (isAutomationCancelled(signal)) {
+    throw new AutomationError('Automation cancelled.', step);
   }
 }
 
@@ -83,13 +99,18 @@ function parseScores(
       criterion.maxPoints,
     );
 
+    const notesRaw = match?.notes ?? existingScore?.notes;
+    const notes =
+      notesRaw !== undefined && notesRaw !== null
+        ? jsonToSentences(notesRaw) || undefined
+        : undefined;
+
     return {
       criterionId: criterion.id,
       criterionName: criterion.name,
       points,
       maxPoints: criterion.maxPoints,
-      ...(match?.notes ? { notes: String(match.notes) } : {}),
-      ...(existingScore?.notes && !match?.notes ? { notes: existingScore.notes } : {}),
+      ...(notes ? { notes } : {}),
     };
   });
 }
@@ -101,12 +122,16 @@ async function generateAnswers(
   criteria: RubricCriterion[],
   runId: string,
   onProgress: ProgressCallback,
+  signal: AbortSignal,
 ): Promise<Answer[]> {
-  const answers: Answer[] = [];
   const total = setup.answerModels.length;
+  const generateMessages: ChatMessage[] = [
+    { role: 'system', content: GENERATE_SYSTEM },
+    { role: 'user', content: prompt },
+  ];
 
-  for (let index = 0; index < setup.answerModels.length; index += 1) {
-    const modelRef = setup.answerModels[index];
+  return mapWithConcurrency(setup.answerModels, config.llmConcurrency, async (modelRef, index) => {
+    assertNotCancelled(signal, 'generating');
 
     emit(onProgress, {
       type: 'generating',
@@ -123,15 +148,11 @@ async function generateAnswers(
     });
 
     const start = Date.now();
-    const content = await chat(
-      setup.provider,
-      modelRef.model,
-      [
-        { role: 'system', content: GENERATE_SYSTEM },
-        { role: 'user', content: prompt },
-      ],
-      { runId, evaluationId, step: 'generating' },
-    );
+    const content = await chat(setup.provider, modelRef.model, generateMessages, {
+      runId,
+      evaluationId,
+      step: 'generating',
+    });
 
     const answer: Answer = {
       id: crypto.randomUUID(),
@@ -140,8 +161,6 @@ async function generateAnswers(
       content,
       scores: initialScoresForCriteria(criteria),
     };
-
-    answers.push(answer);
 
     logEvent('info', LogEvents.automationAnswerGenerated, {
       runId,
@@ -153,23 +172,29 @@ async function generateAnswers(
       answerId: answer.id,
     });
     emit(onProgress, { type: 'answer_generated', answerId: answer.id, label: answer.label });
-  }
 
-  return answers;
+    return answer;
+  });
 }
 
 async function scoreAnswers(
   setup: ResolvedLlmSetup,
   evaluationId: string,
-  prompt: string,
+  scoreContext: ScorePromptContext,
   criteria: RubricCriterion[],
   answers: Answer[],
   runId: string,
   onProgress: ProgressCallback,
+  signal: AbortSignal,
 ): Promise<Answer[]> {
-  const scored: Answer[] = [];
+  const judgeSystem: ChatMessage = {
+    role: 'system',
+    content: 'You are a strict evaluation judge. Return JSON only.',
+  };
 
-  for (const answer of answers) {
+  return mapWithConcurrency(answers, config.llmConcurrency, async (answer) => {
+    assertNotCancelled(signal, 'scoring');
+
     emit(onProgress, { type: 'scoring', answerId: answer.id, label: answer.label });
     logEvent('info', LogEvents.automationScoring, {
       runId,
@@ -178,20 +203,13 @@ async function scoreAnswers(
       step: 'scoring',
     });
 
-    const scorePrompt = buildScorePrompt(prompt, criteria, answer);
     const scores = await chatJson(
       setup.provider,
       setup.judgeModel.model,
-      [
-        { role: 'system', content: 'You are a strict evaluation judge. Return JSON only.' },
-        { role: 'user', content: scorePrompt },
-      ],
+      [judgeSystem, { role: 'user', content: buildScorePrompt(scoreContext, answer) }],
       { runId, evaluationId, step: 'scoring' },
       (raw) => parseScores(raw, criteria, answer.scores),
     );
-
-    const updated = { ...answer, scores };
-    scored.push(updated);
 
     const totalPoints = scores.reduce((sum, s) => sum + s.points, 0);
     logEvent('info', LogEvents.automationScored, {
@@ -202,9 +220,9 @@ async function scoreAnswers(
       step: 'scoring',
     });
     emit(onProgress, { type: 'scored', answerId: answer.id, totalPoints });
-  }
 
-  return scored;
+    return { ...answer, scores };
+  });
 }
 
 async function synthesizeImproved(
@@ -216,7 +234,10 @@ async function synthesizeImproved(
   winner: Answer,
   runId: string,
   onProgress: ProgressCallback,
+  signal: AbortSignal,
 ): Promise<ImprovedAnswer> {
+  assertNotCancelled(signal, 'improved');
+
   emit(onProgress, { type: 'improved_generating' });
   logEvent('info', LogEvents.automationImprovedGenerating, {
     runId,
@@ -247,6 +268,7 @@ async function runWithSetup(
   doc: EvaluationDocument,
   runId: string,
   onProgress: ProgressCallback,
+  signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
   const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
@@ -260,15 +282,26 @@ async function runWithSetup(
     throw new AutomationError('At least one rubric criterion is required.', 'scoring');
   }
 
-  const answers = await generateAnswers(setup, evaluationId, prompt, criteria, runId, onProgress);
-  const scored = await scoreAnswers(
+  const scoreContext = buildScorePromptContext(prompt, criteria);
+
+  const answers = await generateAnswers(
     setup,
     evaluationId,
     prompt,
     criteria,
+    runId,
+    onProgress,
+    signal,
+  );
+  const scored = await scoreAnswers(
+    setup,
+    evaluationId,
+    scoreContext,
+    criteria,
     answers,
     runId,
     onProgress,
+    signal,
   );
 
   const winnerResult = pickWinner(scored);
@@ -304,6 +337,7 @@ async function runWithSetup(
     winner,
     runId,
     onProgress,
+    signal,
   );
 
   const now = new Date().toISOString();
@@ -347,6 +381,7 @@ export async function runEvaluationAutomation(options: {
   }
 
   const evaluationId = doc._id.toString();
+  const signal = registerAutomationRun(evaluationId, runId);
 
   logEvent('info', LogEvents.automationStarted, {
     runId,
@@ -356,11 +391,14 @@ export async function runEvaluationAutomation(options: {
   });
 
   if (doc.answers.length > 0 && !force) {
+    clearAutomationRun(evaluationId, runId);
     throw new AutomationError(
       'Evaluation already has answers. Re-run with force=true after confirming.',
       'generating',
     );
   }
+
+  let workingDoc = doc;
 
   if (force && doc.answers.length > 0) {
     await collection.updateOne(
@@ -373,6 +411,7 @@ export async function runEvaluationAutomation(options: {
         $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
       },
     );
+    workingDoc = { ...doc, answers: [] };
   }
 
   let setup = await resolveProvider();
@@ -393,10 +432,8 @@ export async function runEvaluationAutomation(options: {
     judge: setup.judgeModel.model,
   });
 
-  const freshDoc = (await collection.findOne({ _id: evaluationObjectId }))!;
-
   try {
-    return await runWithSetup(setup, freshDoc, runId, onProgress);
+    return await runWithSetup(setup, workingDoc, runId, onProgress, signal);
   } catch (error) {
     if (error instanceof Error && error.message.includes('429')) {
       const fallback = await resolveNextProvider(setup.providerName);
@@ -413,8 +450,7 @@ export async function runEvaluationAutomation(options: {
           to: fallback.providerName,
         });
         setup = fallback;
-        const retryDoc = (await collection.findOne({ _id: evaluationObjectId }))!;
-        return await runWithSetup(setup, retryDoc, runId, onProgress);
+        return await runWithSetup(setup, workingDoc, runId, onProgress, signal);
       }
     }
 
@@ -436,5 +472,7 @@ export async function runEvaluationAutomation(options: {
       message,
     });
     throw new AutomationError(message, 'generating');
+  } finally {
+    clearAutomationRun(evaluationId, runId);
   }
 }

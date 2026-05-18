@@ -13,6 +13,7 @@ export const LogEvents = {
   automationImprovedGenerating: 'automation.improved_generating',
   automationImprovedDone: 'automation.improved_done',
   automationComplete: 'automation.complete',
+  automationCancelled: 'automation.cancelled',
   automationFailed: 'automation.failed',
   llmRequest: 'llm.request',
   llmResponse: 'llm.response',

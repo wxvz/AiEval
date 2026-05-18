@@ -164,6 +164,12 @@ export class EditEvaluationPage {
     // modal dismissed
   }
 
+  protected onStopAutomation(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId);
+    this.automating.set(false);
+    this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
+  }
+
   private async runAutomate(force: boolean): Promise<void> {
     this.automating.set(true);
     this.progressSteps.set(['Starting automation…']);

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { cancelAutomationRun } from '../automation/run-registry.js';
 import { AutomationError, runEvaluationAutomation } from '../automation/run-evaluation.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
@@ -48,18 +49,26 @@ export function createAutomationRouter(): Router {
       }
     };
 
+    const onClientDisconnect = () => {
+      if (!res.writableFinished) {
+        cancelAutomationRun(evaluationId, runId);
+      }
+    };
+
     try {
       if (stream) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         res.flushHeaders?.();
+        req.on('close', onClientDisconnect);
 
         heartbeat = setInterval(() => {
           res.write(': heartbeat\n\n');
         }, HEARTBEAT_MS);
 
         timeout = setTimeout(() => {
+          cancelAutomationRun(evaluationId, runId);
           writeSse(res, { type: 'error', message: 'Automation timed out', step: 'generating' });
           res.end();
         }, AUTOMATE_TIMEOUT_MS);
@@ -92,11 +101,13 @@ export function createAutomationRouter(): Router {
       const message = error instanceof Error ? error.message : 'Automation failed';
       const status = message.includes('not found')
         ? 404
-        : message.includes('force=true')
-          ? 409
-          : message.includes('No LLM provider')
-            ? 503
-            : 502;
+        : message.includes('cancelled')
+          ? 499
+          : message.includes('force=true')
+            ? 409
+            : message.includes('No LLM provider')
+              ? 503
+              : 502;
 
       if (stream) {
         writeSse(res, { type: 'error', message, step });
@@ -118,6 +129,30 @@ export function createAutomationRouter(): Router {
 
   router.get('/:id/automate/stream', (req, res, next) => {
     void handleAutomate(req, res, true).catch(next);
+  });
+
+  router.post('/:id/automate/cancel', (req, res) => {
+    const idParam = req.params['id'];
+    const evaluationIdParam = Array.isArray(idParam) ? idParam[0] : (idParam ?? '');
+    const objectId = parseObjectId(evaluationIdParam);
+
+    if (!objectId) {
+      res.status(400).json({ message: 'Invalid evaluation id' });
+      return;
+    }
+
+    const evaluationId = objectId.toString();
+    const body = req.body as { runId?: string } | undefined;
+    const runId = typeof body?.runId === 'string' ? body.runId : undefined;
+    const cancelled = cancelAutomationRun(evaluationId, runId);
+
+    if (!cancelled) {
+      res.status(404).json({ message: 'No automation run in progress for this evaluation.' });
+      return;
+    }
+
+    logEvent('info', LogEvents.automationCancelled, { evaluationId, runId });
+    res.json({ cancelled: true });
   });
 
   return router;

@@ -81,8 +81,17 @@
       @if (automating()) {
         <div class="card mb-3 border-primary">
           <div class="card-body">
-            <app-loading-spinner />
-            <p class="text-muted small mb-2 mt-2">Generating and scoring answers. This may take a few minutes.</p>
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <app-loading-spinner />
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                (click)="onStopAutomation()"
+              >
+                Stop automation
+              </button>
+            </div>
+            <p class="text-muted small mb-2">Generating and scoring answers. This may take a few minutes.</p>
             <ul class="small mb-0 ps-3">
               @for (step of progressSteps(); track $index) {
                 <li>{{ step }}</li>

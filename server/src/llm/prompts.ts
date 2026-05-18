@@ -1,3 +1,4 @@
+import { jsonToSentences } from '../format/json-to-sentences.js';
 import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluation.js';
 
 export const GENERATE_SYSTEM =
@@ -6,35 +7,52 @@ export const GENERATE_SYSTEM =
 export const JSON_RETRY_SYSTEM =
   'You must respond with valid JSON only. No markdown, no code fences, no explanation outside the JSON object.';
 
-export function buildScorePrompt(
-  prompt: string,
-  criteria: RubricCriterion[],
-  answer: Answer,
-): string {
-  const criteriaLines = criteria
+export function formatCriteriaBlock(criteria: RubricCriterion[]): string {
+  return criteria
     .map(
       (c) =>
         `- id: ${c.id}, name: ${c.name}, maxPoints: ${c.maxPoints}${c.description ? `, description: ${c.description}` : ''}`,
     )
     .join('\n');
+}
 
-  return `You are an evaluation judge. Score this model answer against each rubric criterion.
+export interface ScorePromptContext {
+  header: string;
+  criteriaIds: string[];
+}
+
+export function buildScorePromptContext(
+  prompt: string,
+  criteria: RubricCriterion[],
+): ScorePromptContext {
+  const criteriaIds = criteria.map((c) => c.id);
+
+  return {
+    criteriaIds,
+    header: `You are an evaluation judge. Score each model answer against the rubric.
 
 User prompt:
 ${prompt}
 
 Rubric criteria:
-${criteriaLines}
-
-Model answer (${answer.label}):
-${answer.content}
+${formatCriteriaBlock(criteria)}
 
 Return JSON only:
 {
   "scores": [
     { "criterionId": "<id>", "points": <0 to maxPoints>, "notes": "<optional brief note>" }
   ]
-}`;
+}
+
+Use criterion ids: ${criteriaIds.join(', ')}`,
+  };
+}
+
+export function buildScorePrompt(context: ScorePromptContext, answer: Answer): string {
+  return `${context.header}
+
+Model answer (${answer.label}):
+${answer.content}`;
 }
 
 export function buildImprovedPrompt(
@@ -75,22 +93,41 @@ Return JSON only matching this shape:
 }`;
 }
 
+function readImprovedField(
+  record: Record<string, unknown>,
+  key: keyof ImprovedAnswer,
+): string | undefined {
+  const value = record[key];
+
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = jsonToSentences(value);
+  return text || undefined;
+}
+
 export function parseImprovedAnswer(raw: unknown): ImprovedAnswer {
   if (!raw || typeof raw !== 'object') {
     throw new Error('Invalid improved answer JSON');
   }
 
   const record = raw as Record<string, unknown>;
+  const improved: ImprovedAnswer = {};
 
-  return {
-    ...(typeof record['winningAnswer'] === 'string'
-      ? { winningAnswer: record['winningAnswer'] }
-      : {}),
-    ...(typeof record['strengths'] === 'string' ? { strengths: record['strengths'] } : {}),
-    ...(typeof record['weaknesses'] === 'string' ? { weaknesses: record['weaknesses'] } : {}),
-    ...(typeof record['usefulFromOthers'] === 'string'
-      ? { usefulFromOthers: record['usefulFromOthers'] }
-      : {}),
-    ...(typeof record['finalAnswer'] === 'string' ? { finalAnswer: record['finalAnswer'] } : {}),
-  };
+  for (const key of [
+    'winningAnswer',
+    'strengths',
+    'weaknesses',
+    'usefulFromOthers',
+    'finalAnswer',
+  ] as const) {
+    const text = readImprovedField(record, key);
+
+    if (text) {
+      improved[key] = text;
+    }
+  }
+
+  return improved;
 }

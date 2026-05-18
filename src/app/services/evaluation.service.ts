@@ -257,6 +257,25 @@ export class EvaluationService {
     return changed ? updated : undefined;
   }
 
+  private activeAutomation: { evaluationId: string; eventSource: EventSource } | null = null;
+  private automationStoppedByUser = false;
+
+  cancelAutomation(evaluationId: string): void {
+    const active = this.activeAutomation;
+
+    if (active?.evaluationId === evaluationId) {
+      this.automationStoppedByUser = true;
+      active.eventSource.close();
+      this.activeAutomation = null;
+    }
+
+    void firstValueFrom(
+      this.http.post<{ cancelled: boolean }>(`${API}/${evaluationId}/automate/cancel`, {}),
+    ).catch(() => {
+      // no active server run (already finished or never started)
+    });
+  }
+
   automate(
     evaluationId: string,
     options: { force?: boolean } = {},
@@ -275,8 +294,11 @@ export class EvaluationService {
 
     return new Promise((resolve, reject) => {
       const eventSource = new EventSource(url);
+      this.activeAutomation = { evaluationId, eventSource };
       const timeoutMs = 10 * 60 * 1000;
+      let settled = false;
       const timeoutId = setTimeout(() => {
+        this.activeAutomation = null;
         eventSource.close();
         const message = 'Automation timed out after 10 minutes.';
         if (callbacks?.operationFeedback) {
@@ -286,7 +308,13 @@ export class EvaluationService {
       }, timeoutMs);
 
       const finish = (handler: () => void) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
         clearTimeout(timeoutId);
+        this.activeAutomation = null;
         eventSource.close();
         handler();
       };
@@ -316,7 +344,10 @@ export class EvaluationService {
         if (event.type === 'error') {
           finish(() => {
             const errorMessage = event.message;
-            if (callbacks?.operationFeedback) {
+            if (
+              callbacks?.operationFeedback &&
+              !errorMessage.toLowerCase().includes('cancelled')
+            ) {
               this.feedback.error(errorMessage);
             }
             reject(new Error(errorMessage));
@@ -326,6 +357,12 @@ export class EvaluationService {
 
       eventSource.onerror = () => {
         finish(() => {
+          if (this.automationStoppedByUser) {
+            this.automationStoppedByUser = false;
+            reject(new Error('Automation cancelled.'));
+            return;
+          }
+
           const errorMessage =
             callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
           if (callbacks?.operationFeedback) {
