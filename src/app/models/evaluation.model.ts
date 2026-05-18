@@ -52,6 +52,7 @@ export interface Evaluation {
   answers: Answer[];
   improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
+  automatedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

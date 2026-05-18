@@ -10,7 +10,14 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="onCancel()">Cancel</button>
-        <button type="button" class="btn btn-danger" data-bs-dismiss="modal" (click)="onConfirm()">Delete</button>
+        <button
+          type="button"
+          [class]="'btn ' + confirmClass()"
+          data-bs-dismiss="modal"
+          (click)="onConfirm()"
+        >
+          {{ confirmLabel() }}
+        </button>
       </div>
     </div>
   </div>

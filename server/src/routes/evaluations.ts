@@ -100,6 +100,7 @@ export function createEvaluationsRouter(): Router {
         answers: body.answers ?? existing.answers,
         improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
         winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
+        ...(existing.automatedAt !== undefined ? { automatedAt: existing.automatedAt } : {}),
         createdAt: existing.createdAt,
         updatedAt: new Date().toISOString(),
       };

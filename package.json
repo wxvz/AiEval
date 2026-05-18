@@ -9,7 +9,8 @@
     "build": "ng build",
     "build:server": "tsc -p server/tsconfig.build.json",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "test:server": "vitest run"
   },
   "prettier": {
     "printWidth": 100,

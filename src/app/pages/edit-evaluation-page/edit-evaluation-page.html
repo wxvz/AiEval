@@ -62,10 +62,39 @@
       }
     </div>
     <div class="col-lg-6">
-      <h2 class="h5">Answers</h2>
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <h2 class="h5 mb-0">Answers</h2>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!canAutomate()"
+          (click)="onAutomateClick()"
+        >
+          @if (automating()) {
+            Running automation…
+          } @else {
+            Run automated evaluation
+          }
+        </button>
+      </div>
+
+      @if (automating()) {
+        <div class="card mb-3 border-primary">
+          <div class="card-body">
+            <app-loading-spinner />
+            <p class="text-muted small mb-2 mt-2">Generating and scoring answers. This may take a few minutes.</p>
+            <ul class="small mb-0 ps-3">
+              @for (step of progressSteps(); track $index) {
+                <li>{{ step }}</li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+
       <app-answer-form class="d-block mb-3" (submitted)="onAnswerSubmit($event)" />
       @if (evaluation()!.answers.length === 0) {
-        <app-empty-state title="No answers" message="Add at least one model answer to compare." />
+        <app-empty-state title="No answers" message="Add at least one model answer or run automation." />
       } @else {
         @for (answer of evaluation()!.answers; track answer.id) {
           <app-answer-card [answer]="answer" [criteria]="activeCriteria()" (removeRequested)="removeAnswer($event)" />
@@ -73,4 +102,14 @@
       }
     </div>
   </div>
+
+  <app-confirm-delete-modal
+    modalId="confirmRerunAutomationModal"
+    title="Replace answers?"
+    message="Replace existing answers and re-run automation? Scores, winner, and improved answer will be cleared."
+    confirmLabel="Replace and run"
+    confirmClass="btn-primary"
+    (confirmed)="onRerunConfirmed()"
+    (cancelled)="onRerunCancelled()"
+  />
 }

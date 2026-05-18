@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   Answer,
+  AutomationProgressEvent,
   CriteriaMode,
   CreateAnswerDto,
   CreateCriterionDto,
@@ -254,6 +255,86 @@ export class EvaluationService {
     );
 
     return changed ? updated : undefined;
+  }
+
+  automate(
+    evaluationId: string,
+    options: { force?: boolean } = {},
+    callbacks?: {
+      onProgress?: (event: AutomationProgressEvent) => void;
+      operationFeedback?: OperationFeedback;
+    },
+  ): Promise<Evaluation> {
+    const params = new URLSearchParams();
+
+    if (options.force) {
+      params.set('force', 'true');
+    }
+
+    const url = `${API}/${evaluationId}/automate/stream?${params.toString()}`;
+
+    return new Promise((resolve, reject) => {
+      const eventSource = new EventSource(url);
+      const timeoutMs = 10 * 60 * 1000;
+      const timeoutId = setTimeout(() => {
+        eventSource.close();
+        const message = 'Automation timed out after 10 minutes.';
+        if (callbacks?.operationFeedback) {
+          this.feedback.error(message);
+        }
+        reject(new Error(message));
+      }, timeoutMs);
+
+      const finish = (handler: () => void) => {
+        clearTimeout(timeoutId);
+        eventSource.close();
+        handler();
+      };
+
+      eventSource.onmessage = (messageEvent) => {
+        let event: AutomationProgressEvent;
+
+        try {
+          event = JSON.parse(messageEvent.data as string) as AutomationProgressEvent;
+        } catch {
+          return;
+        }
+
+        callbacks?.onProgress?.(event);
+
+        if (event.type === 'complete') {
+          finish(() => {
+            this.replaceEvaluation(event.evaluation);
+            if (callbacks?.operationFeedback) {
+              this.feedback.success(callbacks.operationFeedback.success);
+            }
+            resolve(event.evaluation);
+          });
+          return;
+        }
+
+        if (event.type === 'error') {
+          finish(() => {
+            const errorMessage = event.message;
+            if (callbacks?.operationFeedback) {
+              this.feedback.error(errorMessage);
+            }
+            reject(new Error(errorMessage));
+          });
+        }
+      };
+
+      eventSource.onerror = () => {
+        finish(() => {
+          const errorMessage =
+            callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
+          if (callbacks?.operationFeedback) {
+            this.feedback.error(errorMessage);
+          }
+          reject(new Error(errorMessage));
+        });
+      };
+    });
   }
 
   setWinner(

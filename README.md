@@ -12,6 +12,7 @@ Create an evaluation from a prompt, add model answers, score each answer against
 - Mark a winning answer.
 - Capture an improved answer after reviewing the comparison.
 - Success and error feedback via toast-style alerts.
+- **Run automated evaluation** — generate answers from free models, auto-score, pick a winner, and draft an improved answer (with live progress).
 
 ## How to use AiEval
 
@@ -38,6 +39,32 @@ Switching back to default criteria uses the built-in rubric for scoring; your cu
 2. In **Answers**, enter a model name (for example, GPT-4) and the model answer.
 3. Click **Add model answer**.
 4. Repeat for each model answer you want to compare.
+
+### Run automated evaluation
+
+1. On the **Edit** page, enter a prompt (required).
+2. Click **Run automated evaluation**.
+3. Watch progress as the server generates three model answers, scores them, picks a winner, and drafts an improved answer.
+4. Open **Compare** to review or edit AI-generated scores (a banner appears when scores were automated).
+5. Open **Improved** to review the synthesized final answer.
+
+If answers already exist, confirm **Replace and run** to clear answers, winner, and improved answer before re-running.
+
+**LLM providers (tried in order):** Ollama (local) → Groq → OpenRouter → Gemini → Hugging Face. Set at least one option in `.env` (see `.env.example`).
+
+**Ollama setup:**
+
+```bash
+brew install ollama
+ollama pull llama3.2:3b
+ollama pull qwen2.5:3b
+ollama pull gemma2:2b
+ollama pull llama3.1:8b
+```
+
+**Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited.
+
+Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set `LOG_PROMPTS=true` and `LOG_LEVEL=debug` to log full prompts locally.
 
 ### Compare and score answers
 
@@ -92,6 +119,16 @@ cp .env.example .env
 | `MONGODB_URI` | MongoDB connection string (required) |
 | `MONGODB_DB_NAME` | Database name (default: `aieval`) |
 | `PORT` | API port (default: `3000`) |
+| `OLLAMA_BASE_URL` | Ollama API URL (default: `http://localhost:11434`) |
+| `GROQ_API_KEY` | Groq API key (free tier) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
+| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`) |
+| `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
+| `LLM_JUDGE_MODEL` | Override judge `provider:model` |
+| `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` (default: `info`) |
+| `LOG_FILE` | Optional path to append NDJSON logs |
 
 ### Run locally
 

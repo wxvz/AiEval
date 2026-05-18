@@ -1,0 +1,77 @@
+import { config } from '../config.js';
+import { LogEvents } from '../logging/events.js';
+import { logEvent } from '../logging/logger.js';
+
+let lastCallAt = 0;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitInterCallDelay(): Promise<void> {
+  const elapsed = Date.now() - lastCallAt;
+  const wait = config.llmInterCallDelayMs - elapsed;
+
+  if (wait > 0) {
+    await delay(wait);
+  }
+
+  lastCallAt = Date.now();
+}
+
+function isRateLimitError(error: unknown): boolean {
+  if (error instanceof Error && error.message.includes('429')) {
+    return true;
+  }
+
+  return false;
+}
+
+export interface CompleteContext {
+  runId?: string;
+  evaluationId?: string;
+  provider?: string;
+  model?: string;
+  step?: string;
+}
+
+export async function completeWithRetry(
+  fn: () => Promise<string>,
+  context: CompleteContext,
+): Promise<string> {
+  let attempt = 0;
+
+  while (true) {
+    await waitInterCallDelay();
+
+    try {
+      const start = Date.now();
+      const result = await fn();
+      logEvent('debug', LogEvents.llmResponse, {
+        ...context,
+        durationMs: Date.now() - start,
+        outputLength: result.length,
+      });
+      return result;
+    } catch (error) {
+      if (isRateLimitError(error) && attempt < config.llmMaxRetries) {
+        const backoff = config.llmBackoffBaseMs * 2 ** attempt;
+        logEvent('warn', LogEvents.llmRateLimit, {
+          ...context,
+          attempt: attempt + 1,
+          backoffMs: backoff,
+        });
+        await delay(backoff);
+        attempt += 1;
+        logEvent('warn', LogEvents.llmRetry, {
+          ...context,
+          attempt,
+          message: error instanceof Error ? error.message : 'Rate limited',
+        });
+        continue;
+      }
+
+      throw error;
+    }
+  }
+}

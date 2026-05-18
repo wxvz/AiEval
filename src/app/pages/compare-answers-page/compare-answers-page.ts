@@ -86,6 +86,8 @@ export class CompareAnswersPage {
 
     return current ? this.evaluationService.getActiveCriteria(current) : [];
   });
+  protected readonly showAutomationBanner = computed(() => !!this.evaluation()?.automatedAt);
+  protected readonly automationBannerDismissed = signal(false);
   protected readonly selectedAnswer = computed(() => {
     const answers = this.evaluation()?.answers ?? [];
 
@@ -147,6 +149,10 @@ export class CompareAnswersPage {
     this.evaluationService.updateAnswer(this.evaluationId, answer.id, {
       scores: upsertCriterionScore(answer.scores, criterion, input.valueAsNumber),
     });
+  }
+
+  protected dismissAutomationBanner(): void {
+    this.automationBannerDismissed.set(true);
   }
 
   protected setWinner(answerId: string): void {
