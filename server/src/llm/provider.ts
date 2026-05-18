@@ -84,6 +84,20 @@ export async function tryResolveGroq(): Promise<ResolvedLlmSetup | null> {
   return tryResolve('groq');
 }
 
+const CLOUD_PROVIDER_ORDER: ProviderName[] = ['groq', 'openrouter', 'gemini', 'huggingface'];
+
+export async function resolveFirstCloudProvider(): Promise<ResolvedLlmSetup | null> {
+  for (const name of CLOUD_PROVIDER_ORDER) {
+    const resolved = await tryResolve(name);
+
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+}
+
 export async function resolveNextProvider(
   current: ProviderName,
 ): Promise<ResolvedLlmSetup | null> {

@@ -112,6 +112,12 @@
     </div>
   </div>
 
+  <app-provider-choice-modal
+    modalId="providerChoiceModal"
+    (useCloud)="onProviderChoiceCloud()"
+    (useLocal)="onProviderChoiceLocal()"
+  />
+
   <app-confirm-delete-modal
     modalId="confirmRerunAutomationModal"
     title="Replace answers?"

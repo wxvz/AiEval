@@ -10,10 +10,10 @@ vi.mock('../logging/logger.js', () => ({
 }));
 
 vi.mock('./provider.js', () => ({
-  tryResolveGroq: vi.fn(),
+  resolveFirstCloudProvider: vi.fn(),
 }));
 
-import { tryResolveGroq } from './provider.js';
+import { resolveFirstCloudProvider } from './provider.js';
 import { chat } from './chat.js';
 import type { LlmProvider, ResolvedLlmSetup } from './types.js';
 
@@ -48,22 +48,57 @@ describe('chat slow fallback', () => {
   };
 
   beforeEach(() => {
-    vi.mocked(tryResolveGroq).mockResolvedValue(groqSetup);
+    vi.mocked(resolveFirstCloudProvider).mockResolvedValue(groqSetup);
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it('retries on Groq when the primary provider exceeds the slow threshold', async () => {
-    const onGroqFallback = vi.fn();
+  it('retries on cloud when the user chooses cloud after a slow local response', async () => {
+    const onCloudProviderSwitch = vi.fn();
 
     const result = await chat(slowProvider, 'llama3.2:3b', [{ role: 'user', content: 'hi' }], {
       currentSetup: ollamaSetup,
-      onGroqFallback,
+      requestProviderChoice: async () => true,
+      onCloudProviderSwitch,
     });
 
     expect(result).toBe('groq-response');
-    expect(onGroqFallback).toHaveBeenCalledWith(groqSetup);
+    expect(onCloudProviderSwitch).toHaveBeenCalledWith(groqSetup);
+  });
+
+  it('retries locally without a timeout when the user keeps Ollama', async () => {
+    const fastLocal: LlmProvider = {
+      name: 'ollama',
+      complete: async () => 'local-response',
+    };
+    const onPreferLocalProvider = vi.fn();
+    let calls = 0;
+
+    const result = await chat(
+      {
+        name: 'ollama',
+        complete: (...args) => {
+          calls += 1;
+
+          if (calls === 1) {
+            return slowProvider.complete(...args);
+          }
+
+          return fastLocal.complete(...args);
+        },
+      },
+      'llama3.2:3b',
+      [{ role: 'user', content: 'hi' }],
+      {
+        currentSetup: ollamaSetup,
+        requestProviderChoice: async () => false,
+        onPreferLocalProvider,
+      },
+    );
+
+    expect(result).toBe('local-response');
+    expect(onPreferLocalProvider).toHaveBeenCalled();
   });
 });

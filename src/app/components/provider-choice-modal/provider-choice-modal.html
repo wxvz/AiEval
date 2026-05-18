@@ -1,0 +1,40 @@
+<div
+  class="modal fade"
+  [id]="modalId()"
+  tabindex="-1"
+  [attr.aria-labelledby]="modalId() + 'Label'"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" [id]="modalId() + 'Label'">Local model is slow</h5>
+      </div>
+      @if (details(); as prompt) {
+        <div class="modal-body">
+          <p class="mb-0">
+            {{ formatProvider(prompt.currentProvider) }} took longer than {{ prompt.elapsedLabel }}.
+            @if (prompt.cloudProvider) {
+              Switch to {{ formatProvider(prompt.cloudProvider) }} for faster results, or keep waiting on
+              {{ formatProvider(prompt.currentProvider) }}?
+            } @else {
+              No cloud API key is configured. Keep waiting on {{ formatProvider(prompt.currentProvider) }}?
+            }
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" (click)="onUseLocal()">
+            Keep using {{ formatProvider(prompt.currentProvider) }}
+          </button>
+          @if (prompt.cloudProvider) {
+            <button type="button" class="btn btn-primary" (click)="onUseCloud()">
+              Use {{ formatProvider(prompt.cloudProvider) }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+</div>

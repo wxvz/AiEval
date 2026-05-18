@@ -34,6 +34,13 @@ export type AutomationStep = 'generating' | 'scoring' | 'improved' | 'provider';
 export type AutomationProgressEvent =
   | { type: 'provider_resolved'; provider: string; models: string[] }
   | { type: 'provider_fallback'; from: string; to: string }
+  | {
+      type: 'slow_provider_prompt';
+      runId: string;
+      currentProvider: string;
+      cloudProvider: string | null;
+      elapsedLabel: string;
+    }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }

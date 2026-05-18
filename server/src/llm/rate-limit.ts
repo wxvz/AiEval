@@ -35,7 +35,13 @@ export interface CompleteContext {
   model?: string;
   step?: string;
   currentSetup?: ResolvedLlmSetup;
-  onGroqFallback?: (groqSetup: ResolvedLlmSetup) => void;
+  skipSlowFallback?: boolean;
+  requestProviderChoice?: (prompt: {
+    currentProvider: string;
+    cloudProvider: string | null;
+  }) => Promise<boolean>;
+  onCloudProviderSwitch?: (cloudSetup: ResolvedLlmSetup) => void;
+  onPreferLocalProvider?: () => void;
 }
 
 export async function completeWithRetry(

@@ -1,11 +1,11 @@
 import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent, logPromptSnippet } from '../logging/logger.js';
-import { isSlowRequestError, resolveGroqModelForCall } from './groq-fallback.js';
+import { isSlowRequestError, resolveProviderModelForCall } from './groq-fallback.js';
 import { completeWithRetry, type CompleteContext } from './rate-limit.js';
 import { JSON_RETRY_SYSTEM } from './prompts.js';
 import { parseJsonText } from './parse-json.js';
-import { tryResolveGroq } from './provider.js';
+import { resolveFirstCloudProvider } from './provider.js';
 import type { ChatMessage, LlmProvider } from './types.js';
 
 export async function chat(
@@ -28,7 +28,9 @@ export async function chat(
   }
 
   const slowSignal =
-    provider.name !== 'groq' ? AbortSignal.timeout(config.llmSlowFallbackMs) : undefined;
+    provider.name === 'ollama' && !context.skipSlowFallback
+      ? AbortSignal.timeout(config.llmSlowFallbackMs)
+      : undefined;
 
   try {
     return await completeWithRetry(
@@ -36,34 +38,60 @@ export async function chat(
       { ...context, provider: provider.name, model },
     );
   } catch (error) {
-    if (!isSlowRequestError(error) || provider.name === 'groq' || !context.currentSetup) {
+    if (
+      !isSlowRequestError(error) ||
+      provider.name !== 'ollama' ||
+      context.skipSlowFallback ||
+      !context.currentSetup ||
+      !context.requestProviderChoice
+    ) {
       throw error;
     }
 
-    const groqSetup = await tryResolveGroq();
-
-    if (!groqSetup) {
-      throw error;
-    }
-
-    const groqModel = resolveGroqModelForCall(context.currentSetup, groqSetup, model);
-    const durationMs = config.llmSlowFallbackMs;
-
-    logEvent('warn', LogEvents.llmSlowFallback, {
-      ...context,
-      from: provider.name,
-      to: 'groq',
-      model,
-      groqModel,
-      durationMs,
-      message: `Request exceeded ${durationMs}ms; retrying on Groq`,
+    const cloudSetup = await resolveFirstCloudProvider();
+    const useCloud = await context.requestProviderChoice({
+      currentProvider: provider.name,
+      cloudProvider: cloudSetup?.providerName ?? null,
     });
 
-    context.onGroqFallback?.(groqSetup);
+    if (useCloud) {
+      if (!cloudSetup) {
+        throw new Error(
+          'No cloud LLM provider configured. Set GROQ_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY, or HUGGINGFACE_API_KEY.',
+        );
+      }
+
+      const cloudModel = resolveProviderModelForCall(context.currentSetup, cloudSetup, model);
+
+      logEvent('warn', LogEvents.llmSlowFallback, {
+        ...context,
+        from: provider.name,
+        to: cloudSetup.providerName,
+        model,
+        cloudModel,
+        durationMs: config.llmSlowFallbackMs,
+        message: 'User chose cloud provider after slow local response',
+      });
+
+      context.onCloudProviderSwitch?.(cloudSetup);
+
+      return completeWithRetry(
+        () => cloudSetup.provider.complete(cloudModel, messages, { json: context.json }),
+        { ...context, provider: cloudSetup.providerName, model: cloudModel },
+      );
+    }
+
+    logEvent('info', LogEvents.llmSlowFallback, {
+      ...context,
+      from: provider.name,
+      message: 'User chose to continue with local provider',
+    });
+
+    context.onPreferLocalProvider?.();
 
     return completeWithRetry(
-      () => groqSetup.provider.complete(groqModel, messages, { json: context.json }),
-      { ...context, provider: 'groq', model: groqModel },
+      () => provider.complete(model, messages, { json: context.json }),
+      { ...context, provider: provider.name, model },
     );
   }
 }

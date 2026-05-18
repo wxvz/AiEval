@@ -281,6 +281,9 @@ export class EvaluationService {
     options: { force?: boolean } = {},
     callbacks?: {
       onProgress?: (event: AutomationProgressEvent) => void;
+      onSlowProviderPrompt?: (
+        event: Extract<AutomationProgressEvent, { type: 'slow_provider_prompt' }>,
+      ) => Promise<boolean>;
       operationFeedback?: OperationFeedback;
     },
   ): Promise<Evaluation> {
@@ -329,6 +332,29 @@ export class EvaluationService {
         }
 
         callbacks?.onProgress?.(event);
+
+        if (event.type === 'slow_provider_prompt') {
+          void (async () => {
+            try {
+              const useCloud = callbacks?.onSlowProviderPrompt
+                ? await callbacks.onSlowProviderPrompt(event)
+                : false;
+
+              await firstValueFrom(
+                this.http.post<{ accepted: boolean }>(
+                  `${API}/${evaluationId}/automate/provider-choice`,
+                  { useCloud, runId: event.runId },
+                ),
+              );
+            } catch {
+              finish(() => {
+                reject(new Error('Could not submit provider choice.'));
+              });
+            }
+          })();
+
+          return;
+        }
 
         if (event.type === 'complete') {
           finish(() => {

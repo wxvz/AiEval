@@ -1,3 +1,5 @@
+import { clearProviderChoice } from './provider-choice.js';
+
 interface ActiveRun {
   runId: string;
   abortController: AbortController;
@@ -29,6 +31,7 @@ export function cancelAutomationRun(evaluationId: string, runId?: string): boole
   }
 
   active.abortController.abort();
+  clearProviderChoice(evaluationId);
   return true;
 }
 

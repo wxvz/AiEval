@@ -8,20 +8,23 @@ export function isSlowRequestError(error: unknown): boolean {
   return error.name === 'TimeoutError' || error.name === 'AbortError';
 }
 
-export function resolveGroqModelForCall(
+export function resolveProviderModelForCall(
   currentSetup: ResolvedLlmSetup,
-  groqSetup: ResolvedLlmSetup,
+  targetSetup: ResolvedLlmSetup,
   model: string,
 ): string {
   const answerIndex = currentSetup.answerModels.findIndex((entry) => entry.model === model);
 
   if (answerIndex >= 0) {
-    return groqSetup.answerModels[answerIndex]?.model ?? groqSetup.answerModels[0]!.model;
+    return targetSetup.answerModels[answerIndex]?.model ?? targetSetup.answerModels[0]!.model;
   }
 
   if (currentSetup.judgeModel.model === model) {
-    return groqSetup.judgeModel.model;
+    return targetSetup.judgeModel.model;
   }
 
-  return groqSetup.judgeModel.model;
+  return targetSetup.judgeModel.model;
 }
+
+/** @deprecated Use resolveProviderModelForCall */
+export const resolveGroqModelForCall = resolveProviderModelForCall;

@@ -3,6 +3,13 @@ import { Evaluation } from './evaluation.model';
 export type AutomationProgressEvent =
   | { type: 'provider_resolved'; provider: string; models: string[] }
   | { type: 'provider_fallback'; from: string; to: string }
+  | {
+      type: 'slow_provider_prompt';
+      runId: string;
+      currentProvider: string;
+      cloudProvider: string | null;
+      elapsedLabel: string;
+    }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }
@@ -19,6 +26,10 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
       return `Using ${event.provider} (${event.models.join(', ')})`;
     case 'provider_fallback':
       return `Switching provider: ${event.from} → ${event.to}`;
+    case 'slow_provider_prompt':
+      return event.cloudProvider
+        ? `Waiting: use ${event.cloudProvider} or keep ${event.currentProvider}?`
+        : `Waiting: keep using ${event.currentProvider}?`;
     case 'generating':
       return `Generating ${event.modelLabel} (${event.index}/${event.total})…`;
     case 'answer_generated':

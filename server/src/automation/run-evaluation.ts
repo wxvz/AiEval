@@ -24,6 +24,7 @@ import {
   parseImprovedAnswer,
   type ScorePromptContext,
 } from '../llm/prompts.js';
+import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
 import {
   clearAutomationRun,
   isAutomationCancelled,
@@ -79,28 +80,44 @@ function createLlmCallContext(
   evaluationId: string,
   onProgress: ProgressCallback,
 ): CompleteContext {
-  let switchedToGroq = false;
-
-  return {
+  let switchedToCloud = false;
+  const ctx: CompleteContext = {
     runId,
     evaluationId,
     currentSetup: setup,
-    onGroqFallback: (groqSetup) => {
-      if (switchedToGroq || setup.providerName === 'groq') {
+    skipSlowFallback: false,
+    requestProviderChoice: async ({ currentProvider, cloudProvider }) => {
+      emit(onProgress, {
+        type: 'slow_provider_prompt',
+        runId,
+        currentProvider,
+        cloudProvider,
+        elapsedLabel: providerChoiceTimeoutLabel(),
+      });
+
+      return waitForProviderChoice(evaluationId, runId);
+    },
+    onCloudProviderSwitch: (cloudSetup) => {
+      if (switchedToCloud || setup.providerName === cloudSetup.providerName) {
         return;
       }
 
-      switchedToGroq = true;
+      switchedToCloud = true;
       const from = setup.providerName;
-      Object.assign(setup, groqSetup);
+      Object.assign(setup, cloudSetup);
       logEvent('warn', LogEvents.automationProviderFallback, {
         runId,
         evaluationId,
-        message: `Fallback from ${from} to groq after slow response`,
+        message: `Switched from ${from} to ${cloudSetup.providerName} after user chose cloud`,
       });
-      emit(onProgress, { type: 'provider_fallback', from, to: 'groq' });
+      emit(onProgress, { type: 'provider_fallback', from, to: cloudSetup.providerName });
+    },
+    onPreferLocalProvider: () => {
+      ctx.skipSlowFallback = true;
     },
   };
+
+  return ctx;
 }
 
 function parseScores(

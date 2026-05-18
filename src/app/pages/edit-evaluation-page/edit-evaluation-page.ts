@@ -1,9 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AnswerCard } from '../../components/answer-card/answer-card';
 import { AnswerForm, AnswerFormValue } from '../../components/answer-form/answer-form';
 import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
+import {
+  ProviderChoiceDetails,
+  ProviderChoiceModal,
+} from '../../components/provider-choice-modal/provider-choice-modal';
 import { CriterionCard } from '../../components/criterion-card/criterion-card';
 import { CriterionForm, CriterionFormValue } from '../../components/criterion-form/criterion-form';
 import { EmptyState } from '../../components/empty-state/empty-state';
@@ -12,7 +16,7 @@ import {
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
-import { automationProgressLabel, CriteriaMode } from '../../models';
+import { automationProgressLabel, AutomationProgressEvent, CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
 declare const bootstrap: {
@@ -33,6 +37,7 @@ declare const bootstrap: {
     EmptyState,
     LoadingSpinner,
     ConfirmDeleteModal,
+    ProviderChoiceModal,
   ],
   templateUrl: './edit-evaluation-page.html',
   styleUrl: './edit-evaluation-page.css',
@@ -40,6 +45,9 @@ declare const bootstrap: {
 export class EditEvaluationPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
+
+  private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
+  private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = signal(false);
@@ -164,6 +172,14 @@ export class EditEvaluationPage {
     // modal dismissed
   }
 
+  protected onProviderChoiceCloud(): void {
+    this.resolveProviderChoice(true);
+  }
+
+  protected onProviderChoiceLocal(): void {
+    this.resolveProviderChoice(false);
+  }
+
   protected onStopAutomation(): void {
     this.evaluationService.cancelAutomation(this.evaluationId);
     this.automating.set(false);
@@ -182,6 +198,7 @@ export class EditEvaluationPage {
           onProgress: (event) => {
             this.progressSteps.update((steps) => [...steps, automationProgressLabel(event)]);
           },
+          onSlowProviderPrompt: (event) => this.promptProviderChoice(event),
           operationFeedback: {
             success: 'Automated evaluation complete.',
             error: 'Automation failed.',
@@ -193,5 +210,45 @@ export class EditEvaluationPage {
     } finally {
       this.automating.set(false);
     }
+  }
+
+  private promptProviderChoice(
+    event: Extract<AutomationProgressEvent, { type: 'slow_provider_prompt' }>,
+  ): Promise<boolean> {
+    const details: ProviderChoiceDetails = {
+      currentProvider: event.currentProvider,
+      cloudProvider: event.cloudProvider,
+      elapsedLabel: event.elapsedLabel,
+    };
+
+    return new Promise((resolve) => {
+      this.pendingProviderChoiceResolve = resolve;
+      const modal = this.providerChoiceModal();
+
+      if (!modal) {
+        resolve(false);
+        return;
+      }
+
+      modal.setDetails(details);
+      const modalElement = document.getElementById('providerChoiceModal');
+
+      if (modalElement) {
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+      } else {
+        resolve(false);
+      }
+    });
+  }
+
+  private resolveProviderChoice(useCloud: boolean): void {
+    const modalElement = document.getElementById('providerChoiceModal');
+
+    if (modalElement) {
+      bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    }
+
+    this.pendingProviderChoiceResolve?.(useCloud);
+    this.pendingProviderChoiceResolve = null;
   }
 }

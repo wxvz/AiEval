@@ -1,5 +1,6 @@
 import { Router } from 'express';
 
+import { submitProviderChoice } from '../automation/provider-choice.js';
 import { cancelAutomationRun } from '../automation/run-registry.js';
 import { AutomationError, runEvaluationAutomation } from '../automation/run-evaluation.js';
 import { LogEvents } from '../logging/events.js';
@@ -129,6 +130,40 @@ export function createAutomationRouter(): Router {
 
   router.get('/:id/automate/stream', (req, res, next) => {
     void handleAutomate(req, res, true).catch(next);
+  });
+
+  router.post('/:id/automate/provider-choice', (req, res) => {
+    const idParam = req.params['id'];
+    const evaluationIdParam = Array.isArray(idParam) ? idParam[0] : (idParam ?? '');
+    const objectId = parseObjectId(evaluationIdParam);
+
+    if (!objectId) {
+      res.status(400).json({ message: 'Invalid evaluation id' });
+      return;
+    }
+
+    const body = req.body as { useCloud?: boolean; runId?: string } | undefined;
+
+    if (typeof body?.useCloud !== 'boolean') {
+      res.status(400).json({ message: 'useCloud (boolean) is required.' });
+      return;
+    }
+
+    const evaluationId = objectId.toString();
+    const runId = typeof body.runId === 'string' ? body.runId : undefined;
+    const accepted = submitProviderChoice(evaluationId, runId, body.useCloud);
+
+    if (!accepted) {
+      res.status(404).json({ message: 'No provider choice is pending for this evaluation.' });
+      return;
+    }
+
+    logEvent('info', LogEvents.llmSlowFallback, {
+      evaluationId,
+      runId,
+      useCloud: body.useCloud,
+    });
+    res.json({ accepted: true });
   });
 
   router.post('/:id/automate/cancel', (req, res) => {
