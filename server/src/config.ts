@@ -32,6 +32,16 @@ function parseLogLevel(value: string | undefined): 'debug' | 'info' | 'warn' | '
   return 'info';
 }
 
+function parseLogFormat(value: string | undefined): 'json' | 'pretty' | 'text' {
+  const format = value?.toLowerCase();
+
+  if (format === 'pretty' || format === 'text') {
+    return format;
+  }
+
+  return 'json';
+}
+
 function parsePreset(value: string | undefined): 'fast' | 'balanced' {
   return value === 'fast' ? 'fast' : 'balanced';
 }
@@ -72,7 +82,7 @@ export const config = {
     max: 60_000,
   }),
   logLevel: parseLogLevel(process.env['LOG_LEVEL']),
-  logFormat: process.env['LOG_FORMAT'] === 'pretty' ? 'pretty' : 'json',
+  logFormat: parseLogFormat(process.env['LOG_FORMAT']),
   logFile: process.env['LOG_FILE'] ?? '',
   logPrompts: process.env['LOG_PROMPTS'] === 'true',
   startupPreflight: process.env['STARTUP_PREFLIGHT'] !== 'false',

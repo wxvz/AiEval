@@ -72,7 +72,7 @@ On macOS, opening the **Ollama** app from Applications also starts the server, s
 
 **Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited.
 
-Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set `LOG_PROMPTS=true` and `LOG_LEVEL=debug` to log full prompts locally.
+Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set `LOG_FORMAT=text` for readable terminal lines like `INFO: Next step: scoring` (the log file stays NDJSON). Set `LOG_PROMPTS=true` and `LOG_LEVEL=debug` to log full prompts locally.
 
 ### Compare and score answers
 
@@ -138,6 +138,7 @@ cp .env.example .env
 | `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
 | `LLM_JUDGE_MODEL` | Override judge `provider:model` |
 | `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` (default: `info`) |
+| `LOG_FORMAT` | `json`, `pretty`, or `text` — `text` prints `LEVEL: message` to the terminal (default: `json`) |
 | `LOG_FILE` | Optional path to append NDJSON logs |
 | `STARTUP_PREFLIGHT` | Print MongoDB and LLM provider status on API boot (default: `true`) |
 

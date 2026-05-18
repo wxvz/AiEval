@@ -75,13 +75,28 @@ function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): voi
 
 const PIPELINE_STEPS = ['generating', 'scoring', 'improved'] as const satisfies readonly AutomationStep[];
 
-function logAutomationStepComplete(completed: (typeof PIPELINE_STEPS)[number]): void {
+function logAutomationStepComplete(
+  completed: (typeof PIPELINE_STEPS)[number],
+  runId: string,
+  evaluationId: string,
+): void {
   const i = PIPELINE_STEPS.indexOf(completed);
   const next = PIPELINE_STEPS[i + 1];
   if (next) {
-    console.log(`Next step: ${next}`);
+    logEvent('info', LogEvents.automationPipelineStep, {
+      runId,
+      evaluationId,
+      completed,
+      nextStep: next,
+      message: `Next step: ${next}`,
+    });
   } else {
-    console.log('Automation complete');
+    logEvent('info', LogEvents.automationPipelineStep, {
+      runId,
+      evaluationId,
+      completed,
+      message: 'Automation complete',
+    });
   }
 }
 
@@ -460,7 +475,7 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
-  logAutomationStepComplete('generating');
+  logAutomationStepComplete('generating', runId, evaluationId);
 
   const scored = await scoreAnswers(
     setup,
@@ -473,7 +488,7 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
-  logAutomationStepComplete('scoring');
+  logAutomationStepComplete('scoring', runId, evaluationId);
 
   const winnerResult = pickWinner(scored);
 
@@ -511,7 +526,7 @@ async function runWithSetup(
     signal,
     llmCtx,
   );
-  logAutomationStepComplete('improved');
+  logAutomationStepComplete('improved', runId, evaluationId);
 
   const now = new Date().toISOString();
   const update = {
