@@ -64,7 +64,7 @@ export async function completeWithRetry(
     try {
       const start = Date.now();
       const result = await fn();
-      logEvent('debug', LogEvents.llmResponse, {
+      logEvent('info', LogEvents.llmResponse, {
         ...context,
         durationMs: Date.now() - start,
         outputLength: result.length,
@@ -88,6 +88,11 @@ export async function completeWithRetry(
         continue;
       }
 
+      logEvent('error', LogEvents.llmCallFailed, {
+        ...context,
+        attempt: attempt + 1,
+        message: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

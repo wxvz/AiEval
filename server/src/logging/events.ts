@@ -17,6 +17,7 @@ export const LogEvents = {
   automationFailed: 'automation.failed',
   llmRequest: 'llm.request',
   llmResponse: 'llm.response',
+  llmCallFailed: 'llm.call_failed',
   llmRetry: 'llm.retry',
   llmRateLimit: 'llm.rate_limit',
   llmSlowFallback: 'llm.slow_fallback',

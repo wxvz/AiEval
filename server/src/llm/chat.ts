@@ -30,7 +30,7 @@ export async function chat(
 ): Promise<string> {
   const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
 
-  logEvent('debug', LogEvents.llmRequest, {
+  logEvent('info', LogEvents.llmRequest, {
     ...context,
     provider: provider.name,
     model,
