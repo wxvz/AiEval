@@ -129,6 +129,14 @@ export class CompareAnswersPage {
     return score?.points ?? null;
   }
 
+  protected onNotesInput(answer: Answer, event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+
+    this.evaluationService.updateAnswer(this.evaluationId, answer.id, {
+      notes: textarea.value,
+    });
+  }
+
   protected onScoreInput(answer: Answer, criterion: RubricCriterion, event: Event): void {
     const input = event.target as HTMLInputElement;
 

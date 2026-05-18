@@ -60,6 +60,20 @@
       </div>
     </div>
 
+    <div class="card mb-4">
+      <div class="card-body">
+        <label class="form-label h6 text-muted mb-2" [for]="'answer-notes-' + answer.id">Notes</label>
+        <textarea
+          [id]="'answer-notes-' + answer.id"
+          class="form-control"
+          rows="3"
+          placeholder="Notes on this answer…"
+          [value]="answer.notes ?? ''"
+          (input)="onNotesInput(answer, $event)"
+        ></textarea>
+      </div>
+    </div>
+
     <h2 class="h5 mb-3">Criteria</h2>
     <div class="vstack gap-3">
       @for (criterion of activeCriteria(); track criterion.id) {

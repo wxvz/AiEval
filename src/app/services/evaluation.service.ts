@@ -228,7 +228,7 @@ export class EvaluationService {
   updateAnswer(
     evaluationId: string,
     answerId: string,
-    partial: Partial<Pick<Answer, 'label' | 'content' | 'scores' | 'isWinner'>>,
+    partial: Partial<Pick<Answer, 'label' | 'content' | 'scores' | 'isWinner' | 'notes'>>,
     operationFeedback?: OperationFeedback,
   ): Answer | undefined {
     let updated: Answer | undefined;
