@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
 import type { ChatMessage, LlmCompleteOptions, LlmProvider } from './types.js';
 
@@ -27,7 +28,7 @@ async function openAiCompatibleComplete(
   });
 
   if (!response.ok) {
-    throw new Error(`LLM request failed: ${response.status}`);
+    await throwLlmHttpError('LLM request failed', response);
   }
 
   const body = (await response.json()) as {

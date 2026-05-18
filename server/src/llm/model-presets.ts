@@ -19,11 +19,19 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
   },
   groq: {
     balanced: {
-      answer: ['llama-3.1-8b-instant', 'gemma2-9b-it', 'llama-3.2-3b'],
+      answer: [
+        'llama-3.1-8b-instant',
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+        'qwen/qwen3-32b',
+      ],
       judge: 'llama-3.3-70b-versatile',
     },
     fast: {
-      answer: ['llama-3.1-8b-instant', 'llama-3.1-8b-instant', 'llama-3.2-3b'],
+      answer: [
+        'llama-3.1-8b-instant',
+        'llama-3.1-8b-instant',
+        'meta-llama/llama-4-scout-17b-16e-instruct',
+      ],
       judge: 'llama-3.1-8b-instant',
     },
   },
