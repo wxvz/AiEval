@@ -101,8 +101,9 @@
           class="form-control"
           rows="3"
           placeholder="Notes on this answer…"
-          [value]="answer.notes ?? ''"
+          [value]="answerNotesValue(answer)"
           (input)="onNotesInput(answer, $event)"
+          (blur)="onNotesBlur(answer, $event)"
         ></textarea>
       </div>
     </div>

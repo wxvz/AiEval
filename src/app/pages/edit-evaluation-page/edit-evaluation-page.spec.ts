@@ -101,4 +101,5 @@ describe('EditEvaluationPage.canDeactivate', () => {
     await expect(result).resolves.toBe(true);
     expect(cancelSpy).toHaveBeenCalledWith('eval-1');
   });
+
 });

@@ -10,12 +10,6 @@ import {
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 @Component({
   selector: 'app-create-evaluation-page',
   imports: [
@@ -82,9 +76,11 @@ export class CreateEvaluationPage {
   }
 
   protected onSubmit(value: EvaluationFormValue): void {
-    void this.createEvaluation(value).then((created) => {
-      void this.router.navigate(['/evaluations', created.id, 'edit']);
-    });
+    void this.createEvaluation(value)
+      .then((created) => {
+        void this.router.navigate(['/evaluations', created.id, 'edit']);
+      })
+      .catch(() => undefined);
   }
 
   protected onGeneratePrompt(): Promise<void> {

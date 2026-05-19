@@ -19,12 +19,6 @@ import {
 } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 @Component({
   selector: 'app-automation-controls',
   imports: [LoadingSpinner, ConfirmDeleteModal, ProviderChoiceModal],

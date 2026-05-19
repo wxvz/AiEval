@@ -8,12 +8,6 @@ import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/im
 import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 @Component({
   selector: 'app-improved-answer-page',
   imports: [

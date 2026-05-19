@@ -15,12 +15,6 @@ import {
 import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 @Component({
   selector: 'app-edit-evaluation-page',
   imports: [

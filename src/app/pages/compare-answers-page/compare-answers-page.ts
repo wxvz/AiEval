@@ -9,12 +9,6 @@ import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 export function upsertCriterionScore(
   scores: Score[],
   criterion: RubricCriterion,
@@ -92,6 +86,7 @@ export class CompareAnswersPage {
   private readonly evaluationService = inject(EvaluationService);
 
   private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+  private readonly answerNotesDrafts = signal<Record<string, string>>({});
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = computed(() =>
@@ -182,11 +177,38 @@ export class CompareAnswersPage {
     return score?.notes?.trim() ? score.notes : null;
   }
 
+  protected answerNotesValue(answer: Answer): string {
+    const draft = this.answerNotesDrafts()[answer.id];
+
+    if (draft !== undefined) {
+      return draft;
+    }
+
+    return answer.notes ?? '';
+  }
+
   protected onNotesInput(answer: Answer, event: Event): void {
-    const textarea = event.target as HTMLTextAreaElement;
+    const value = (event.target as HTMLTextAreaElement).value;
+
+    this.answerNotesDrafts.update((drafts) => ({ ...drafts, [answer.id]: value }));
+  }
+
+  protected onNotesBlur(answer: Answer, event: Event): void {
+    const value = (event.target as HTMLTextAreaElement).value;
+    const persisted = answer.notes ?? '';
+
+    this.answerNotesDrafts.update((drafts) => {
+      const { [answer.id]: _removed, ...rest } = drafts;
+
+      return rest;
+    });
+
+    if (value === persisted) {
+      return;
+    }
 
     this.evaluationService.updateAnswer(this.evaluationId, answer.id, {
-      notes: textarea.value,
+      notes: value,
     });
   }
 
