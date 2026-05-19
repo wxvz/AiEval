@@ -49,10 +49,16 @@ describe('CreateEvaluationPage', () => {
 
     await page['onRunFullAutomation']();
 
-    expect(createSpy).toHaveBeenCalledWith({
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
-    });
+    expect(createSpy).toHaveBeenCalledWith(
+      {
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
     expect(page['createdEvaluationId']()).toBe('eval-new');
     expect(routerNavigate).not.toHaveBeenCalled();
   });

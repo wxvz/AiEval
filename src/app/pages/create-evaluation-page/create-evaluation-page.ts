@@ -9,7 +9,6 @@ import {
 } from '../../components/evaluation-form/evaluation-form';
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
-import { FeedbackService } from '../../services/feedback.service';
 
 declare const bootstrap: {
   Modal: {
@@ -30,7 +29,6 @@ declare const bootstrap: {
 })
 export class CreateEvaluationPage {
   private readonly evaluationService = inject(EvaluationService);
-  private readonly feedback = inject(FeedbackService);
   private readonly router = inject(Router);
 
   private readonly evaluationForm = viewChild(EvaluationForm);
@@ -89,15 +87,15 @@ export class CreateEvaluationPage {
     });
   }
 
-  protected onGeneratePrompt(): void {
+  protected onGeneratePrompt(): Promise<void> {
     const form = this.evaluationForm();
 
     if (!form) {
-      return;
+      return Promise.resolve();
     }
 
     if (this.generatingPrompt() || this.creating() || this.automating()) {
-      return;
+      return Promise.resolve();
     }
 
     this.generatingPrompt.set(true);
@@ -106,7 +104,7 @@ export class CreateEvaluationPage {
       ? Promise.resolve(form.getValue().title)
       : this.evaluationService.generateTitle();
 
-    void titlePromise
+    return titlePromise
       .then((title) => {
         form.setTitle(title);
         return this.evaluationService.generatePrompt(title, {
@@ -123,14 +121,14 @@ export class CreateEvaluationPage {
       });
   }
 
-  protected onRunFullAutomation(): void {
+  protected onRunFullAutomation(): Promise<void> {
     if (this.creating() || this.automating()) {
-      return;
+      return Promise.resolve();
     }
 
     this.creating.set(true);
 
-    void this.createEvaluation({
+    return this.createEvaluation({
       title: AUTOMATION_METADATA_STUB,
       prompt: AUTOMATION_METADATA_STUB,
     })

@@ -40,7 +40,7 @@ export class ImprovedAnswerPage {
   protected readonly hasWinner = computed(
     () =>
       !!this.evaluation()?.winnerAnswerId ||
-      !!this.evaluation()?.answers.some((answer) => answer.isWinner),
+      !!this.evaluation()?.answers?.some((answer) => answer.isWinner),
   );
 
   @HostListener('window:beforeunload', ['$event'])
