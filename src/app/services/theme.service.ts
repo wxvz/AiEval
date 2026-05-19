@@ -27,7 +27,12 @@ export class ThemeService {
     if (stored === 'light' || stored === 'dark') {
       return stored;
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+    if (typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    return 'light';
   }
 
   private apply(theme: Theme): void {
