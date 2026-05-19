@@ -90,6 +90,20 @@ describe('EditEvaluationPage.canDeactivate', () => {
     expect(evaluationService.automatingEvaluationId()).toBe('eval-1');
   });
 
+  it('returns the same promise when canDeactivate is called twice while automating', async () => {
+    evaluationService.automatingEvaluationId.set('eval-1');
+
+    const first = page.canDeactivate();
+    const second = page.canDeactivate();
+
+    expect(first).toBe(second);
+
+    page['onLeaveCancelled']();
+
+    await expect(first).resolves.toBe(false);
+    await expect(second).resolves.toBe(false);
+  });
+
   it('returns a promise that resolves true and cancels automation when user leaves', async () => {
     evaluationService.automatingEvaluationId.set('eval-1');
     const cancelSpy = vi.spyOn(evaluationService, 'cancelAutomation');

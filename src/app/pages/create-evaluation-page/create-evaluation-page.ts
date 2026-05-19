@@ -7,6 +7,7 @@ import {
   EvaluationForm,
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -26,7 +27,7 @@ export class CreateEvaluationPage {
   private readonly router = inject(Router);
 
   private readonly evaluationForm = viewChild(EvaluationForm);
-  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
 
   protected readonly createdEvaluationId = signal<string | null>(null);
   protected readonly generatingPrompt = signal(false);
@@ -63,17 +64,7 @@ export class CreateEvaluationPage {
       return true;
     }
 
-    return new Promise((resolve) => {
-      this.pendingLeaveResolve = resolve;
-      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
-
-      if (modalElement) {
-        bootstrap.Modal.getOrCreateInstance(modalElement).show();
-      } else {
-        this.pendingLeaveResolve?.(false);
-        this.pendingLeaveResolve = null;
-      }
-    });
+    return this.leavePrompt.prompt();
   }
 
   protected onSubmit(value: EvaluationFormValue): void {
@@ -98,7 +89,7 @@ export class CreateEvaluationPage {
     this.generatingPrompt.set(true);
 
     const titlePromise = form.isTitleValid()
-      ? Promise.resolve(form.getValue().title)
+      ? Promise.resolve(form.getValue().title.trim())
       : this.evaluationService.generateTitle();
 
     return titlePromise
@@ -145,13 +136,11 @@ export class CreateEvaluationPage {
       this.evaluationService.cancelAutomation(id);
     }
 
-    this.pendingLeaveResolve?.(true);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.confirmLeave();
   }
 
   protected onLeaveCancelled(): void {
-    this.pendingLeaveResolve?.(false);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.cancelLeave();
   }
 
   private createEvaluation(value: EvaluationFormValue): Promise<Evaluation> {

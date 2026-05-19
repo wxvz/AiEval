@@ -6,6 +6,7 @@ import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confir
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -85,7 +86,7 @@ export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -127,17 +128,7 @@ export class CompareAnswersPage {
       return true;
     }
 
-    return new Promise((resolve) => {
-      this.pendingLeaveResolve = resolve;
-      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
-
-      if (modalElement) {
-        bootstrap.Modal.getOrCreateInstance(modalElement).show();
-      } else {
-        this.pendingLeaveResolve?.(false);
-        this.pendingLeaveResolve = null;
-      }
-    });
+    return this.leavePrompt.prompt();
   }
 
   protected summaryFor(answerId: string) {
@@ -239,12 +230,10 @@ export class CompareAnswersPage {
 
   protected onLeaveConfirmed(): void {
     this.evaluationService.cancelAutomation(this.evaluationId);
-    this.pendingLeaveResolve?.(true);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.confirmLeave();
   }
 
   protected onLeaveCancelled(): void {
-    this.pendingLeaveResolve?.(false);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.cancelLeave();
   }
 }

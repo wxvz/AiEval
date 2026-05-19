@@ -86,6 +86,29 @@ describe('CreateEvaluationPage', () => {
     expect(form!.getValue().prompt).toBe('Generated prompt text for evaluation.');
   });
 
+  it('onGeneratePrompt calls generateTitle when title is whitespace-only', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    form!.form.controls.title.setValue('   ');
+
+    const generateTitleSpy = vi
+      .spyOn(evaluationService, 'generateTitle')
+      .mockResolvedValue('Generated title');
+    const generatePromptSpy = vi
+      .spyOn(evaluationService, 'generatePrompt')
+      .mockResolvedValue('Generated prompt text for evaluation.');
+
+    await page['onGeneratePrompt']();
+
+    expect(generateTitleSpy).toHaveBeenCalled();
+    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', {
+      success: 'Prompt generated.',
+      error: 'Could not generate prompt.',
+    });
+  });
+
   it('onGeneratePrompt uses existing title when valid', async () => {
     const form = page['evaluationForm']();
 

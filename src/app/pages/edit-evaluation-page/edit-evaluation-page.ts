@@ -12,6 +12,7 @@ import {
   EvaluationForm,
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -35,7 +36,7 @@ export class EditEvaluationPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = computed(() =>
@@ -65,17 +66,7 @@ export class EditEvaluationPage {
       return true;
     }
 
-    return new Promise((resolve) => {
-      this.pendingLeaveResolve = resolve;
-      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
-
-      if (modalElement) {
-        bootstrap.Modal.getOrCreateInstance(modalElement).show();
-      } else {
-        this.pendingLeaveResolve?.(false);
-        this.pendingLeaveResolve = null;
-      }
-    });
+    return this.leavePrompt.prompt();
   }
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
@@ -155,12 +146,10 @@ export class EditEvaluationPage {
 
   protected onLeaveConfirmed(): void {
     this.evaluationService.cancelAutomation(this.evaluationId);
-    this.pendingLeaveResolve?.(true);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.confirmLeave();
   }
 
   protected onLeaveCancelled(): void {
-    this.pendingLeaveResolve?.(false);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.cancelLeave();
   }
 }

@@ -5,6 +5,7 @@ import { AutomationControlsComponent } from '../../components/automation-control
 import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/improved-answer-editor';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -24,7 +25,7 @@ export class ImprovedAnswerPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = computed(() =>
@@ -50,17 +51,7 @@ export class ImprovedAnswerPage {
       return true;
     }
 
-    return new Promise((resolve) => {
-      this.pendingLeaveResolve = resolve;
-      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
-
-      if (modalElement) {
-        bootstrap.Modal.getOrCreateInstance(modalElement).show();
-      } else {
-        this.pendingLeaveResolve?.(false);
-        this.pendingLeaveResolve = null;
-      }
-    });
+    return this.leavePrompt.prompt();
   }
 
   protected onSave(improvedAnswer: ImprovedAnswer): void {
@@ -76,12 +67,10 @@ export class ImprovedAnswerPage {
 
   protected onLeaveConfirmed(): void {
     this.evaluationService.cancelAutomation(this.evaluationId);
-    this.pendingLeaveResolve?.(true);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.confirmLeave();
   }
 
   protected onLeaveCancelled(): void {
-    this.pendingLeaveResolve?.(false);
-    this.pendingLeaveResolve = null;
+    this.leavePrompt.cancelLeave();
   }
 }
