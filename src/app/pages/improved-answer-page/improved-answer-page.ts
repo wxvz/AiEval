@@ -57,7 +57,8 @@ export class ImprovedAnswerPage {
       if (modalElement) {
         bootstrap.Modal.getOrCreateInstance(modalElement).show();
       } else {
-        resolve(false);
+        this.pendingLeaveResolve?.(false);
+        this.pendingLeaveResolve = null;
       }
     });
   }

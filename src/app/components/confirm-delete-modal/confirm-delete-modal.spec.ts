@@ -17,22 +17,24 @@ describe('ConfirmDeleteModal', () => {
     fixture.detectChanges();
   });
 
-  it('emits cancelled when the modal is hidden without confirming', () => {
+  it('emits cancelled when the modal is hidden without confirming', async () => {
     const cancelled = vi.fn();
 
     component.cancelled.subscribe(cancelled);
+    await fixture.whenStable();
     fixture.nativeElement.querySelector('.modal')?.dispatchEvent(new Event('hidden.bs.modal'));
 
     expect(cancelled).toHaveBeenCalledTimes(1);
   });
 
-  it('does not emit cancelled after confirm hides the modal', () => {
+  it('does not emit cancelled after confirm hides the modal', async () => {
     const cancelled = vi.fn();
     const confirmed = vi.fn();
 
     component.cancelled.subscribe(cancelled);
     component.confirmed.subscribe(confirmed);
 
+    await fixture.whenStable();
     component.onConfirm();
     fixture.nativeElement.querySelector('.modal')?.dispatchEvent(new Event('hidden.bs.modal'));
 

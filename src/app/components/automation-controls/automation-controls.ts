@@ -29,7 +29,6 @@ export class AutomationControlsComponent {
 
   private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
   private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
-  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
 
   readonly evaluationId = input.required<string>();
   readonly phase = input.required<AutomationPhase>();
@@ -39,7 +38,6 @@ export class AutomationControlsComponent {
   readonly successMessage = input.required<string>();
   readonly errorMessage = input.required<string>();
   readonly buttonClass = input('btn btn-primary btn-sm');
-  readonly confirmLeaveModalId = input<string | undefined>(undefined);
   readonly confirmForceTitle = input.required<string>();
   readonly confirmForceMessage = input.required<string>();
   readonly confirmForceLabel = input('Replace and run');
@@ -98,29 +96,6 @@ export class AutomationControlsComponent {
     () => `providerChoiceModal${this.phase()}${this.evaluationId()}`,
   );
 
-  canDeactivate(): boolean | Promise<boolean> {
-    if (!this.automating()) {
-      return true;
-    }
-
-    const modalId = this.confirmLeaveModalId();
-
-    if (!modalId) {
-      return false;
-    }
-
-    return new Promise((resolve) => {
-      this.pendingLeaveResolve = resolve;
-      const modalElement = document.getElementById(modalId);
-
-      if (modalElement) {
-        bootstrap.Modal.getOrCreateInstance(modalElement).show();
-      } else {
-        resolve(false);
-      }
-    });
-  }
-
   protected onAutomateClick(): void {
     if (!this.canRun()) {
       return;
@@ -145,18 +120,6 @@ export class AutomationControlsComponent {
 
   protected onForceCancelled(): void {
     // modal dismissed
-  }
-
-  protected onLeaveConfirmed(): void {
-    this.evaluationService.cancelAutomation(this.evaluationId());
-    this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
-    this.pendingLeaveResolve?.(true);
-    this.pendingLeaveResolve = null;
-  }
-
-  protected onLeaveCancelled(): void {
-    this.pendingLeaveResolve?.(false);
-    this.pendingLeaveResolve = null;
   }
 
   protected onProviderChoiceCloud(): void {
