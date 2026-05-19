@@ -31,7 +31,15 @@ function parsePhase(value: unknown): AutomationPhase {
   return 'full';
 }
 
+function isStreamClosed(res: import('express').Response): boolean {
+  return res.writableEnded || res.writableFinished;
+}
+
 function writeSse(res: import('express').Response, data: unknown): void {
+  if (isStreamClosed(res)) {
+    return;
+  }
+
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
@@ -81,6 +89,10 @@ export function createAutomationRouter(): Router {
       req.on('close', onClientDisconnect);
 
       heartbeat = setInterval(() => {
+        if (isStreamClosed(res)) {
+          return;
+        }
+
         res.write(': heartbeat\n\n');
       }, HEARTBEAT_MS);
 
