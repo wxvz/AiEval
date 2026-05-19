@@ -158,14 +158,5 @@
     </div>
   }
 
-  <app-confirm-delete-modal
-    modalId="confirmLeaveDuringAutomationModal"
-    title="Leave during automation?"
-    message="Automation is still running. Leaving this page will cancel the run."
-    confirmLabel="Leave"
-    cancelLabel="Stay"
-    confirmClass="btn-warning"
-    (confirmed)="onLeaveConfirmed()"
-    (cancelled)="onLeaveCancelled()"
-  />
+  <app-leave-during-automation [evaluationId]="evaluationId" />
 }

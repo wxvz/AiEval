@@ -1,13 +1,12 @@
-import { Component, computed, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
-import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import {
   EvaluationForm,
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
-import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
+import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -16,8 +15,8 @@ import { EvaluationService } from '../../services/evaluation.service';
   imports: [
     RouterLink,
     EvaluationForm,
-    ConfirmDeleteModal,
     AutomationControlsComponent,
+    LeaveDuringAutomationComponent,
   ],
   templateUrl: './create-evaluation-page.html',
   styleUrl: './create-evaluation-page.css',
@@ -27,17 +26,60 @@ export class CreateEvaluationPage {
   private readonly router = inject(Router);
 
   private readonly evaluationForm = viewChild(EvaluationForm);
-  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
+  private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
   protected readonly createdEvaluationId = signal<string | null>(null);
   protected readonly generatingPrompt = signal(false);
   protected readonly creating = signal(false);
+  private readonly formFieldsVersion = signal(0);
+
+  constructor() {
+    effect((onCleanup) => {
+      const form = this.evaluationForm();
+
+      if (!form) {
+        return;
+      }
+
+      const subscription = form.form.valueChanges.subscribe(() => {
+        this.formFieldsVersion.update((version) => version + 1);
+      });
+
+      this.formFieldsVersion.update((version) => version + 1);
+
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
 
   protected readonly automating = computed(() => {
     const id = this.createdEvaluationId();
 
     return id ? this.evaluationService.isAutomating(id) : false;
   });
+
+  protected readonly hasPartialFormForAutomation = computed(() => {
+    this.formFieldsVersion();
+
+    const form = this.evaluationForm();
+
+    if (!form) {
+      return false;
+    }
+
+    const { title, prompt } = form.getValue();
+    const hasTitle = title.trim().length > 0;
+    const hasPrompt = prompt.trim().length > 0;
+
+    return hasTitle !== hasPrompt;
+  });
+
+  protected readonly canRunFullAutomation = computed(
+    () =>
+      !this.creating() &&
+      !this.automating() &&
+      !this.createdEvaluationId() &&
+      !this.hasPartialFormForAutomation(),
+  );
 
   protected readonly automationComplete = computed(() => {
     const id = this.createdEvaluationId();
@@ -64,7 +106,7 @@ export class CreateEvaluationPage {
       return true;
     }
 
-    return this.leavePrompt.prompt();
+    return this.leaveDuringAutomation()?.prompt() ?? true;
   }
 
   protected onSubmit(value: EvaluationFormValue): void {
@@ -110,16 +152,13 @@ export class CreateEvaluationPage {
   }
 
   protected onRunFullAutomation(): Promise<void> {
-    if (this.creating() || this.automating()) {
+    if (!this.canRunFullAutomation() || this.isPartialFormForAutomation()) {
       return Promise.resolve();
     }
 
     this.creating.set(true);
 
-    return this.createEvaluation({
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
-    })
+    return this.createEvaluation(this.resolveFullAutomationCreateValue())
       .then((created) => {
         this.createdEvaluationId.set(created.id);
       })
@@ -129,18 +168,42 @@ export class CreateEvaluationPage {
       });
   }
 
-  protected onLeaveConfirmed(): void {
-    const id = this.createdEvaluationId();
+  private isPartialFormForAutomation(): boolean {
+    const form = this.evaluationForm();
 
-    if (id) {
-      this.evaluationService.cancelAutomation(id);
+    if (!form) {
+      return false;
     }
 
-    this.leavePrompt.confirmLeave();
+    const { title, prompt } = form.getValue();
+    const hasTitle = title.trim().length > 0;
+    const hasPrompt = prompt.trim().length > 0;
+
+    return hasTitle !== hasPrompt;
   }
 
-  protected onLeaveCancelled(): void {
-    this.leavePrompt.cancelLeave();
+  private resolveFullAutomationCreateValue(): EvaluationFormValue {
+    const form = this.evaluationForm();
+
+    if (!form) {
+      return {
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+      };
+    }
+
+    const { title, prompt } = form.getValue();
+    const trimmedTitle = title.trim();
+    const trimmedPrompt = prompt.trim();
+
+    if (trimmedTitle.length > 0 && trimmedPrompt.length > 0) {
+      return { title: trimmedTitle, prompt: trimmedPrompt };
+    }
+
+    return {
+      title: AUTOMATION_METADATA_STUB,
+      prompt: AUTOMATION_METADATA_STUB,
+    };
   }
 
   private createEvaluation(value: EvaluationFormValue): Promise<Evaluation> {

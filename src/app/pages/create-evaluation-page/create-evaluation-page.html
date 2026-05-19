@@ -4,8 +4,13 @@
 
 <p class="text-muted small mb-2">
   <strong>Generate prompt</strong> fills the title and prompt fields (or uses your title if you entered one).
-  <strong>Run full automation</strong> generates a title and prompt automatically, then runs the full pipeline—fields can be left empty.
+  <strong>Run full automation</strong> uses your title and prompt when both are filled; otherwise it generates them, then runs answers, scoring, and an improved answer.
 </p>
+@if (hasPartialFormForAutomation()) {
+  <p class="text-muted small mb-2">
+    Fill both title and prompt, or leave both empty, before running full automation.
+  </p>
+}
 
 <div class="d-flex flex-wrap gap-2 mb-4">
   <button
@@ -23,7 +28,7 @@
   <button
     type="button"
     class="btn btn-outline-primary btn-sm"
-    [disabled]="creating() || automating() || !!createdEvaluationId()"
+    [disabled]="!canRunFullAutomation()"
     (click)="onRunFullAutomation()"
   >
     @if (creating()) {
@@ -44,7 +49,7 @@
     [hideButton]="true"
     buttonLabel="Run full automation"
     runningLabel="Running full automation…"
-    statusHint="Generating title and prompt, then answers, scores, and an improved answer. This may take a few minutes."
+    statusHint="Running the full pipeline—answers, scores, and an improved answer. This may take a few minutes."
     successMessage="Full automation complete."
     errorMessage="Full automation failed."
     confirmForceTitle="Replace answers?"
@@ -64,13 +69,4 @@
   }
 }
 
-<app-confirm-delete-modal
-  modalId="confirmLeaveDuringAutomationModal"
-  title="Leave during automation?"
-  message="Automation is still running. Leaving this page will cancel the run."
-  confirmLabel="Leave"
-  cancelLabel="Stay"
-  confirmClass="btn-warning"
-  (confirmed)="onLeaveConfirmed()"
-  (cancelled)="onLeaveCancelled()"
-/>
+<app-leave-during-automation [evaluationId]="createdEvaluationId()" />

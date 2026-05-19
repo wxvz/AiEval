@@ -1,7 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
+import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
@@ -9,6 +11,7 @@ import { EditEvaluationPage } from './edit-evaluation-page';
 
 describe('EditEvaluationPage.canDeactivate', () => {
   let page: EditEvaluationPage;
+  let fixture: ComponentFixture<EditEvaluationPage>;
   let evaluationService: EvaluationService;
 
   const evaluation: Evaluation = {
@@ -23,10 +26,6 @@ describe('EditEvaluationPage.canDeactivate', () => {
   };
 
   beforeEach(() => {
-    const modalElement = document.createElement('div');
-    modalElement.id = 'confirmLeaveDuringAutomationModal';
-    document.body.appendChild(modalElement);
-
     vi.stubGlobal('bootstrap', {
       Modal: {
         getOrCreateInstance: () => ({ show: vi.fn(), hide: vi.fn() }),
@@ -51,10 +50,18 @@ describe('EditEvaluationPage.canDeactivate', () => {
     evaluationService = TestBed.inject(EvaluationService);
     evaluationService['evaluationsSignal'].set([evaluation]);
 
-    const fixture = TestBed.createComponent(EditEvaluationPage);
+    fixture = TestBed.createComponent(EditEvaluationPage);
     page = fixture.componentInstance;
     fixture.detectChanges();
   });
+
+  function leaveDuringAutomation(): LeaveDuringAutomationComponent {
+    const debugElement = fixture.debugElement.query(By.directive(LeaveDuringAutomationComponent));
+
+    expect(debugElement).toBeTruthy();
+
+    return debugElement.componentInstance as LeaveDuringAutomationComponent;
+  }
 
   afterEach(() => {
     document.body.innerHTML = '';
@@ -84,7 +91,7 @@ describe('EditEvaluationPage.canDeactivate', () => {
 
     expect(result).toBeInstanceOf(Promise);
 
-    page['onLeaveCancelled']();
+    leaveDuringAutomation()['onLeaveCancelled']();
 
     await expect(result).resolves.toBe(false);
     expect(evaluationService.automatingEvaluationId()).toBe('eval-1');
@@ -98,7 +105,7 @@ describe('EditEvaluationPage.canDeactivate', () => {
 
     expect(first).toBe(second);
 
-    page['onLeaveCancelled']();
+    leaveDuringAutomation()['onLeaveCancelled']();
 
     await expect(first).resolves.toBe(false);
     await expect(second).resolves.toBe(false);
@@ -110,7 +117,7 @@ describe('EditEvaluationPage.canDeactivate', () => {
 
     const result = page.canDeactivate();
 
-    page['onLeaveConfirmed']();
+    leaveDuringAutomation()['onLeaveConfirmed']();
 
     await expect(result).resolves.toBe(true);
     expect(cancelSpy).toHaveBeenCalledWith('eval-1');

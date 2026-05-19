@@ -10,6 +10,7 @@ import { CreateEvaluationPage } from './create-evaluation-page';
 
 describe('CreateEvaluationPage', () => {
   let page: CreateEvaluationPage;
+  let fixture: import('@angular/core/testing').ComponentFixture<CreateEvaluationPage>;
   let evaluationService: EvaluationService;
   let routerNavigate: ReturnType<typeof vi.fn>;
 
@@ -28,12 +29,12 @@ describe('CreateEvaluationPage', () => {
     });
 
     evaluationService = TestBed.inject(EvaluationService);
-    const fixture = TestBed.createComponent(CreateEvaluationPage);
+    fixture = TestBed.createComponent(CreateEvaluationPage);
     page = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it('onRunFullAutomation creates stub evaluation without filling the form', async () => {
+  it('onRunFullAutomation creates stub evaluation when form is empty', async () => {
     const created = {
       id: 'eval-new',
       title: AUTOMATION_METADATA_STUB,
@@ -61,6 +62,58 @@ describe('CreateEvaluationPage', () => {
     );
     expect(page['createdEvaluationId']()).toBe('eval-new');
     expect(routerNavigate).not.toHaveBeenCalled();
+  });
+
+  it('onRunFullAutomation uses form title and prompt when both are filled', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    form!.form.controls.title.setValue('My evaluation');
+    form!.form.controls.prompt.setValue('A detailed prompt for comparing model answers.');
+
+    const created = {
+      id: 'eval-user',
+      title: 'My evaluation',
+      prompt: 'A detailed prompt for comparing model answers.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const createSpy = vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    await page['onRunFullAutomation']();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      {
+        title: 'My evaluation',
+        prompt: 'A detailed prompt for comparing model answers.',
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+    expect(page['createdEvaluationId']()).toBe('eval-user');
+  });
+
+  it('onRunFullAutomation does nothing when only title is filled', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    form!.form.controls.title.setValue('Title only');
+    fixture.detectChanges();
+
+    const createSpy = vi.spyOn(evaluationService, 'create');
+
+    await page['onRunFullAutomation']();
+
+    expect(createSpy).not.toHaveBeenCalled();
+    expect(page['createdEvaluationId']()).toBeNull();
   });
 
   it('onGeneratePrompt chains generateTitle and generatePrompt when title is empty', async () => {

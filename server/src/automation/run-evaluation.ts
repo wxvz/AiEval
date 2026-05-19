@@ -35,8 +35,7 @@ import {
   registerAutomationRun,
 } from './run-registry.js';
 import { modelIdToLabel } from '../llm/model-presets.js';
-import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
-import { generateEvaluationTitle } from '../llm/generate-title.js';
+import { generateEvaluationMetadata } from './metadata.js';
 import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
 import type {
   AutomationPhase,
@@ -668,8 +667,7 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const title = await generateEvaluationTitle();
-  const prompt = await generateEvaluationPrompt(title);
+  const { title, prompt } = await generateEvaluationMetadata();
   const now = new Date().toISOString();
 
   const saved = await persistEvaluation(

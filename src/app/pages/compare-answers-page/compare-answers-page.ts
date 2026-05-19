@@ -1,12 +1,11 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
-import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
+import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
-import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -77,7 +76,7 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
     WinnerBadge,
     EmptyState,
     AutomationControlsComponent,
-    ConfirmDeleteModal,
+    LeaveDuringAutomationComponent,
   ],
   templateUrl: './compare-answers-page.html',
   styleUrl: './compare-answers-page.css',
@@ -86,7 +85,7 @@ export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
+  private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -128,7 +127,7 @@ export class CompareAnswersPage {
       return true;
     }
 
-    return this.leavePrompt.prompt();
+    return this.leaveDuringAutomation()?.prompt() ?? true;
   }
 
   protected summaryFor(answerId: string) {
@@ -228,12 +227,4 @@ export class CompareAnswersPage {
     });
   }
 
-  protected onLeaveConfirmed(): void {
-    this.evaluationService.cancelAutomation(this.evaluationId);
-    this.leavePrompt.confirmLeave();
-  }
-
-  protected onLeaveCancelled(): void {
-    this.leavePrompt.cancelLeave();
-  }
 }

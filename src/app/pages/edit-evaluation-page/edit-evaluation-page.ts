@@ -1,10 +1,9 @@
-import { Component, computed, HostListener, inject } from '@angular/core';
+import { Component, computed, HostListener, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AnswerCard } from '../../components/answer-card/answer-card';
 import { AnswerForm, AnswerFormValue } from '../../components/answer-form/answer-form';
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
-import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { CriterionCard } from '../../components/criterion-card/criterion-card';
 import { CriterionForm, CriterionFormValue } from '../../components/criterion-form/criterion-form';
 import { EmptyState } from '../../components/empty-state/empty-state';
@@ -12,7 +11,7 @@ import {
   EvaluationForm,
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
-import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
+import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -26,8 +25,8 @@ import { EvaluationService } from '../../services/evaluation.service';
     AnswerForm,
     AnswerCard,
     EmptyState,
-    ConfirmDeleteModal,
     AutomationControlsComponent,
+    LeaveDuringAutomationComponent,
   ],
   templateUrl: './edit-evaluation-page.html',
   styleUrl: './edit-evaluation-page.css',
@@ -36,7 +35,7 @@ export class EditEvaluationPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
+  private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly automating = computed(() =>
@@ -66,7 +65,7 @@ export class EditEvaluationPage {
       return true;
     }
 
-    return this.leavePrompt.prompt();
+    return this.leaveDuringAutomation()?.prompt() ?? true;
   }
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
@@ -144,12 +143,4 @@ export class EditEvaluationPage {
     );
   }
 
-  protected onLeaveConfirmed(): void {
-    this.evaluationService.cancelAutomation(this.evaluationId);
-    this.leavePrompt.confirmLeave();
-  }
-
-  protected onLeaveCancelled(): void {
-    this.leavePrompt.cancelLeave();
-  }
 }
