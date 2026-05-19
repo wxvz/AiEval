@@ -8,8 +8,8 @@
       formControlName="title"
       [class.is-invalid]="form.controls.title.touched && form.controls.title.invalid"
     />
-    @if (form.controls.title.touched && form.controls.title.hasError('required')) {
-      <div class="invalid-feedback">Title is required.</div>
+    @if (form.controls.title.touched && form.controls.title.hasError('minlength')) {
+      <div class="invalid-feedback">Title must be at least 3 characters.</div>
     }
   </div>
 

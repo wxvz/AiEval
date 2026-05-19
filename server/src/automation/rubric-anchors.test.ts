@@ -35,6 +35,7 @@ describe('built-in rubric anchors', () => {
     expect(DEFAULT_CRITERIA).toHaveLength(5);
     expect(DEFAULT_CRITERIA[0]?.id).toBe('default-accuracy');
     expect(DEFAULT_CRITERIA[0]?.description).toContain('Fully correct with no misleading claims');
+    expect(DEFAULT_CRITERIA[0]?.description).not.toContain('.;');
     expect(formatAnchorDescription(BUILT_IN_RUBRIC_ANCHORS[0]!.anchors)).toContain('5 =');
   });
 

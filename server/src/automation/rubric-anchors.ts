@@ -86,7 +86,12 @@ export const DEFAULT_RUBRIC_ANCHORS = BUILT_IN_RUBRIC_ANCHORS;
 const BUILT_IN_IDS = new Set<string>(DEFAULT_CRITERION_IDS);
 
 export function formatAnchorDescription(anchors: ReadonlyArray<ParsedAnchor>): string {
-  return anchors.map((anchor) => `${anchor.points} = ${anchor.description}`).join('; ');
+  return anchors
+    .map((anchor) => {
+      const text = anchor.description.replace(/\.\s*$/, '');
+      return `${anchor.points} = ${text}`;
+    })
+    .join('; ');
 }
 
 export function buildDefaultCriteriaFromAnchors(): RubricCriterion[] {

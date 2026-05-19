@@ -29,12 +29,15 @@ export function createGeminiProvider(): LlmProvider {
   return {
     name: 'gemini',
     async complete(model, messages, options) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.geminiApiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const { systemInstruction, contents } = toGeminiContents(messages);
 
       const response = await llmFetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': config.geminiApiKey,
+        },
         signal: options?.signal,
         body: JSON.stringify({
           ...(systemInstruction ? { systemInstruction } : {}),
