@@ -312,6 +312,7 @@ export class EvaluationService {
     runState: { cancelledByUser: boolean };
     runId?: string;
     clearTimer: () => void;
+    abort: () => void;
   } | null = null;
 
   private clearActiveAutomation(): void {
@@ -326,15 +327,13 @@ export class EvaluationService {
       return;
     }
 
+    const { evaluationId, runId, abort } = active;
+
     if (notifyServer) {
       active.runState.cancelledByUser = true;
     }
 
-    active.clearTimer();
-    active.eventSource.close();
-
-    const { evaluationId, runId } = active;
-    this.clearActiveAutomation();
+    abort();
 
     if (notifyServer && runId) {
       void firstValueFrom(
@@ -392,23 +391,9 @@ export class EvaluationService {
         }
       };
 
-      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer };
-      this.automatingEvaluationId.set(evaluationId);
-
-      timeoutId = setTimeout(() => {
-        if (settled) {
-          return;
-        }
-
-        finish(() => {
-          const message = 'Automation timed out after 10 minutes.';
-          callbacks?.onStatus?.('failed');
-          if (callbacks?.operationFeedback) {
-            this.feedback.error(message);
-          }
-          reject(new Error(message));
-        });
-      }, timeoutMs);
+      const runInZone = (handler: () => void): void => {
+        this.ngZone.run(handler);
+      };
 
       const finish = (handler: () => void) => {
         if (settled) {
@@ -426,9 +411,32 @@ export class EvaluationService {
         handler();
       };
 
-      const runInZone = (handler: () => void): void => {
-        this.ngZone.run(handler);
+      const abort = (): void => {
+        runInZone(() => {
+          finish(() => {
+            callbacks?.onStatus?.('cancelled');
+            reject(new Error('Automation cancelled.'));
+          });
+        });
       };
+
+      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer, abort };
+      this.automatingEvaluationId.set(evaluationId);
+
+      timeoutId = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+
+        finish(() => {
+          const message = 'Automation timed out after 10 minutes.';
+          callbacks?.onStatus?.('failed');
+          if (callbacks?.operationFeedback) {
+            this.feedback.error(message);
+          }
+          reject(new Error(message));
+        });
+      }, timeoutMs);
 
       eventSource.onmessage = (messageEvent) => {
         runInZone(() => {

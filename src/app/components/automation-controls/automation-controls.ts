@@ -64,7 +64,7 @@ export class AutomationControlsComponent {
   protected readonly canRun = computed(() => {
     const current = this.evaluation();
 
-    return !!current && !this.automating();
+    return !!current && !this.evaluationService.isAutomating();
   });
 
   protected readonly canRunPhase = computed(() =>
@@ -83,7 +83,7 @@ export class AutomationControlsComponent {
 
       const evaluation = this.evaluation();
 
-      if (!evaluation || !this.canRunPhase() || this.automating()) {
+      if (!evaluation || !this.canRunPhase() || this.evaluationService.isAutomating()) {
         return;
       }
 

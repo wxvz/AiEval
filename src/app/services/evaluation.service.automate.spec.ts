@@ -444,4 +444,140 @@ describe('EvaluationService.automate', () => {
 
     expect(statuses).toEqual(['running', 'cancelled']);
   });
+
+  it('rejects automate() when cancelled and EventSource.close() does not fire onerror', async () => {
+    const runId = 'run-cancel-noop-close';
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // Real browsers often do not invoke onerror after close().
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const automatePromise = service.automate('eval-1');
+    await Promise.resolve();
+
+    service.cancelAutomation('eval-1');
+
+    const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    cancelReq.flush({ cancelled: true });
+
+    await expect(automatePromise).rejects.toThrow('Automation cancelled.');
+    expect(service.automatingEvaluationId()).toBeNull();
+  });
+
+  it('rejects prior automate() on same eval when superseded and close() is a no-op', async () => {
+    const runId = 'run-supersede-noop-close';
+    const instances: MockEventSource[] = [];
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        instances.push(this);
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const firstPromise = service.automate('eval-1');
+    await Promise.resolve();
+
+    const secondPromise = service.automate('eval-1');
+
+    const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    cancelReq.flush({ cancelled: true });
+
+    await expect(firstPromise).rejects.toThrow('Automation cancelled.');
+
+    instances[1].onmessage!({
+      data: JSON.stringify({
+        type: 'complete',
+        status: 'completed',
+        evaluation: { ...evaluation, automatedAt: 'now' },
+      }),
+    } as MessageEvent);
+
+    const result = await secondPromise;
+    expect(result.automatedAt).toBe('now');
+  });
+
+  it('rejects prior automate() on different eval when superseded and close() is a no-op', async () => {
+    const evaluation2: Evaluation = {
+      ...evaluation,
+      id: 'eval-2',
+      title: 'Test 2',
+    };
+    service['evaluationsSignal'].set([evaluation, evaluation2]);
+
+    const runId = 'run-cross-eval';
+    const instances: MockEventSource[] = [];
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        instances.push(this);
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({ type: 'status', status: 'running', runId }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const firstPromise = service.automate('eval-1');
+    await Promise.resolve();
+    expect(service.automatingEvaluationId()).toBe('eval-1');
+
+    const secondPromise = service.automate('eval-2');
+    expect(service.automatingEvaluationId()).toBe('eval-2');
+
+    const cancelReq = httpMock.expectOne('/api/evaluations/eval-1/automate/cancel');
+    cancelReq.flush({ cancelled: true });
+
+    await expect(firstPromise).rejects.toThrow('Automation cancelled.');
+
+    instances[1].onmessage!({
+      data: JSON.stringify({
+        type: 'complete',
+        status: 'completed',
+        evaluation: { ...evaluation2, automatedAt: 'now' },
+      }),
+    } as MessageEvent);
+
+    const result = await secondPromise;
+    expect(result.automatedAt).toBe('now');
+    expect(result.id).toBe('eval-2');
+  });
 });

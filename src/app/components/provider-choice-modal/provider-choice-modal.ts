@@ -6,6 +6,18 @@ export interface ProviderChoiceDetails {
   elapsedLabel: string;
 }
 
+const PROVIDER_LABELS: Record<string, string> = {
+  ollama: 'Ollama',
+  groq: 'Groq',
+  openrouter: 'OpenRouter',
+  gemini: 'Gemini',
+  huggingface: 'Hugging Face',
+};
+
+export function formatProviderLabel(name: string): string {
+  return PROVIDER_LABELS[name] ?? name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 @Component({
   selector: 'app-provider-choice-modal',
   imports: [],
@@ -23,11 +35,7 @@ export class ProviderChoiceModal {
   }
 
   formatProvider(name: string): string {
-    if (name === 'openrouter') {
-      return 'OpenRouter';
-    }
-
-    return name.charAt(0).toUpperCase() + name.slice(1);
+    return formatProviderLabel(name);
   }
 
   onUseCloud(): void {
