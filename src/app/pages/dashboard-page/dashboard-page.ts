@@ -7,12 +7,6 @@ import { EvaluationCard } from '../../components/evaluation-card/evaluation-card
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
 import { EvaluationService } from '../../services/evaluation.service';
 
-declare const bootstrap: {
-  Modal: {
-    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
-  };
-};
-
 @Component({
   selector: 'app-dashboard-page',
   imports: [RouterLink, EvaluationCard, EmptyState, LoadingSpinner, ConfirmDeleteModal],

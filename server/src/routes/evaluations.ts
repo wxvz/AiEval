@@ -1,6 +1,13 @@
 import { Router } from 'express';
+
+import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
+import { generateEvaluationTitle } from '../llm/generate-title.js';
 import { getEvaluationsCollection } from '../db.js';
-import { parseObjectId, toApiEvaluation } from '../serialization.js';
+import {
+  normalizeEvaluationRecord,
+  parseObjectId,
+  toApiEvaluation,
+} from '../serialization.js';
 import type { Evaluation, EvaluationRecord } from '../types/evaluation.js';
 
 export function createEvaluationsRouter(): Router {
@@ -13,6 +20,34 @@ export function createEvaluationsRouter(): Router {
       res.json(evaluations.map(toApiEvaluation));
     } catch (error) {
       next(error);
+    }
+  });
+
+  router.post('/generate-title', async (_req, res, next) => {
+    try {
+      const title = await generateEvaluationTitle();
+      res.json({ title });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate title';
+      res.status(500).json({ message });
+    }
+  });
+
+  router.post('/generate-prompt', async (req, res, next) => {
+    try {
+      const body = req.body as { title?: string } | undefined;
+      const title = body?.title?.trim() ?? '';
+
+      if (title.length < 3) {
+        res.status(400).json({ message: 'title is required (at least 3 characters).' });
+        return;
+      }
+
+      const prompt = await generateEvaluationPrompt(title);
+      res.json({ prompt });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate prompt';
+      res.status(500).json({ message });
     }
   });
 
@@ -92,17 +127,22 @@ export function createEvaluationsRouter(): Router {
       }
 
       const body = req.body as Partial<Evaluation>;
-      const updated: EvaluationRecord = {
-        title: body.title?.trim() ?? existing.title,
-        prompt: body.prompt?.trim() ?? existing.prompt,
-        criteriaMode: body.criteriaMode ?? existing.criteriaMode ?? 'default',
-        criteria: body.criteria ?? existing.criteria,
-        answers: body.answers ?? existing.answers,
-        improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
-        winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
-        createdAt: existing.createdAt,
-        updatedAt: new Date().toISOString(),
-      };
+      const evaluationId = objectId.toString();
+      const updated: EvaluationRecord = normalizeEvaluationRecord(
+        {
+          title: body.title?.trim() ?? existing.title,
+          prompt: body.prompt?.trim() ?? existing.prompt,
+          criteriaMode: body.criteriaMode ?? existing.criteriaMode ?? 'default',
+          criteria: body.criteria ?? existing.criteria,
+          answers: body.answers ?? existing.answers,
+          improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
+          winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
+          ...(existing.automatedAt !== undefined ? { automatedAt: existing.automatedAt } : {}),
+          createdAt: existing.createdAt,
+          updatedAt: new Date().toISOString(),
+        },
+        evaluationId,
+      );
 
       await collection.updateOne({ _id: objectId }, { $set: updated });
       res.json(toApiEvaluation({ _id: objectId, ...updated }));

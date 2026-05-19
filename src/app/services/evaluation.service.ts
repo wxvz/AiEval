@@ -1,9 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import {
   Answer,
+  AutomationPhase,
+  AutomationProgressEvent,
+  AutomationRunStatus,
   CriteriaMode,
   CreateAnswerDto,
   CreateCriterionDto,
@@ -30,6 +33,7 @@ export interface OperationFeedback {
 export class EvaluationService {
   private readonly http = inject(HttpClient);
   private readonly feedback = inject(FeedbackService);
+  private readonly ngZone = inject(NgZone);
 
   private readonly evaluationsSignal = signal<Evaluation[]>([]);
   private readonly loadingSignal = signal(true);
@@ -40,6 +44,14 @@ export class EvaluationService {
   readonly loadError = this.loadErrorSignal.asReadonly();
 
   readonly count = computed(() => this.evaluationsSignal().length);
+
+  readonly automatingEvaluationId = signal<string | null>(null);
+
+  isAutomating(evaluationId?: string): boolean {
+    const id = this.automatingEvaluationId();
+
+    return evaluationId ? id === evaluationId : id !== null;
+  }
 
   loadFromApi(): Promise<void> {
     this.loadingSignal.set(true);
@@ -76,6 +88,44 @@ export class EvaluationService {
     operationFeedback?: OperationFeedback,
   ): Evaluation | undefined {
     return this.update(id, { criteriaMode }, operationFeedback);
+  }
+
+  generateTitle(operationFeedback?: OperationFeedback): Promise<string> {
+    return firstValueFrom(this.http.post<{ title: string }>(`${API}/generate-title`, {}))
+      .then((response) => {
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+        return response.title;
+      })
+      .catch((error) => {
+        if (operationFeedback) {
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
+        }
+        throw new Error(
+          messageFromHttpError(error, operationFeedback?.error ?? 'Could not generate title.'),
+        );
+      });
+  }
+
+  generatePrompt(title: string, operationFeedback?: OperationFeedback): Promise<string> {
+    return firstValueFrom(
+      this.http.post<{ prompt: string }>(`${API}/generate-prompt`, { title: title.trim() }),
+    )
+      .then((response) => {
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+        return response.prompt;
+      })
+      .catch((error) => {
+        if (operationFeedback) {
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
+        }
+        throw new Error(
+          messageFromHttpError(error, operationFeedback?.error ?? 'Could not generate prompt.'),
+        );
+      });
   }
 
   create(dto: CreateEvaluationDto, operationFeedback?: OperationFeedback): Promise<Evaluation> {
@@ -228,7 +278,7 @@ export class EvaluationService {
   updateAnswer(
     evaluationId: string,
     answerId: string,
-    partial: Partial<Pick<Answer, 'label' | 'content' | 'scores' | 'isWinner'>>,
+    partial: Partial<Pick<Answer, 'label' | 'content' | 'scores' | 'isWinner' | 'notes'>>,
     operationFeedback?: OperationFeedback,
   ): Answer | undefined {
     let updated: Answer | undefined;
@@ -254,6 +304,255 @@ export class EvaluationService {
     );
 
     return changed ? updated : undefined;
+  }
+
+  private activeAutomation: {
+    evaluationId: string;
+    eventSource: EventSource;
+    runState: { cancelledByUser: boolean };
+    runId?: string;
+    clearTimer: () => void;
+    abort: () => void;
+  } | null = null;
+
+  private clearActiveAutomation(): void {
+    this.activeAutomation = null;
+    this.automatingEvaluationId.set(null);
+  }
+
+  private disposeActiveAutomation(notifyServer: boolean): void {
+    const active = this.activeAutomation;
+
+    if (!active) {
+      return;
+    }
+
+    const { evaluationId, runId, abort } = active;
+
+    if (notifyServer) {
+      active.runState.cancelledByUser = true;
+    }
+
+    abort();
+
+    if (notifyServer && runId) {
+      void firstValueFrom(
+        this.http.post<{ cancelled: boolean }>(`${API}/${evaluationId}/automate/cancel`, {
+          runId,
+        }),
+      ).catch(() => {
+        // no active server run (already finished or never started)
+      });
+    }
+  }
+
+  cancelAutomation(evaluationId: string): void {
+    if (this.activeAutomation?.evaluationId === evaluationId) {
+      this.disposeActiveAutomation(true);
+    }
+  }
+
+  automate(
+    evaluationId: string,
+    options: { force?: boolean; phase?: AutomationPhase } = {},
+    callbacks?: {
+      onProgress?: (event: AutomationProgressEvent) => void;
+      onStatus?: (status: AutomationRunStatus) => void;
+      onSlowProviderPrompt?: (
+        event: Extract<AutomationProgressEvent, { type: 'slow_provider_prompt' }>,
+      ) => Promise<boolean>;
+      operationFeedback?: OperationFeedback;
+    },
+  ): Promise<Evaluation> {
+    const params = new URLSearchParams();
+
+    if (options.force) {
+      params.set('force', 'true');
+    }
+
+    if (options.phase && options.phase !== 'full') {
+      params.set('phase', options.phase);
+    }
+
+    const url = `${API}/${evaluationId}/automate/stream?${params.toString()}`;
+
+    return new Promise((resolve, reject) => {
+      this.disposeActiveAutomation(true);
+
+      const eventSource = new EventSource(url);
+      const runState = { cancelledByUser: false };
+      const timeoutMs = 10 * 60 * 1000;
+      let settled = false;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const clearTimer = () => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+      };
+
+      const runInZone = (handler: () => void): void => {
+        this.ngZone.run(handler);
+      };
+
+      const finish = (handler: () => void) => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        clearTimer();
+
+        if (this.activeAutomation?.eventSource === eventSource) {
+          this.clearActiveAutomation();
+          eventSource.close();
+        }
+
+        handler();
+      };
+
+      const abort = (): void => {
+        runInZone(() => {
+          finish(() => {
+            callbacks?.onStatus?.('cancelled');
+            reject(new Error('Automation cancelled.'));
+          });
+        });
+      };
+
+      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer, abort };
+      this.automatingEvaluationId.set(evaluationId);
+
+      timeoutId = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+
+        finish(() => {
+          const message = 'Automation timed out after 10 minutes.';
+          callbacks?.onStatus?.('failed');
+          if (callbacks?.operationFeedback) {
+            this.feedback.error(message);
+          }
+          reject(new Error(message));
+        });
+      }, timeoutMs);
+
+      eventSource.onmessage = (messageEvent) => {
+        runInZone(() => {
+          let event: AutomationProgressEvent;
+
+          try {
+            event = JSON.parse(messageEvent.data as string) as AutomationProgressEvent;
+          } catch {
+            return;
+          }
+
+          if ('runId' in event && typeof event.runId === 'string' && this.activeAutomation) {
+            this.activeAutomation.runId = event.runId;
+          }
+
+          if (event.type === 'status') {
+            callbacks?.onStatus?.(event.status);
+            return;
+          }
+
+          if (event.type === 'complete') {
+            try {
+              callbacks?.onProgress?.(event);
+            } finally {
+              finish(() => {
+                callbacks?.onStatus?.('completed');
+                this.replaceEvaluation(event.evaluation);
+                if (callbacks?.operationFeedback) {
+                  this.feedback.success(callbacks.operationFeedback.success);
+                }
+                resolve(event.evaluation);
+              });
+            }
+            return;
+          }
+
+          if (event.type === 'error') {
+            try {
+              callbacks?.onProgress?.(event);
+            } finally {
+              finish(() => {
+                callbacks?.onStatus?.(event.status);
+                const errorMessage = event.message;
+                if (callbacks?.operationFeedback && event.status !== 'cancelled') {
+                  this.feedback.error(errorMessage);
+                }
+                reject(new Error(errorMessage));
+              });
+            }
+            return;
+          }
+
+          callbacks?.onProgress?.(event);
+
+          if (event.type === 'slow_provider_prompt') {
+            void (async () => {
+              const runId = event.runId ?? this.activeAutomation?.runId;
+
+              if (!runId) {
+                finish(() => {
+                  reject(new Error('Could not submit provider choice: missing run id.'));
+                });
+                return;
+              }
+
+              try {
+                const useCloud = callbacks?.onSlowProviderPrompt
+                  ? await this.ngZone.run(() => callbacks.onSlowProviderPrompt!(event))
+                  : false;
+
+                const response = await firstValueFrom(
+                  this.http.post<{ accepted: boolean }>(
+                    `${API}/${evaluationId}/automate/provider-choice`,
+                    { useCloud, runId },
+                  ),
+                );
+
+                if (!response.accepted) {
+                  const message = 'Automation already ended; please run again.';
+                  this.feedback.error(message);
+                  finish(() => {
+                    reject(new Error(message));
+                  });
+                }
+              } catch {
+                finish(() => {
+                  reject(new Error('Could not submit provider choice.'));
+                });
+              }
+            })();
+
+            return;
+          }
+        });
+      };
+
+      eventSource.onerror = () => {
+        runInZone(() => {
+          finish(() => {
+            if (runState.cancelledByUser) {
+              callbacks?.onStatus?.('cancelled');
+              reject(new Error('Automation cancelled.'));
+              return;
+            }
+
+            callbacks?.onStatus?.('failed');
+            const errorMessage =
+              callbacks?.operationFeedback?.error ?? 'Automation connection failed.';
+            if (callbacks?.operationFeedback) {
+              this.feedback.error(errorMessage);
+            }
+            reject(new Error(errorMessage));
+          });
+        });
+      };
+    });
   }
 
   setWinner(

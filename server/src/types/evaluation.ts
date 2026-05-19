@@ -32,6 +32,7 @@ export interface Answer {
   content: string;
   scores: Score[];
   isWinner?: boolean;
+  notes?: string;
 }
 
 export interface Evaluation {
@@ -43,6 +44,7 @@ export interface Evaluation {
   answers: Answer[];
   improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
+  automatedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

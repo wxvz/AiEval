@@ -1,2 +1,76 @@
 <h1 class="h3 mb-4">Create Evaluation</h1>
+
 <app-evaluation-form submitLabel="Create" (submitted)="onSubmit($event)" />
+
+<p class="text-muted small mb-2">
+  <strong>Generate prompt</strong> fills the title and prompt fields (or uses your title if you entered one).
+  <strong>Run full automation</strong> generates a title and prompt automatically, then runs the full pipeline—fields can be left empty.
+</p>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <button
+    type="button"
+    class="btn btn-outline-secondary btn-sm"
+    [disabled]="generatingPrompt() || creating() || automating()"
+    (click)="onGeneratePrompt()"
+  >
+    @if (generatingPrompt()) {
+      Generating prompt…
+    } @else {
+      Generate prompt
+    }
+  </button>
+  <button
+    type="button"
+    class="btn btn-outline-primary btn-sm"
+    [disabled]="creating() || automating() || !!createdEvaluationId()"
+    (click)="onRunFullAutomation()"
+  >
+    @if (creating()) {
+      Creating…
+    } @else if (automating()) {
+      Running full automation…
+    } @else {
+      Run full automation
+    }
+  </button>
+</div>
+
+@if (createdEvaluationId(); as evaluationId) {
+  <app-automation-controls
+    [evaluationId]="evaluationId"
+    phase="full"
+    [autoStart]="true"
+    [hideButton]="true"
+    buttonLabel="Run full automation"
+    runningLabel="Running full automation…"
+    statusHint="Generating title and prompt, then answers, scores, and an improved answer. This may take a few minutes."
+    successMessage="Full automation complete."
+    errorMessage="Full automation failed."
+    confirmForceTitle="Replace answers?"
+    confirmForceMessage="Replace existing answers and re-run full automation? Scores, winner, and improved answer will be cleared."
+    confirmForceLabel="Replace and run"
+  />
+
+  @if (automationComplete()) {
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">
+        Compare answers
+      </a>
+      <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">
+        Edit evaluation
+      </a>
+    </div>
+  }
+}
+
+<app-confirm-delete-modal
+  modalId="confirmLeaveDuringAutomationModal"
+  title="Leave during automation?"
+  message="Automation is still running. Leaving this page will cancel the run."
+  confirmLabel="Leave"
+  cancelLabel="Stay"
+  confirmClass="btn-warning"
+  (confirmed)="onLeaveConfirmed()"
+  (cancelled)="onLeaveCancelled()"
+/>

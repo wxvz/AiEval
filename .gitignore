@@ -9,6 +9,9 @@
 # Environment
 .env
 
+# Server logs (NDJSON)
+/logs/
+
 # Node
 /node_modules
 /server/dist

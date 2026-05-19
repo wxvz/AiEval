@@ -1,9 +1,12 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
+import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -68,7 +71,14 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
 
 @Component({
   selector: 'app-compare-answers-page',
-  imports: [RouterLink, ScoreSummary, WinnerBadge, EmptyState],
+  imports: [
+    RouterLink,
+    ScoreSummary,
+    WinnerBadge,
+    EmptyState,
+    AutomationControlsComponent,
+    ConfirmDeleteModal,
+  ],
   templateUrl: './compare-answers-page.html',
   styleUrl: './compare-answers-page.css',
 })
@@ -76,7 +86,13 @@ export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
+  private readonly answerNotesDrafts = signal<Record<string, string>>({});
+
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
+  protected readonly automating = computed(() =>
+    this.evaluationService.isAutomating(this.evaluationId),
+  );
 
   protected readonly selectedAnswerIndex = signal(0);
 
@@ -86,6 +102,8 @@ export class CompareAnswersPage {
 
     return current ? this.evaluationService.getActiveCriteria(current) : [];
   });
+  protected readonly showAutomationBanner = computed(() => !!this.evaluation()?.automatedAt);
+  protected readonly automationBannerDismissed = signal(false);
   protected readonly selectedAnswer = computed(() => {
     const answers = this.evaluation()?.answers ?? [];
 
@@ -96,6 +114,22 @@ export class CompareAnswersPage {
 
     return normalizeAnswerIndex(this.selectedAnswerIndex(), answerCount);
   });
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.automating()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.automating()) {
+      return true;
+    }
+
+    return this.leavePrompt.prompt();
+  }
 
   protected summaryFor(answerId: string) {
     const answer = this.evaluation()?.answers.find((item) => item.id === answerId);
@@ -129,6 +163,48 @@ export class CompareAnswersPage {
     return score?.points ?? null;
   }
 
+  protected criterionNotesFor(answer: Answer, criterionId: string): string | null {
+    const score = answer.scores.find((item) => item.criterionId === criterionId);
+    const notes = score?.notes?.trim();
+
+    return notes ? notes : null;
+  }
+
+  protected answerNotesValue(answer: Answer): string {
+    const draft = this.answerNotesDrafts()[answer.id];
+
+    if (draft !== undefined) {
+      return draft;
+    }
+
+    return answer.notes ?? '';
+  }
+
+  protected onNotesInput(answer: Answer, event: Event): void {
+    const value = (event.target as HTMLTextAreaElement).value;
+
+    this.answerNotesDrafts.update((drafts) => ({ ...drafts, [answer.id]: value }));
+  }
+
+  protected onNotesBlur(answer: Answer, event: Event): void {
+    const value = (event.target as HTMLTextAreaElement).value;
+    const persisted = answer.notes ?? '';
+
+    this.answerNotesDrafts.update((drafts) => {
+      const { [answer.id]: _removed, ...rest } = drafts;
+
+      return rest;
+    });
+
+    if (value === persisted) {
+      return;
+    }
+
+    this.evaluationService.updateAnswer(this.evaluationId, answer.id, {
+      notes: value,
+    });
+  }
+
   protected onScoreInput(answer: Answer, criterion: RubricCriterion, event: Event): void {
     const input = event.target as HTMLInputElement;
 
@@ -141,10 +217,23 @@ export class CompareAnswersPage {
     });
   }
 
+  protected dismissAutomationBanner(): void {
+    this.automationBannerDismissed.set(true);
+  }
+
   protected setWinner(answerId: string): void {
     this.evaluationService.setWinner(this.evaluationId, answerId, {
       success: 'Winner marked.',
       error: 'Could not mark winner.',
     });
+  }
+
+  protected onLeaveConfirmed(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId);
+    this.leavePrompt.confirmLeave();
+  }
+
+  protected onLeaveCancelled(): void {
+    this.leavePrompt.cancelLeave();
   }
 }

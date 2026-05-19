@@ -12,6 +12,7 @@ Create an evaluation from a prompt, add model answers, score each answer against
 - Mark a winning answer.
 - Capture an improved answer after reviewing the comparison.
 - Success and error feedback via toast-style alerts.
+- **Run automated evaluation** — generate answers from free models, auto-score, pick a winner, and draft an improved answer (with live progress).
 
 ## How to use AiEval
 
@@ -38,6 +39,60 @@ Switching back to default criteria uses the built-in rubric for scoring; your cu
 2. In **Answers**, enter a model name (for example, GPT-4) and the model answer.
 3. Click **Add model answer**.
 4. Repeat for each model answer you want to compare.
+
+### Run automated evaluation
+
+1. On the **Edit** page, enter a prompt (required).
+2. Click **Run automated evaluation**.
+3. Watch live SSE progress as the server generates three model answers, scores them, picks a winner, and drafts an improved answer.
+4. Open **Compare** to review or edit AI-generated scores (a banner appears when scores were automated).
+5. Open **Improved** to review the synthesized final answer.
+
+If answers already exist, confirm **Replace and run** to clear answers, winner, and improved answer before re-running.
+
+**LLM providers (tried in order):** Ollama (local) → Groq → OpenRouter → Gemini → Hugging Face. Set at least one option in `.env` (see `.env.example`).
+
+**Ollama setup:**
+
+```bash
+brew install ollama
+ollama serve          # keep this running (API at http://localhost:11434)
+```
+
+In another terminal, pull the models:
+
+```bash
+ollama pull llama3.2:3b
+ollama pull qwen2.5:3b
+ollama pull gemma2:2b
+ollama pull llama3.1:8b   # judge (balanced preset)
+```
+
+On macOS, opening the **Ollama** app from Applications also starts the server, so you may not need a separate `ollama serve` terminal.
+
+**Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited. For OpenRouter free-tier judging issues, see **OpenRouter free tier and judging** below.
+
+#### OpenRouter free tier and judging
+
+As observed in May 2026 when using OpenRouter’s free tier (especially `openrouter/free`):
+
+**Shared quota.** `openrouter/free` and OpenRouter `:free` models share account rate limits across answer generation, batch scoring (judging), ranking, and improved-answer steps.
+
+**Why judging often fails first.** Scoring is one batch LLM call that sends every answer plus the full rubric in a single prompt (not one call per answer). After three answer-generation calls, that judge request is large and often returns `429 — Provider returned error` immediately. Retries with the default backoff (`LLM_MAX_RETRIES=2`, `LLM_BACKOFF_BASE_MS=500`) may then surface `404 — Provider returned error`, an empty body, or `Unexpected end of JSON input`. Generate-only runs can succeed while score-only runs fail the same way if quota was already used.
+
+**Symptoms in logs.** Look in `LOG_FILE` for `llm.rate_limit` or `OpenRouter request failed: 429` with `step: scoring`.
+
+**Mitigations.**
+
+- Set `LLM_CONCURRENCY=1` for `openrouter/free` (parallel answer calls burn quota quickly).
+- Wait a few minutes between **Generate** and **Score** if you run phases separately.
+- Raise `LLM_INTER_CALL_DELAY_MS` (e.g. `1000`–`2000`) and optionally `LLM_MAX_RETRIES` / `LLM_BACKOFF_BASE_MS`.
+- Use `LLM_PRESET=fast`, or remove `openrouter/free` overrides so defaults apply: named `:free` answer models plus `meta-llama/llama-3.3-70b-instruct:free` for the judge (see `server/src/llm/model-presets.ts`).
+- Add a second provider key (Groq or Gemini) so a run-level 429 can fall back to another cloud provider.
+
+This reflects upstream OpenRouter limits, not an AiEval bug: the server retries 429s but cannot bypass hard caps when only one provider is configured.
+
+Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set `LOG_FORMAT=text` for readable terminal lines like `INFO: Next step: scoring` (the log file stays NDJSON). Set `LOG_PROMPTS=true` and `LOG_LEVEL=debug` to log full prompts locally.
 
 ### Compare and score answers
 
@@ -92,6 +147,26 @@ cp .env.example .env
 | `MONGODB_URI` | MongoDB connection string (required) |
 | `MONGODB_DB_NAME` | Database name (default: `aieval`) |
 | `PORT` | API port (default: `3000`) |
+| `OLLAMA_BASE_URL` | Ollama API URL (default: `http://localhost:11434`) |
+| `GROQ_API_KEY` | Groq API key (free tier) |
+| `OPENROUTER_API_KEY` | OpenRouter API key |
+| `OPENROUTER_HTTP_REFERER` | Referer sent to OpenRouter (default: `http://localhost:4200`) |
+| `OPENROUTER_APP_TITLE` | App title sent to OpenRouter (default: `AiEval`) |
+| `GEMINI_API_KEY` | Google Gemini API key |
+| `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
+| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`) |
+| `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
+| `LLM_JUDGE_MODEL` | Override judge as `provider:model` (e.g. `openrouter:meta-llama/llama-3.3-70b-instruct:free`). Ignored if the provider does not match the active automation provider. |
+| `LLM_CONCURRENCY` | Max parallel answer-generation calls (default: `3`). Use `1` for OpenRouter free / `openrouter/free`. |
+| `LLM_INTER_CALL_DELAY_MS` | Minimum gap between LLM calls in ms (default: `200`) |
+| `LLM_MAX_RETRIES` | Retries on HTTP 429 before failing (default: `2`) |
+| `LLM_BACKOFF_BASE_MS` | Base backoff for 429 retries in ms (default: `500`) |
+| `LLM_REQUEST_TIMEOUT_MS` | Per-request fetch timeout in ms (default: `900000`) |
+| `LLM_SLOW_FALLBACK_MS` | After this many ms on Ollama, the UI offers switching to a cloud provider (default: `180000`) |
+| `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` (default: `info`) |
+| `LOG_FORMAT` | `json`, `pretty`, or `text` — `text` prints `LEVEL: message` to the terminal (default: `json`) |
+| `LOG_FILE` | Optional path to append NDJSON logs |
+| `STARTUP_PREFLIGHT` | Print MongoDB and LLM provider status on API boot (default: `true`) |
 
 ### Run locally
 
@@ -110,6 +185,8 @@ npm start
 
 - Frontend: [http://localhost:4200/](http://localhost:4200/) (proxies `/api` to the backend)
 - API: [http://localhost:3000/api](http://localhost:3000/api)
+
+On startup, the API prints a checklist of MongoDB and LLM provider readiness (Ollama reachability, cloud API keys, and which provider automation would use). Set `STARTUP_PREFLIGHT=false` to skip this probe.
 
 Evaluations are stored in the `evaluations` collection. The API creates an index on `updatedAt` when it connects.
 

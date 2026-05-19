@@ -1,0 +1,73 @@
+<div class="automation-controls">
+  @if (!hideButton()) {
+    <button
+      type="button"
+      [class]="buttonClass()"
+      [disabled]="!canRun() || !canRunPhase()"
+      (click)="onAutomateClick()"
+    >
+      @if (automating()) {
+        {{ runningLabel() }}
+      } @else {
+        {{ buttonLabel() }}
+      }
+    </button>
+  }
+
+  @if (showAutomationStatus()) {
+    <div
+      class="card mt-3"
+      [class.border-primary]="automating()"
+      [class.border-success]="automationOutcome().status === 'completed'"
+      [class.border-danger]="automationOutcome().status === 'failed' || automationOutcome().status === 'cancelled'"
+    >
+      <div class="card-body">
+        @if (automating()) {
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <app-loading-spinner />
+            <button type="button" class="btn btn-outline-danger btn-sm" (click)="onStopAutomation()">
+              Stop automation
+            </button>
+          </div>
+          <p class="text-muted small mb-2">{{ statusHint() }}</p>
+        } @else if (automationOutcome().status === 'completed') {
+          <p class="text-success small mb-2">Automation finished successfully.</p>
+        } @else if (automationOutcome().status === 'cancelled') {
+          <p class="text-danger small mb-2">Automation was cancelled.</p>
+        } @else if (automationOutcome().status === 'failed') {
+          <p class="text-danger small mb-2">Automation did not complete.</p>
+        }
+        <ul class="small mb-0 ps-3">
+          @for (step of progressSteps(); track $index) {
+            <li>{{ step }}</li>
+          }
+        </ul>
+        @if (!automating() && automationOutcome().status !== 'idle') {
+          <button
+            type="button"
+            class="btn btn-outline-secondary btn-sm mt-3"
+            (click)="onDismissAutomationStatus()"
+          >
+            Dismiss
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <app-provider-choice-modal
+    [modalId]="providerChoiceModalId()"
+    (useCloud)="onProviderChoiceCloud()"
+    (useLocal)="onProviderChoiceLocal()"
+  />
+
+  <app-confirm-delete-modal
+    [modalId]="confirmForceModalId()"
+    [title]="confirmForceTitle()"
+    [message]="confirmForceMessage()"
+    [confirmLabel]="confirmForceLabel()"
+    confirmClass="btn-primary"
+    (confirmed)="onForceConfirmed()"
+    (cancelled)="onForceCancelled()"
+  />
+</div>

@@ -1,6 +1,10 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand fw-semibold" routerLink="/">AiEval</a>
+    @if (automating()) {
+      <span class="navbar-brand fw-semibold disabled" aria-disabled="true">AiEval</span>
+    } @else {
+      <a class="navbar-brand fw-semibold" routerLink="/">AiEval</a>
+    }
     <button
       class="navbar-toggler"
       type="button"
@@ -15,15 +19,27 @@
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-            Dashboard
-          </a>
+          @if (automating()) {
+            <span class="nav-link disabled" aria-disabled="true">Dashboard</span>
+          } @else {
+            <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+              Dashboard
+            </a>
+          }
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/evaluations/new" routerLinkActive="active">New Evaluation</a>
+          @if (automating()) {
+            <span class="nav-link disabled" aria-disabled="true">New Evaluation</span>
+          } @else {
+            <a class="nav-link" routerLink="/evaluations/new" routerLinkActive="active">New Evaluation</a>
+          }
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/about" routerLinkActive="active">About</a>
+          @if (automating()) {
+            <span class="nav-link disabled" aria-disabled="true">About</span>
+          } @else {
+            <a class="nav-link" routerLink="/about" routerLinkActive="active">About</a>
+          }
         </li>
       </ul>
     </div>

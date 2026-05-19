@@ -3,7 +3,12 @@ import express from 'express';
 
 import { assertConfig, config } from './config.js';
 import { closeDb, connectDb } from './db.js';
+import { LogEvents } from './logging/events.js';
+import { logEvent } from './logging/logger.js';
+import { requestLogger } from './middleware/request-logger.js';
+import { createAutomationRouter } from './routes/automation.js';
 import { createEvaluationsRouter } from './routes/evaluations.js';
+import { runStartupPreflight } from './startup/preflight.js';
 
 assertConfig();
 
@@ -11,6 +16,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
+app.use(requestLogger);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -18,7 +24,9 @@ app.get('/api/health', (_req, res) => {
 
 async function start(): Promise<void> {
   await connectDb();
+  await runStartupPreflight();
 
+  app.use('/api/evaluations', createAutomationRouter());
   app.use('/api/evaluations', createEvaluationsRouter());
 
   app.use(
@@ -28,7 +36,7 @@ async function start(): Promise<void> {
       res: express.Response,
       _next: express.NextFunction,
     ) => {
-      console.error(error);
+      logEvent('error', LogEvents.httpError, { message: error.message, stack: error.stack });
       res.status(500).json({ message: 'Internal server error' });
     },
   );

@@ -1,14 +1,23 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, HostListener, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
+import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/improved-answer-editor';
+import { LeaveDuringAutomationPrompt } from '../../guards/leave-during-automation-prompt';
 import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
 
 @Component({
   selector: 'app-improved-answer-page',
-  imports: [RouterLink, ImprovedAnswerEditor, EmptyState],
+  imports: [
+    RouterLink,
+    ImprovedAnswerEditor,
+    EmptyState,
+    AutomationControlsComponent,
+    ConfirmDeleteModal,
+  ],
   templateUrl: './improved-answer-page.html',
   styleUrl: './improved-answer-page.css',
 })
@@ -16,9 +25,34 @@ export class ImprovedAnswerPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
-  protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
+  private readonly leavePrompt = new LeaveDuringAutomationPrompt();
 
+  protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
+  protected readonly automating = computed(() =>
+    this.evaluationService.isAutomating(this.evaluationId),
+  );
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly hasWinner = computed(
+    () =>
+      !!this.evaluation()?.winnerAnswerId ||
+      !!this.evaluation()?.answers?.some((answer) => answer.isWinner),
+  );
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.automating()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.automating()) {
+      return true;
+    }
+
+    return this.leavePrompt.prompt();
+  }
 
   protected onSave(improvedAnswer: ImprovedAnswer): void {
     this.evaluationService.update(
@@ -29,5 +63,14 @@ export class ImprovedAnswerPage {
         error: 'Could not save improved answer.',
       },
     );
+  }
+
+  protected onLeaveConfirmed(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId);
+    this.leavePrompt.confirmLeave();
+  }
+
+  protected onLeaveCancelled(): void {
+    this.leavePrompt.cancelLeave();
   }
 }
