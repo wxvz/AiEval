@@ -70,7 +70,27 @@ ollama pull llama3.1:8b   # judge (balanced preset)
 
 On macOS, opening the **Ollama** app from Applications also starts the server, so you may not need a separate `ollama serve` terminal.
 
-**Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited.
+**Presets:** `LLM_PRESET=balanced` (default) uses fast models for answers and a stronger model for judging/scoring. Use `fast` for all-small models when rate-limited. For OpenRouter free-tier judging issues, see **OpenRouter free tier and judging** below.
+
+#### OpenRouter free tier and judging
+
+As observed in May 2026 when using OpenRouter’s free tier (especially `openrouter/free`):
+
+**Shared quota.** `openrouter/free` and OpenRouter `:free` models share account rate limits across answer generation, batch scoring (judging), ranking, and improved-answer steps.
+
+**Why judging often fails first.** Scoring is one batch LLM call that sends every answer plus the full rubric in a single prompt (not one call per answer). After three answer-generation calls, that judge request is large and often returns `429 — Provider returned error` immediately. Retries with the default backoff (`LLM_MAX_RETRIES=2`, `LLM_BACKOFF_BASE_MS=500`) may then surface `404 — Provider returned error`, an empty body, or `Unexpected end of JSON input`. Generate-only runs can succeed while score-only runs fail the same way if quota was already used.
+
+**Symptoms in logs.** Look in `LOG_FILE` for `llm.rate_limit` or `OpenRouter request failed: 429` with `step: scoring`.
+
+**Mitigations.**
+
+- Set `LLM_CONCURRENCY=1` for `openrouter/free` (parallel answer calls burn quota quickly).
+- Wait a few minutes between **Generate** and **Score** if you run phases separately.
+- Raise `LLM_INTER_CALL_DELAY_MS` (e.g. `1000`–`2000`) and optionally `LLM_MAX_RETRIES` / `LLM_BACKOFF_BASE_MS`.
+- Use `LLM_PRESET=fast`, or remove `openrouter/free` overrides so defaults apply: named `:free` answer models plus `meta-llama/llama-3.3-70b-instruct:free` for the judge (see `server/src/llm/model-presets.ts`).
+- Add a second provider key (Groq or Gemini) so a run-level 429 can fall back to another cloud provider.
+
+This reflects upstream OpenRouter limits, not an AiEval bug: the server retries 429s but cannot bypass hard caps when only one provider is configured.
 
 Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set `LOG_FORMAT=text` for readable terminal lines like `INFO: Next step: scoring` (the log file stays NDJSON). Set `LOG_PROMPTS=true` and `LOG_LEVEL=debug` to log full prompts locally.
 
@@ -136,7 +156,13 @@ cp .env.example .env
 | `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
 | `LLM_PRESET` | `balanced` or `fast` (default: `balanced`) |
 | `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
-| `LLM_JUDGE_MODEL` | Override judge `provider:model` |
+| `LLM_JUDGE_MODEL` | Override judge as `provider:model` (e.g. `openrouter:meta-llama/llama-3.3-70b-instruct:free`). Ignored if the provider does not match the active automation provider. |
+| `LLM_CONCURRENCY` | Max parallel answer-generation calls (default: `3`). Use `1` for OpenRouter free / `openrouter/free`. |
+| `LLM_INTER_CALL_DELAY_MS` | Minimum gap between LLM calls in ms (default: `200`) |
+| `LLM_MAX_RETRIES` | Retries on HTTP 429 before failing (default: `2`) |
+| `LLM_BACKOFF_BASE_MS` | Base backoff for 429 retries in ms (default: `500`) |
+| `LLM_REQUEST_TIMEOUT_MS` | Per-request fetch timeout in ms (default: `900000`) |
+| `LLM_SLOW_FALLBACK_MS` | After this many ms on Ollama, the UI offers switching to a cloud provider (default: `180000`) |
 | `LOG_LEVEL` | `debug`, `info`, `warn`, or `error` (default: `info`) |
 | `LOG_FORMAT` | `json`, `pretty`, or `text` — `text` prints `LEVEL: message` to the terminal (default: `json`) |
 | `LOG_FILE` | Optional path to append NDJSON logs |
