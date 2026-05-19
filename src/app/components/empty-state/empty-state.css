@@ -1,0 +1,28 @@
+.empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.empty-state__panel {
+  max-width: 28rem;
+  width: 100%;
+  text-align: center;
+  padding: 2.5rem 2rem;
+  border: 2px dashed var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
+}
+
+.empty-state__title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.empty-state__message {
+  color: var(--bs-secondary-color);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}

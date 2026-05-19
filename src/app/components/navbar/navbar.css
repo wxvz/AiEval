@@ -1,8 +1,56 @@
-.navbar {
+.app-navbar {
   --bs-navbar-padding-y: 0.75rem;
+  backdrop-filter: blur(8px);
+  background-color: color-mix(in srgb, var(--bs-body-bg) 85%, transparent) !important;
 }
 
-.navbar-brand,
+.navbar-brand {
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--bs-body-color);
+}
+
+.navbar-brand:hover {
+  color: var(--aieval-primary);
+}
+
 .navbar .nav-link {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--bs-secondary-color);
+  border-radius: var(--bs-border-radius-sm);
+  padding-inline: 0.75rem !important;
+  transition: color 0.15s ease;
+}
+
+.navbar .nav-link:hover:not(.disabled) {
+  color: var(--bs-body-color);
+}
+
+.navbar .nav-link.active {
+  color: var(--aieval-primary) !important;
+  font-weight: 600;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  line-height: 1;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  border-radius: var(--bs-border-radius-sm);
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+
+.theme-toggle:hover {
+  color: var(--aieval-primary);
+  background-color: color-mix(in srgb, var(--aieval-primary) 10%, transparent);
+}
+
+[data-bs-theme='dark'] .app-navbar {
+  backdrop-filter: none;
+  background-color: var(--aieval-surface) !important;
 }

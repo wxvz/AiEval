@@ -1,1 +1,102 @@
-/* You can add global styles to this file, and also import other style files */
+/* Design tokens – light mode (default) */
+:root,
+[data-bs-theme='light'] {
+  --aieval-page-bg: #f4f6f9;
+  --aieval-surface: #ffffff;
+  --aieval-border: #e2e8f0;
+  --aieval-shadow: 0 1px 3px rgb(15 23 42 / 6%), 0 4px 12px rgb(15 23 42 / 4%);
+  --aieval-shadow-hover: 0 4px 16px rgb(15 23 42 / 10%), 0 8px 24px rgb(15 23 42 / 6%);
+  --aieval-primary: #4f46e5;
+  --aieval-primary-hover: #4338ca;
+  --aieval-radius: 0.75rem;
+
+  --bs-font-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bs-body-font-family: var(--bs-font-sans-serif);
+  --bs-body-bg: var(--aieval-page-bg);
+  --bs-body-color: #1e293b;
+  --bs-primary: var(--aieval-primary);
+  --bs-primary-rgb: 79, 70, 229;
+  --bs-link-color: var(--aieval-primary);
+  --bs-link-hover-color: var(--aieval-primary-hover);
+  --bs-border-radius: var(--aieval-radius);
+  --bs-border-radius-sm: 0.5rem;
+  --bs-border-radius-lg: 1rem;
+  --bs-border-color: var(--aieval-border);
+  --bs-card-bg: var(--aieval-surface);
+  --bs-card-border-color: var(--aieval-border);
+  --bs-card-border-radius: var(--aieval-radius);
+  --bs-card-box-shadow: var(--aieval-shadow);
+}
+
+[data-bs-theme='dark'] {
+  --aieval-page-bg: #0f172a;
+  --aieval-surface: #1e293b;
+  --aieval-border: #334155;
+  --aieval-shadow: 0 1px 3px rgb(0 0 0 / 20%), 0 4px 12px rgb(0 0 0 / 15%);
+  --aieval-shadow-hover: 0 4px 16px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 20%);
+  --aieval-primary: #818cf8;
+  --aieval-primary-hover: #a5b4fc;
+
+  --bs-body-bg: var(--aieval-page-bg);
+  --bs-body-color: #e2e8f0;
+  --bs-primary: var(--aieval-primary);
+  --bs-primary-rgb: 129, 140, 248;
+  --bs-link-color: var(--aieval-primary);
+  --bs-link-hover-color: var(--aieval-primary-hover);
+  --bs-border-color: var(--aieval-border);
+  --bs-card-bg: var(--aieval-surface);
+  --bs-card-border-color: var(--aieval-border);
+  --bs-card-box-shadow: var(--aieval-shadow);
+}
+
+body {
+  font-family: var(--bs-body-font-family);
+  background-color: var(--bs-body-bg);
+  min-height: 100vh;
+}
+
+/* Utilities */
+.card-elevated {
+  background: var(--aieval-surface);
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  box-shadow: var(--aieval-shadow);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.card-elevated:hover {
+  box-shadow: var(--aieval-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.page-header {
+  margin-bottom: 1.75rem;
+}
+
+.page-header__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.page-header__subtitle {
+  color: var(--bs-secondary-color);
+  font-size: 0.95rem;
+  margin-bottom: 0;
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--aieval-primary);
+  --bs-btn-border-color: var(--aieval-primary);
+  --bs-btn-hover-bg: var(--aieval-primary-hover);
+  --bs-btn-hover-border-color: var(--aieval-primary-hover);
+  --bs-btn-active-bg: var(--aieval-primary-hover);
+  --bs-btn-active-border-color: var(--aieval-primary-hover);
+}
+
+.app-shell {
+  max-width: 72rem;
+}

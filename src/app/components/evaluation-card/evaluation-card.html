@@ -1,12 +1,12 @@
-<div class="card h-100 shadow-sm">
+<div class="card card-elevated evaluation-card h-100">
   <div class="card-body d-flex flex-column">
-    <h5 class="card-title">{{ evaluation().title }}</h5>
-    <p class="card-text text-muted small flex-grow-1">{{ evaluation().prompt }}</p>
-    <p class="card-text">
-      <span class="badge text-bg-secondary me-1">{{ evaluation().answers.length }} answers</span>
-      <span class="badge text-bg-light text-dark">{{ evaluation().updatedAt | date: 'mediumDate' }}</span>
+    <h5 class="card-title evaluation-card__title">{{ evaluation().title }}</h5>
+    <p class="card-text evaluation-card__prompt text-muted small flex-grow-1">{{ evaluation().prompt }}</p>
+    <p class="card-text evaluation-card__meta mb-0">
+      <span class="badge evaluation-card__badge">{{ evaluation().answers.length }} answers</span>
+      <span class="badge evaluation-card__badge evaluation-card__badge--muted">{{ evaluation().updatedAt | date: 'mediumDate' }}</span>
     </p>
-    <div class="d-flex flex-wrap gap-2 mt-2">
+    <div class="evaluation-card__actions d-flex flex-wrap gap-2 mt-3">
       <a class="btn btn-sm btn-primary" [routerLink]="['/evaluations', evaluation().id, 'edit']">Edit</a>
       <a class="btn btn-sm btn-outline-primary" [routerLink]="['/evaluations', evaluation().id, 'compare']">
         Compare

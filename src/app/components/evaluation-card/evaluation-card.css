@@ -1,0 +1,43 @@
+.evaluation-card {
+  overflow: hidden;
+}
+
+.evaluation-card__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+}
+
+.evaluation-card__prompt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  margin-bottom: 0.75rem;
+}
+
+.evaluation-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.evaluation-card__badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  background-color: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
+  color: var(--aieval-primary);
+  border: none;
+}
+
+.evaluation-card__badge--muted {
+  background-color: color-mix(in srgb, var(--bs-secondary-color) 15%, transparent);
+  color: var(--bs-secondary-color);
+}
+
+.evaluation-card__actions .btn {
+  border-radius: var(--bs-border-radius-sm);
+}
