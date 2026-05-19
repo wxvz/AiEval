@@ -73,66 +73,21 @@
     <div class="col-lg-6">
       <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
         <h2 class="h5 mb-0">Answers</h2>
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          [disabled]="!canAutomate()"
-          (click)="onAutomateClick()"
-        >
-          @if (automating()) {
-            Running automation…
-          } @else {
-            Run automated evaluation
-          }
-        </button>
-      </div>
-
-      @if (showAutomationStatus()) {
-        <div
-          class="card mb-3"
-          [class.border-primary]="automating()"
-          [class.border-success]="automationOutcome().status === 'completed'"
-          [class.border-danger]="automationOutcome().status === 'failed' || automationOutcome().status === 'cancelled'"
-        >
-          <div class="card-body">
-            @if (automating()) {
-              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-                <app-loading-spinner />
-                <button
-                  type="button"
-                  class="btn btn-outline-danger btn-sm"
-                  (click)="onStopAutomation()"
-                >
-                  Stop automation
-                </button>
-              </div>
-              <p class="text-muted small mb-2">
-                Generating and scoring answers. This may take a few minutes.
-              </p>
-            } @else if (automationOutcome().status === 'completed') {
-              <p class="text-success small mb-2">Automation finished successfully.</p>
-            } @else if (automationOutcome().status === 'cancelled') {
-              <p class="text-danger small mb-2">Automation was cancelled.</p>
-            } @else if (automationOutcome().status === 'failed') {
-              <p class="text-danger small mb-2">Automation did not complete.</p>
-            }
-            <ul class="small mb-0 ps-3">
-              @for (step of progressSteps(); track $index) {
-                <li>{{ step }}</li>
-              }
-            </ul>
-            @if (!automating() && automationOutcome().status !== 'idle') {
-              <button
-                type="button"
-                class="btn btn-outline-secondary btn-sm mt-3"
-                (click)="onDismissAutomationStatus()"
-              >
-                Dismiss
-              </button>
-            }
-          </div>
+        <div class="d-flex flex-wrap gap-2">
+          <app-automation-controls
+            [evaluationId]="evaluationId"
+            phase="generate"
+            buttonLabel="Generate answers"
+            runningLabel="Generating answers…"
+            statusHint="Generating model answers from your prompt. This may take a few minutes."
+            successMessage="Answers generated."
+            errorMessage="Could not generate answers."
+            confirmForceTitle="Replace answers?"
+            confirmForceMessage="Replace existing answers and generate new ones? Scores, winner, and improved answer will be cleared."
+            confirmForceLabel="Replace and generate"
+          />
         </div>
-      }
+      </div>
 
       <app-answer-form class="d-block mb-3" (submitted)="onAnswerSubmit($event)" />
       @if (evaluation()!.answers.length === 0) {
@@ -144,22 +99,6 @@
       }
     </div>
   </div>
-
-  <app-provider-choice-modal
-    modalId="providerChoiceModal"
-    (useCloud)="onProviderChoiceCloud()"
-    (useLocal)="onProviderChoiceLocal()"
-  />
-
-  <app-confirm-delete-modal
-    modalId="confirmRerunAutomationModal"
-    title="Replace answers?"
-    message="Replace existing answers and re-run automation? Scores, winner, and improved answer will be cleared."
-    confirmLabel="Replace and run"
-    confirmClass="btn-primary"
-    (confirmed)="onRerunConfirmed()"
-    (cancelled)="onRerunCancelled()"
-  />
 
   <app-confirm-delete-modal
     modalId="confirmLeaveDuringAutomationModal"

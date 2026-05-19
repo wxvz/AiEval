@@ -36,12 +36,15 @@ import {
 import { modelIdToLabel } from '../llm/model-presets.js';
 import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
 import type {
+  AutomationPhase,
   AutomationProgressEvent,
   AutomationStep,
   ChatMessage,
   ProgressCallback,
   ResolvedLlmSetup,
 } from '../llm/types.js';
+
+export type { AutomationPhase };
 import { toApiEvaluation } from '../serialization.js';
 import type {
   Answer,
@@ -427,7 +430,109 @@ async function synthesizeImproved(
   return improved;
 }
 
-async function runWithSetup(
+async function persistEvaluation(
+  docId: ObjectId,
+  set: Record<string, unknown>,
+  unset: Record<string, ''> | undefined,
+  errorStep: AutomationStep,
+): Promise<EvaluationDocument> {
+  const update: { $set: Record<string, unknown>; $unset?: Record<string, ''> } = { $set: set };
+
+  if (unset && Object.keys(unset).length > 0) {
+    update.$unset = unset;
+  }
+
+  const result = await getEvaluationsCollection().findOneAndUpdate(
+    { _id: docId },
+    update,
+    { returnDocument: 'after' },
+  );
+
+  if (!result) {
+    throw new AutomationError('Failed to save evaluation.', errorStep);
+  }
+
+  return result;
+}
+
+function finishAutomation(
+  doc: EvaluationDocument,
+  runId: string,
+  evaluationId: string,
+  onProgress: ProgressCallback,
+  automatedAt?: string,
+): Evaluation {
+  const evaluation = toApiEvaluation(doc);
+  logEvent('info', LogEvents.automationComplete, {
+    runId,
+    evaluationId,
+    ...(automatedAt ? { automatedAt } : {}),
+  });
+  emit(onProgress, { type: 'complete', evaluation, status: 'completed' });
+
+  return evaluation;
+}
+
+function requirePromptAndCriteria(
+  doc: EvaluationDocument,
+): { prompt: string; criteria: RubricCriterion[] } {
+  const prompt = doc.prompt;
+
+  if (!prompt.trim()) {
+    throw new AutomationError('Evaluation prompt is required.', 'generating');
+  }
+
+  const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
+
+  if (criteria.length === 0) {
+    throw new AutomationError('At least one rubric criterion is required.', 'scoring');
+  }
+
+  return { prompt, criteria };
+}
+
+function findWinnerAnswer(answers: Answer[], winnerAnswerId?: string): Answer | undefined {
+  if (winnerAnswerId) {
+    return answers.find((answer) => answer.id === winnerAnswerId);
+  }
+
+  return answers.find((answer) => answer.isWinner);
+}
+
+async function applyWinner(
+  scored: Answer[],
+  runId: string,
+  evaluationId: string,
+  onProgress: ProgressCallback,
+): Promise<{ answersWithWinner: Answer[]; winner: Answer; winnerAnswerId: string }> {
+  const winnerResult = pickWinner(scored);
+
+  if (!winnerResult) {
+    throw new AutomationError('No winner could be determined.', 'scoring');
+  }
+
+  const answersWithWinner = scored.map((answer) => ({
+    ...answer,
+    isWinner: answer.id === winnerResult.answerId,
+  }));
+  const winner = answersWithWinner.find((a) => a.id === winnerResult.answerId)!;
+
+  logEvent('info', LogEvents.automationWinnerPicked, {
+    runId,
+    evaluationId,
+    answerId: winnerResult.answerId,
+    totalPoints: winnerResult.totalPoints,
+  });
+  emit(onProgress, {
+    type: 'winner_picked',
+    answerId: winnerResult.answerId,
+    label: winnerResult.label,
+  });
+
+  return { answersWithWinner, winner, winnerAnswerId: winnerResult.answerId };
+}
+
+async function runGeneratePhase(
   setup: ResolvedLlmSetup,
   doc: EvaluationDocument,
   runId: string,
@@ -435,17 +540,127 @@ async function runWithSetup(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
-  const prompt = doc.prompt;
+  const { prompt, criteria } = requirePromptAndCriteria(doc);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
 
-  if (!prompt.trim()) {
-    throw new AutomationError('Evaluation prompt is required.', 'generating');
+  const answers = await generateAnswers(
+    setup,
+    evaluationId,
+    prompt,
+    criteria,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+  );
+  logAutomationStepComplete('generating', runId, evaluationId);
+
+  const now = new Date().toISOString();
+  const saved = await persistEvaluation(
+    doc._id,
+    { answers, updatedAt: now },
+    { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+    'generating',
+  );
+
+  return finishAutomation(saved, runId, evaluationId, onProgress);
+}
+
+async function runScorePhase(
+  setup: ResolvedLlmSetup,
+  doc: EvaluationDocument,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+): Promise<Evaluation> {
+  const evaluationId = doc._id.toString();
+  const { prompt, criteria } = requirePromptAndCriteria(doc);
+
+  if (doc.answers.length === 0) {
+    throw new AutomationError('Add answers before auto-scoring.', 'scoring');
   }
 
-  if (criteria.length === 0) {
-    throw new AutomationError('At least one rubric criterion is required.', 'scoring');
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const scored = await scoreAnswers(
+    setup,
+    evaluationId,
+    prompt,
+    criteria,
+    doc.answers,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+  );
+  logAutomationStepComplete('scoring', runId, evaluationId);
+
+  const { answersWithWinner, winnerAnswerId } = await applyWinner(scored, runId, evaluationId, onProgress);
+  const now = new Date().toISOString();
+  const saved = await persistEvaluation(
+    doc._id,
+    {
+      answers: answersWithWinner,
+      winnerAnswerId,
+      automatedAt: now,
+      updatedAt: now,
+    },
+    undefined,
+    'scoring',
+  );
+
+  return finishAutomation(saved, runId, evaluationId, onProgress, now);
+}
+
+async function runImprovedPhase(
+  setup: ResolvedLlmSetup,
+  doc: EvaluationDocument,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+): Promise<Evaluation> {
+  const evaluationId = doc._id.toString();
+  const { prompt, criteria } = requirePromptAndCriteria(doc);
+  const winner = findWinnerAnswer(doc.answers, doc.winnerAnswerId);
+
+  if (!winner) {
+    throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
   }
 
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const improvedAnswer = await synthesizeImproved(
+    setup,
+    evaluationId,
+    prompt,
+    criteria,
+    doc.answers,
+    winner,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+  );
+  logAutomationStepComplete('improved', runId, evaluationId);
+
+  const now = new Date().toISOString();
+  const saved = await persistEvaluation(
+    doc._id,
+    { improvedAnswer, updatedAt: now },
+    undefined,
+    'improved',
+  );
+
+  return finishAutomation(saved, runId, evaluationId, onProgress);
+}
+
+async function runFullPipeline(
+  setup: ResolvedLlmSetup,
+  doc: EvaluationDocument,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+): Promise<Evaluation> {
+  const evaluationId = doc._id.toString();
+  const { prompt, criteria } = requirePromptAndCriteria(doc);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
 
   const answers = await generateAnswers(
@@ -473,29 +688,12 @@ async function runWithSetup(
   );
   logAutomationStepComplete('scoring', runId, evaluationId);
 
-  const winnerResult = pickWinner(scored);
-
-  if (!winnerResult) {
-    throw new AutomationError('No winner could be determined.', 'scoring');
-  }
-
-  const answersWithWinner = scored.map((answer) => ({
-    ...answer,
-    isWinner: answer.id === winnerResult.answerId,
-  }));
-  const winner = answersWithWinner.find((a) => a.id === winnerResult.answerId)!;
-
-  logEvent('info', LogEvents.automationWinnerPicked, {
+  const { answersWithWinner, winner, winnerAnswerId } = await applyWinner(
+    scored,
     runId,
     evaluationId,
-    answerId: winnerResult.answerId,
-    totalPoints: winnerResult.totalPoints,
-  });
-  emit(onProgress, {
-    type: 'winner_picked',
-    answerId: winnerResult.answerId,
-    label: winnerResult.label,
-  });
+    onProgress,
+  );
 
   const improvedAnswer = await synthesizeImproved(
     setup,
@@ -512,43 +710,152 @@ async function runWithSetup(
   logAutomationStepComplete('improved', runId, evaluationId);
 
   const now = new Date().toISOString();
-  const update = {
-    answers: answersWithWinner,
-    winnerAnswerId: winnerResult.answerId,
-    improvedAnswer,
-    automatedAt: now,
-    updatedAt: now,
-  };
-
-  const result = await getEvaluationsCollection().findOneAndUpdate(
-    { _id: doc._id },
-    { $set: update },
-    { returnDocument: 'after' },
+  const saved = await persistEvaluation(
+    doc._id,
+    {
+      answers: answersWithWinner,
+      winnerAnswerId,
+      improvedAnswer,
+      automatedAt: now,
+      updatedAt: now,
+    },
+    undefined,
+    'improved',
   );
 
-  if (!result) {
-    throw new AutomationError('Failed to save evaluation.', 'improved');
+  return finishAutomation(saved, runId, evaluationId, onProgress, now);
+}
+
+async function runPhaseWithSetup(
+  setup: ResolvedLlmSetup,
+  doc: EvaluationDocument,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+  phase: AutomationPhase,
+): Promise<Evaluation> {
+  switch (phase) {
+    case 'generate':
+      return runGeneratePhase(setup, doc, runId, onProgress, signal);
+    case 'score':
+      return runScorePhase(setup, doc, runId, onProgress, signal);
+    case 'improved':
+      return runImprovedPhase(setup, doc, runId, onProgress, signal);
+    case 'full':
+      return runFullPipeline(setup, doc, runId, onProgress, signal);
   }
+}
 
-  const evaluation = toApiEvaluation(result);
-  logEvent('info', LogEvents.automationComplete, { runId, evaluationId, automatedAt: now });
-  emit(onProgress, { type: 'complete', evaluation, status: 'completed' });
+function initialFailureStep(phase: AutomationPhase): AutomationStep {
+  switch (phase) {
+    case 'generate':
+    case 'full':
+      return 'generating';
+    case 'score':
+      return 'scoring';
+    case 'improved':
+      return 'improved';
+  }
+}
 
-  return evaluation;
+export async function prepareDocForPhase(
+  doc: EvaluationDocument,
+  phase: AutomationPhase,
+  force: boolean,
+): Promise<EvaluationDocument> {
+  const now = new Date().toISOString();
+
+  switch (phase) {
+    case 'generate': {
+      if (doc.answers.length > 0 && !force) {
+        throw new AutomationError(
+          'Evaluation already has answers. Re-run with force=true after confirming.',
+          'generating',
+        );
+      }
+
+      if (force && doc.answers.length > 0) {
+        const collection = getEvaluationsCollection();
+        await collection.updateOne(
+          { _id: doc._id },
+          {
+            $set: { answers: [], updatedAt: now },
+            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+          },
+        );
+
+        return { ...doc, answers: [] };
+      }
+
+      return doc;
+    }
+    case 'score': {
+      if (doc.answers.length === 0) {
+        throw new AutomationError('Add answers before auto-scoring.', 'scoring');
+      }
+
+      if ((doc.winnerAnswerId || doc.automatedAt) && !force) {
+        throw new AutomationError(
+          'Answers are already scored. Re-run with force=true after confirming.',
+          'scoring',
+        );
+      }
+
+      if (force && (doc.winnerAnswerId || doc.automatedAt)) {
+        const answers = doc.answers.map((answer) => ({
+          ...answer,
+          isWinner: false,
+        }));
+
+        const collection = getEvaluationsCollection();
+        await collection.updateOne(
+          { _id: doc._id },
+          {
+            $set: { answers, updatedAt: now },
+            $unset: { winnerAnswerId: '', automatedAt: '' },
+          },
+        );
+
+        return { ...doc, answers, winnerAnswerId: undefined, automatedAt: undefined };
+      }
+
+      return doc;
+    }
+    case 'improved': {
+      const winner = findWinnerAnswer(doc.answers, doc.winnerAnswerId);
+
+      if (!winner) {
+        throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
+      }
+
+      if (doc.improvedAnswer && !force) {
+        throw new AutomationError(
+          'An improved answer already exists. Re-run with force=true after confirming.',
+          'improved',
+        );
+      }
+
+      return doc;
+    }
+    case 'full':
+      return doc;
+  }
 }
 
 export async function runEvaluationAutomation(options: {
   evaluationObjectId: ObjectId;
   runId: string;
   force: boolean;
+  phase?: AutomationPhase;
   onProgress: ProgressCallback;
 }): Promise<Evaluation> {
   const { evaluationObjectId, runId, force, onProgress } = options;
+  const phase = options.phase ?? 'full';
   const collection = getEvaluationsCollection();
   const doc = await collection.findOne({ _id: evaluationObjectId });
 
   if (!doc) {
-    throw new AutomationError('Evaluation not found.', 'generating');
+    throw new AutomationError('Evaluation not found.', initialFailureStep(phase));
   }
 
   const evaluationId = doc._id.toString();
@@ -558,73 +865,84 @@ export async function runEvaluationAutomation(options: {
     runId,
     evaluationId,
     force,
+    phase,
     preset: config.llmPreset,
   });
 
-  if (doc.answers.length > 0 && !force) {
-    clearAutomationRun(evaluationId, runId);
-    throw new AutomationError(
-      'Evaluation already has answers. Re-run with force=true after confirming.',
-      'generating',
-    );
-  }
-
   let workingDoc = doc;
 
-  if (force && doc.answers.length > 0) {
-    await collection.updateOne(
-      { _id: doc._id },
-      {
-        $set: {
-          answers: [],
-          updatedAt: new Date().toISOString(),
-        },
-        $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
-      },
-    );
-    workingDoc = { ...doc, answers: [] };
-  }
-
-  let setup = await resolveProvider();
-
-  emit(onProgress, {
-    type: 'provider_resolved',
-    provider: setup.providerName,
-    models: [
-      ...setup.answerModels.map((m) => m.label),
-      setup.judgeModel.label,
-    ],
-  });
-  logEvent('info', LogEvents.automationProviderResolved, {
-    runId,
-    evaluationId,
-    provider: setup.providerName,
-    models: setup.answerModels.map((m) => m.model).join(','),
-    judge: setup.judgeModel.model,
-  });
-
   try {
-    return await runWithSetup(setup, workingDoc, runId, onProgress, signal);
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('429')) {
-      const fallback = await resolveNextProvider(setup.providerName);
-
-      if (fallback) {
-        logEvent('warn', LogEvents.automationProviderFallback, {
-          runId,
-          evaluationId,
-          message: `Fallback from ${setup.providerName} to ${fallback.providerName}`,
-        });
-        emit(onProgress, {
-          type: 'provider_fallback',
-          from: setup.providerName,
-          to: fallback.providerName,
-        });
-        setup = fallback;
-        return await runWithSetup(setup, workingDoc, runId, onProgress, signal);
+    if (phase === 'full') {
+      if (doc.answers.length > 0 && !force) {
+        throw new AutomationError(
+          'Evaluation already has answers. Re-run with force=true after confirming.',
+          'generating',
+        );
       }
+
+      if (force && doc.answers.length > 0) {
+        await collection.updateOne(
+          { _id: doc._id },
+          {
+            $set: {
+              answers: [],
+              updatedAt: new Date().toISOString(),
+            },
+            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+          },
+        );
+        workingDoc = { ...doc, answers: [] };
+      }
+    } else {
+      workingDoc = await prepareDocForPhase(doc, phase, force);
     }
 
+    let setup = await resolveProvider();
+
+    emit(onProgress, {
+      type: 'provider_resolved',
+      provider: setup.providerName,
+      models: [
+        ...setup.answerModels.map((m) => m.label),
+        setup.judgeModel.label,
+      ],
+    });
+    logEvent('info', LogEvents.automationProviderResolved, {
+      runId,
+      evaluationId,
+      provider: setup.providerName,
+      models: setup.answerModels.map((m) => m.model).join(','),
+      judge: setup.judgeModel.model,
+    });
+
+    const runPhase = () =>
+      runPhaseWithSetup(setup, workingDoc, runId, onProgress, signal, phase);
+
+    try {
+      return await runPhase();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('429')) {
+        const fallback = await resolveNextProvider(setup.providerName);
+
+        if (fallback) {
+          logEvent('warn', LogEvents.automationProviderFallback, {
+            runId,
+            evaluationId,
+            message: `Fallback from ${setup.providerName} to ${fallback.providerName}`,
+          });
+          emit(onProgress, {
+            type: 'provider_fallback',
+            from: setup.providerName,
+            to: fallback.providerName,
+          });
+          setup = fallback;
+          return await runPhase();
+        }
+      }
+
+      throw error;
+    }
+  } catch (error) {
     if (error instanceof AutomationError) {
       logEvent('error', LogEvents.automationFailed, {
         runId,
@@ -636,13 +954,14 @@ export async function runEvaluationAutomation(options: {
     }
 
     const message = error instanceof Error ? error.message : 'Automation failed';
+    const step = initialFailureStep(phase);
     logEvent('error', LogEvents.automationFailed, {
       runId,
       evaluationId,
-      step: 'generating',
+      step,
       message,
     });
-    throw new AutomationError(message, 'generating');
+    throw new AutomationError(message, step);
   } finally {
     clearAutomationRun(evaluationId, runId);
   }

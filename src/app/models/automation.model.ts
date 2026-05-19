@@ -1,5 +1,7 @@
 import { Evaluation } from './evaluation.model';
 
+export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
+
 /** Terminal and in-flight automation states surfaced in the UI and SSE stream. */
 export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
 

@@ -39,6 +39,8 @@ export interface ResolvedLlmSetup {
   judgeModel: ModelRef;
 }
 
+export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
+
 export type AutomationStep = 'generating' | 'scoring' | 'improved' | 'provider';
 
 export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
@@ -81,5 +83,6 @@ export interface RunEvaluationOptions {
   runId: string;
   evaluationId: string;
   force: boolean;
+  phase?: AutomationPhase;
   onProgress: ProgressCallback;
 }

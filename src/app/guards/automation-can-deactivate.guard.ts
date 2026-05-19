@@ -1,6 +1,8 @@
 import { CanDeactivateFn } from '@angular/router';
 
-import { EditEvaluationPage } from '../pages/edit-evaluation-page/edit-evaluation-page';
+export interface AutomationCanDeactivate {
+  canDeactivate(): boolean | Promise<boolean>;
+}
 
-export const automationCanDeactivateGuard: CanDeactivateFn<EditEvaluationPage> = (component) =>
+export const automationCanDeactivateGuard: CanDeactivateFn<AutomationCanDeactivate> = (component) =>
   component.canDeactivate();

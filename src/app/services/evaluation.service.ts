@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 
 import {
   Answer,
+  AutomationPhase,
   AutomationProgressEvent,
   AutomationRunStatus,
   CriteriaMode,
@@ -87,6 +88,26 @@ export class EvaluationService {
     operationFeedback?: OperationFeedback,
   ): Evaluation | undefined {
     return this.update(id, { criteriaMode }, operationFeedback);
+  }
+
+  generatePrompt(title: string, operationFeedback?: OperationFeedback): Promise<string> {
+    return firstValueFrom(
+      this.http.post<{ prompt: string }>(`${API}/generate-prompt`, { title: title.trim() }),
+    )
+      .then((response) => {
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+        return response.prompt;
+      })
+      .catch((error) => {
+        if (operationFeedback) {
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
+        }
+        throw new Error(
+          messageFromHttpError(error, operationFeedback?.error ?? 'Could not generate prompt.'),
+        );
+      });
   }
 
   create(dto: CreateEvaluationDto, operationFeedback?: OperationFeedback): Promise<Evaluation> {
@@ -316,7 +337,7 @@ export class EvaluationService {
 
   automate(
     evaluationId: string,
-    options: { force?: boolean } = {},
+    options: { force?: boolean; phase?: AutomationPhase } = {},
     callbacks?: {
       onProgress?: (event: AutomationProgressEvent) => void;
       onStatus?: (status: AutomationRunStatus) => void;
@@ -330,6 +351,10 @@ export class EvaluationService {
 
     if (options.force) {
       params.set('force', 'true');
+    }
+
+    if (options.phase && options.phase !== 'full') {
+      params.set('phase', options.phase);
     }
 
     const url = `${API}/${evaluationId}/automate/stream?${params.toString()}`;

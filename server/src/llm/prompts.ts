@@ -11,6 +11,23 @@ import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluatio
 export const GENERATE_SYSTEM =
   'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
+export const PROMPT_GENERATE_SYSTEM = `You draft evaluation prompts for comparing how different language models answer the same user request. Given only an evaluation title, write one clear user prompt that models should answer directly.
+
+Use plain text only: no JSON, markdown fences, headings, labels, or meta commentary. Do not write a long essay-style task unless the title clearly asks for an essay.
+
+The prompt must be specific enough to score using Accuracy, Clarity, Completeness, Relevance, and Safety or custom criteria. It should include concrete requirements and success criteria where useful, but stay concise enough for model answers to be compared easily.
+
+Make the prompt challenging enough that weak or vague answers lose marks. Prefer balanced reasoning, practical examples, trade-offs, and realistic conclusions. When examples are needed, ask for one short example, not multiple case studies, unless the title requires it.
+
+The final prompt should usually be one short paragraph of 3–6 sentences. Only output the final prompt.`;
+
+export function buildPromptGenerateUser(title: string): string {
+  return `Evaluation title:
+${title.trim()}
+
+Write the user prompt that candidates will answer for this evaluation.`;
+}
+
 /** @deprecated Prefer {@link JUDGE_BATCH_SCORE_SYSTEM}; kept for tests / tooling that still build single-answer prompts. */
 export const JUDGE_SCORE_SYSTEM =
   'You are an impartial rubric judge. Score one model answer at a time using only the rubric anchors and the answer text—do not compare to other models. When the rubric lists discrete score anchors, pick the single anchor that best fits; do not invent scores outside those anchors. Return valid JSON only, matching the schema in the user message exactly.';

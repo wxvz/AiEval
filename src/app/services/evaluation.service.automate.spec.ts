@@ -65,6 +65,39 @@ describe('EvaluationService.automate', () => {
     expect(result.automatedAt).toBe('now');
   });
 
+  it('appends phase query param when phase is not full', async () => {
+    let capturedUrl = '';
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        capturedUrl = url;
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'complete',
+              status: 'completed',
+              evaluation,
+            }),
+          } as MessageEvent);
+        });
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    await service.automate('eval-1', { phase: 'generate' });
+
+    expect(capturedUrl).toContain('phase=generate');
+    expect(capturedUrl).not.toContain('force=true');
+  });
+
   it('sets automatingEvaluationId while EventSource is active and clears on complete', async () => {
     type MockSource = {
       onmessage: ((event: MessageEvent) => void) | null;

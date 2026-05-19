@@ -38,6 +38,28 @@ export class EvaluationForm {
     });
   }
 
+  getValue(): EvaluationFormValue {
+    return this.form.getRawValue();
+  }
+
+  setPrompt(prompt: string): void {
+    this.form.controls.prompt.setValue(prompt);
+    this.form.controls.prompt.markAsDirty();
+    this.form.controls.prompt.markAsTouched();
+  }
+
+  isTitleValid(): boolean {
+    return this.form.controls.title.valid;
+  }
+
+  isFormValid(): boolean {
+    return this.form.valid;
+  }
+
+  markAllAsTouched(): void {
+    this.form.markAllAsTouched();
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();

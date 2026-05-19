@@ -1,4 +1,6 @@
 import { Router } from 'express';
+
+import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
 import { getEvaluationsCollection } from '../db.js';
 import {
   normalizeEvaluationRecord,
@@ -17,6 +19,24 @@ export function createEvaluationsRouter(): Router {
       res.json(evaluations.map(toApiEvaluation));
     } catch (error) {
       next(error);
+    }
+  });
+
+  router.post('/generate-prompt', async (req, res, next) => {
+    try {
+      const body = req.body as { title?: string } | undefined;
+      const title = body?.title?.trim() ?? '';
+
+      if (title.length < 3) {
+        res.status(400).json({ message: 'title is required (at least 3 characters).' });
+        return;
+      }
+
+      const prompt = await generateEvaluationPrompt(title);
+      res.json({ prompt });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate prompt';
+      res.status(500).json({ message });
     }
   });
 

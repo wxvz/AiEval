@@ -10,14 +10,26 @@ import { ImprovedAnswerPage } from './pages/improved-answer-page/improved-answer
 
 export const routes: Routes = [
   { path: '', component: DashboardPage },
-  { path: 'evaluations/new', component: CreateEvaluationPage },
+  {
+    path: 'evaluations/new',
+    component: CreateEvaluationPage,
+    canDeactivate: [automationCanDeactivateGuard],
+  },
   {
     path: 'evaluations/:id/edit',
     component: EditEvaluationPage,
     canDeactivate: [automationCanDeactivateGuard],
   },
-  { path: 'evaluations/:id/compare', component: CompareAnswersPage },
-  { path: 'evaluations/:id/improved', component: ImprovedAnswerPage },
+  {
+    path: 'evaluations/:id/compare',
+    component: CompareAnswersPage,
+    canDeactivate: [automationCanDeactivateGuard],
+  },
+  {
+    path: 'evaluations/:id/improved',
+    component: ImprovedAnswerPage,
+    canDeactivate: [automationCanDeactivateGuard],
+  },
   { path: 'about', component: AboutPage },
   { path: '**', redirectTo: '' },
 ];

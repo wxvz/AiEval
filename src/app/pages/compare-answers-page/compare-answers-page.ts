@@ -1,11 +1,19 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
+import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
+
+declare const bootstrap: {
+  Modal: {
+    getOrCreateInstance: (element: Element) => { show: () => void; hide: () => void };
+  };
+};
 
 export function upsertCriterionScore(
   scores: Score[],
@@ -68,7 +76,14 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
 
 @Component({
   selector: 'app-compare-answers-page',
-  imports: [RouterLink, ScoreSummary, WinnerBadge, EmptyState],
+  imports: [
+    RouterLink,
+    ScoreSummary,
+    WinnerBadge,
+    EmptyState,
+    AutomationControlsComponent,
+    ConfirmDeleteModal,
+  ],
   templateUrl: './compare-answers-page.html',
   styleUrl: './compare-answers-page.css',
 })
@@ -76,7 +91,12 @@ export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
 
+  private pendingLeaveResolve: ((allow: boolean) => void) | null = null;
+
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
+  protected readonly automating = computed(() =>
+    this.evaluationService.isAutomating(this.evaluationId),
+  );
 
   protected readonly selectedAnswerIndex = signal(0);
 
@@ -98,6 +118,31 @@ export class CompareAnswersPage {
 
     return normalizeAnswerIndex(this.selectedAnswerIndex(), answerCount);
   });
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.automating()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    if (!this.automating()) {
+      return true;
+    }
+
+    return new Promise((resolve) => {
+      this.pendingLeaveResolve = resolve;
+      const modalElement = document.getElementById('confirmLeaveDuringAutomationModal');
+
+      if (modalElement) {
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
+      } else {
+        resolve(false);
+      }
+    });
+  }
 
   protected summaryFor(answerId: string) {
     const answer = this.evaluation()?.answers.find((item) => item.id === answerId);
@@ -166,5 +211,16 @@ export class CompareAnswersPage {
       success: 'Winner marked.',
       error: 'Could not mark winner.',
     });
+  }
+
+  protected onLeaveConfirmed(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId);
+    this.pendingLeaveResolve?.(true);
+    this.pendingLeaveResolve = null;
+  }
+
+  protected onLeaveCancelled(): void {
+    this.pendingLeaveResolve?.(false);
+    this.pendingLeaveResolve = null;
   }
 }

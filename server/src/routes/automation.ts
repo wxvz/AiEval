@@ -2,7 +2,11 @@ import { Router } from 'express';
 
 import { submitProviderChoice } from '../automation/provider-choice.js';
 import { cancelAutomationRun } from '../automation/run-registry.js';
-import { AutomationError, runEvaluationAutomation } from '../automation/run-evaluation.js';
+import {
+  AutomationError,
+  runEvaluationAutomation,
+  type AutomationPhase,
+} from '../automation/run-evaluation.js';
 import { automationStatusFromError } from '../llm/types.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
@@ -15,6 +19,16 @@ function parseForce(value: unknown): boolean {
   const raw = Array.isArray(value) ? value[0] : value;
 
   return raw === 'true' || raw === '1' || raw === true;
+}
+
+function parsePhase(value: unknown): AutomationPhase {
+  const raw = Array.isArray(value) ? value[0] : value;
+
+  if (raw === 'generate' || raw === 'score' || raw === 'improved' || raw === 'full') {
+    return raw;
+  }
+
+  return 'full';
 }
 
 function writeSse(res: import('express').Response, data: unknown): void {
@@ -39,6 +53,7 @@ export function createAutomationRouter(): Router {
 
     const runId = crypto.randomUUID();
     const force = parseForce(req.query['force']);
+    const phase = parsePhase(req.query['phase']);
     const evaluationId = objectId.toString();
     let heartbeat: ReturnType<typeof setInterval> | undefined;
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -86,6 +101,7 @@ export function createAutomationRouter(): Router {
         evaluationObjectId: objectId,
         runId,
         force,
+        phase,
         onProgress: (event) => onProgress(event),
       });
 

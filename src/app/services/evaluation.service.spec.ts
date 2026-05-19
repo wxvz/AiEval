@@ -301,3 +301,31 @@ describe('EvaluationService criteria modes', () => {
     });
   });
 });
+
+describe('EvaluationService.generatePrompt', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), EvaluationService, FeedbackService],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('posts title and returns prompt text', async () => {
+    const service = TestBed.inject(EvaluationService);
+    const promise = service.generatePrompt('My evaluation title');
+
+    const req = httpMock.expectOne('/api/evaluations/generate-prompt');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ title: 'My evaluation title' });
+    req.flush({ prompt: 'Write a detailed explanation of the topic.' });
+
+    await expect(promise).resolves.toBe('Write a detailed explanation of the topic.');
+  });
+});
