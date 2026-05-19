@@ -83,10 +83,11 @@ export async function chat(
 
       const cloudModel = resolveProviderModelForCall(context.currentSetup, cloudSetup, model);
 
-      logEvent('warn', LogEvents.llmSlowFallback, {
+      logEvent('warn', LogEvents.automationProviderChoice, {
         ...context,
         from: provider.name,
         to: cloudSetup.providerName,
+        useCloud: true,
         model,
         cloudModel,
         durationMs: config.llmSlowFallbackMs,
@@ -106,9 +107,11 @@ export async function chat(
       );
     }
 
-    logEvent('info', LogEvents.llmSlowFallback, {
+    logEvent('info', LogEvents.automationProviderChoice, {
       ...context,
       from: provider.name,
+      useCloud: false,
+      durationMs: config.llmSlowFallbackMs,
       message: 'User chose to continue with local provider',
     });
 

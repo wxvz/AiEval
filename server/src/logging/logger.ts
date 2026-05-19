@@ -2,7 +2,7 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { config } from '../config.js';
-import type { LogContext, LogEventName, LogLevel } from './events.js';
+import { LogEvents, type LogContext, type LogEventName, type LogLevel } from './events.js';
 import { formatLogTextLine } from './format-log-line.js';
 
 const LEVEL_ORDER: Record<LogLevel, number> = {
@@ -94,7 +94,7 @@ export function logPromptSnippet(
     return;
   }
 
-  logEvent('debug', 'llm.request', {
+  logEvent('debug', LogEvents.llmPrompt, {
     runId,
     evaluationId,
     label,

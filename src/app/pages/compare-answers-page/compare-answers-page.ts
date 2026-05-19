@@ -174,8 +174,9 @@ export class CompareAnswersPage {
 
   protected criterionNotesFor(answer: Answer, criterionId: string): string | null {
     const score = answer.scores.find((item) => item.criterionId === criterionId);
+    const notes = score?.notes?.trim();
 
-    return score?.notes?.trim() ? score.notes : null;
+    return notes ? notes : null;
   }
 
   protected answerNotesValue(answer: Answer): string {

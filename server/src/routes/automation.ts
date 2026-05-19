@@ -163,7 +163,7 @@ export function createAutomationRouter(): Router {
       return;
     }
 
-    logEvent('info', LogEvents.llmSlowFallback, {
+    logEvent('info', LogEvents.automationProviderChoice, {
       evaluationId,
       runId,
       useCloud: body.useCloud,

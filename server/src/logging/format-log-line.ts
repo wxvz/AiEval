@@ -46,6 +46,8 @@ function eventBody(event: string, payload: Record<string, unknown>): string | un
       return `${ctx['method']} ${ctx['path']} → ${ctx['status']} (${ctx['durationMs']}ms)`;
     case 'llm.request':
       return `LLM → ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${ctx['promptLength']} chars)`;
+    case 'llm.prompt':
+      return `LLM prompt [${ctx['label']}] (${ctx['promptLength']} chars)`;
     case 'llm.response':
       return `LLM ← ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${ctx['durationMs']}ms, ${ctx['outputLength']} chars)`;
     case 'llm.retry':
@@ -54,8 +56,17 @@ function eventBody(event: string, payload: Record<string, unknown>): string | un
       return `LLM rate limited ${ctx['provider']}/${ctx['model']} attempt ${ctx['attempt']}`;
     case 'llm.call_failed':
       return `LLM failed ${ctx['provider']}/${ctx['model']}: ${ctx['message'] ?? 'unknown error'}`;
-    case 'llm.slow_fallback':
-      return `LLM slow fallback (${ctx['durationMs']}ms on ${ctx['provider']})`;
+    case 'llm.slow_fallback': {
+      const durationMs = ctx['durationMs'];
+      const from = ctx['from'] ?? ctx['provider'];
+      const to = ctx['to'];
+      if (to) {
+        return `LLM slow fallback (${durationMs}ms: ${from} → ${to})`;
+      }
+      return `LLM slow fallback (${durationMs}ms on ${from})`;
+    }
+    case 'automation.provider_choice':
+      return `Provider choice for ${shortId(ctx['evaluationId'])}: ${ctx['useCloud'] ? 'cloud' : 'local'}`;
     case 'automation.started':
       return `Automation started for ${shortId(ctx['evaluationId'])}`;
     case 'automation.complete':
