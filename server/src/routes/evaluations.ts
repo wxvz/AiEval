@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
+import { generateEvaluationTitle } from '../llm/generate-title.js';
 import { getEvaluationsCollection } from '../db.js';
 import {
   normalizeEvaluationRecord,
@@ -19,6 +20,16 @@ export function createEvaluationsRouter(): Router {
       res.json(evaluations.map(toApiEvaluation));
     } catch (error) {
       next(error);
+    }
+  });
+
+  router.post('/generate-title', async (_req, res, next) => {
+    try {
+      const title = await generateEvaluationTitle();
+      res.json({ title });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate title';
+      res.status(500).json({ message });
     }
   });
 

@@ -302,6 +302,34 @@ describe('EvaluationService criteria modes', () => {
   });
 });
 
+describe('EvaluationService.generateTitle', () => {
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), EvaluationService, FeedbackService],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+  });
+
+  it('posts with empty body and returns title text', async () => {
+    const service = TestBed.inject(EvaluationService);
+    const promise = service.generateTitle();
+
+    const req = httpMock.expectOne('/api/evaluations/generate-title');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ title: 'Remote work policy trade-offs' });
+
+    await expect(promise).resolves.toBe('Remote work policy trade-offs');
+  });
+});
+
 describe('EvaluationService.generatePrompt', () => {
   let httpMock: HttpTestingController;
 

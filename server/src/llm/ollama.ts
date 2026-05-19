@@ -1,6 +1,6 @@
 import { config } from '../config.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmProvider } from './types.js';
+import { DEFAULT_LLM_TEMPERATURE, type ChatMessage, type LlmProvider } from './types.js';
 
 export function createOllamaProvider(): LlmProvider {
   return {
@@ -14,6 +14,7 @@ export function createOllamaProvider(): LlmProvider {
           model,
           messages,
           stream: false,
+          options: { temperature: options?.temperature ?? DEFAULT_LLM_TEMPERATURE },
           ...(options?.json ? { format: 'json' } : {}),
         }),
       });

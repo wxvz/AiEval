@@ -42,6 +42,12 @@ export class EvaluationForm {
     return this.form.getRawValue();
   }
 
+  setTitle(title: string): void {
+    this.form.controls.title.setValue(title);
+    this.form.controls.title.markAsDirty();
+    this.form.controls.title.markAsTouched();
+  }
+
   setPrompt(prompt: string): void {
     this.form.controls.prompt.setValue(prompt);
     this.form.controls.prompt.markAsDirty();

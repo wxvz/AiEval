@@ -7,7 +7,7 @@ import {
   EvaluationForm,
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
-import { Evaluation } from '../../models';
+import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
 
@@ -96,19 +96,23 @@ export class CreateEvaluationPage {
       return;
     }
 
-    if (!form.isTitleValid()) {
-      form.markAllAsTouched();
-      this.feedback.error('Enter a valid title (at least 3 characters) before generating a prompt.');
+    if (this.generatingPrompt() || this.creating() || this.automating()) {
       return;
     }
 
-    const title = form.getValue().title;
     this.generatingPrompt.set(true);
 
-    void this.evaluationService
-      .generatePrompt(title, {
-        success: 'Prompt generated.',
-        error: 'Could not generate prompt.',
+    const titlePromise = form.isTitleValid()
+      ? Promise.resolve(form.getValue().title)
+      : this.evaluationService.generateTitle();
+
+    void titlePromise
+      .then((title) => {
+        form.setTitle(title);
+        return this.evaluationService.generatePrompt(title, {
+          success: 'Prompt generated.',
+          error: 'Could not generate prompt.',
+        });
       })
       .then((prompt) => {
         form.setPrompt(prompt);
@@ -120,25 +124,16 @@ export class CreateEvaluationPage {
   }
 
   protected onRunFullAutomation(): void {
-    const form = this.evaluationForm();
-
-    if (!form) {
-      return;
-    }
-
-    if (!form.isFormValid()) {
-      form.markAllAsTouched();
-      this.feedback.error('Please enter a valid title and prompt before running automation.');
-      return;
-    }
-
     if (this.creating() || this.automating()) {
       return;
     }
 
     this.creating.set(true);
 
-    void this.createEvaluation(form.getValue())
+    void this.createEvaluation({
+      title: AUTOMATION_METADATA_STUB,
+      prompt: AUTOMATION_METADATA_STUB,
+    })
       .then((created) => {
         this.createdEvaluationId.set(created.id);
       })

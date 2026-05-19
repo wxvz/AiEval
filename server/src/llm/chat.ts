@@ -26,7 +26,7 @@ export async function chat(
   provider: LlmProvider,
   model: string,
   messages: ChatMessage[],
-  context: CompleteContext & { json?: boolean },
+  context: CompleteContext & { json?: boolean; temperature?: number },
 ): Promise<LlmCompletion> {
   const userContent = messages.find((m) => m.role === 'user')?.content ?? '';
 
@@ -50,7 +50,11 @@ export async function chat(
   try {
     return await completeWithRetry(
       async () =>
-        provider.complete(model, messages, { json: context.json, signal: requestSignal }),
+        provider.complete(model, messages, {
+          json: context.json,
+          signal: requestSignal,
+          temperature: context.temperature,
+        }),
       { ...context, provider: provider.name, model },
     );
   } catch (error) {
@@ -96,6 +100,7 @@ export async function chat(
           cloudSetup.provider.complete(cloudModel, messages, {
             json: context.json,
             signal: mergeSignals(context.abortSignal),
+            temperature: context.temperature,
           }),
         { ...context, provider: cloudSetup.providerName, model: cloudModel },
       );
@@ -114,6 +119,7 @@ export async function chat(
         provider.complete(model, messages, {
           json: context.json,
           signal: mergeSignals(context.abortSignal),
+          temperature: context.temperature,
         }),
       { ...context, provider: provider.name, model },
     );

@@ -90,6 +90,24 @@ export class EvaluationService {
     return this.update(id, { criteriaMode }, operationFeedback);
   }
 
+  generateTitle(operationFeedback?: OperationFeedback): Promise<string> {
+    return firstValueFrom(this.http.post<{ title: string }>(`${API}/generate-title`, {}))
+      .then((response) => {
+        if (operationFeedback) {
+          this.feedback.success(operationFeedback.success);
+        }
+        return response.title;
+      })
+      .catch((error) => {
+        if (operationFeedback) {
+          this.feedback.error(messageFromHttpError(error, operationFeedback.error));
+        }
+        throw new Error(
+          messageFromHttpError(error, operationFeedback?.error ?? 'Could not generate title.'),
+        );
+      });
+  }
+
   generatePrompt(title: string, operationFeedback?: OperationFeedback): Promise<string> {
     return firstValueFrom(
       this.http.post<{ prompt: string }>(`${API}/generate-prompt`, { title: title.trim() }),

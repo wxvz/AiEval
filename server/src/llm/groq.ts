@@ -1,7 +1,13 @@
 import { config } from '../config.js';
 import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmCompleteOptions, LlmCompletion, LlmProvider } from './types.js';
+import {
+  DEFAULT_LLM_TEMPERATURE,
+  type ChatMessage,
+  type LlmCompleteOptions,
+  type LlmCompletion,
+  type LlmProvider,
+} from './types.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -22,7 +28,7 @@ async function openAiCompatibleComplete(
     body: JSON.stringify({
       model,
       messages,
-      temperature: 0.3,
+      temperature: options?.temperature ?? DEFAULT_LLM_TEMPERATURE,
       ...(options?.json ? { response_format: { type: 'json_object' } } : {}),
     }),
   });

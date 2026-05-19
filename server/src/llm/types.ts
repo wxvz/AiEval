@@ -12,9 +12,12 @@ export interface ModelRef {
   label: string;
 }
 
+export const DEFAULT_LLM_TEMPERATURE = 0.3;
+
 export interface LlmCompleteOptions {
   json?: boolean;
   signal?: AbortSignal;
+  temperature?: number;
 }
 
 export interface LlmCompletion {

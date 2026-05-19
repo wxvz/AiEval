@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 
 import { config } from '../config.js';
 import { getEvaluationsCollection } from '../db.js';
+import { needsAutomationMetadataPrep } from './constants.js';
 import { getActiveCriteria } from './criteria.js';
 import {
   allAnswersHaveEqualTotals,
@@ -34,6 +35,8 @@ import {
   registerAutomationRun,
 } from './run-registry.js';
 import { modelIdToLabel } from '../llm/model-presets.js';
+import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
+import { generateEvaluationTitle } from '../llm/generate-title.js';
 import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
 import type {
   AutomationPhase,
@@ -652,6 +655,43 @@ async function runImprovedPhase(
   return finishAutomation(saved, runId, evaluationId, onProgress);
 }
 
+async function ensureAutomationMetadata(
+  doc: EvaluationDocument,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+): Promise<EvaluationDocument> {
+  if (!needsAutomationMetadataPrep(doc)) {
+    return doc;
+  }
+
+  const evaluationId = doc._id.toString();
+  assertNotCancelled(signal, 'generating');
+
+  const title = await generateEvaluationTitle();
+  const prompt = await generateEvaluationPrompt(title);
+  const now = new Date().toISOString();
+
+  const saved = await persistEvaluation(
+    doc._id,
+    { title, prompt, updatedAt: now },
+    undefined,
+    'generating',
+  );
+
+  logEvent('info', LogEvents.automationPipelineStep, {
+    runId,
+    evaluationId,
+    message: 'Title and prompt generated',
+    completed: 'metadata',
+    nextStep: 'generating',
+  });
+
+  emit(onProgress, { type: 'status', status: 'running', runId });
+
+  return saved;
+}
+
 async function runFullPipeline(
   setup: ResolvedLlmSetup,
   doc: EvaluationDocument,
@@ -660,7 +700,8 @@ async function runFullPipeline(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const { prompt, criteria } = requirePromptAndCriteria(doc);
+  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal);
+  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
 
   const answers = await generateAnswers(
@@ -711,7 +752,7 @@ async function runFullPipeline(
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
-    doc._id,
+    preparedDoc._id,
     {
       answers: answersWithWinner,
       winnerAnswerId,

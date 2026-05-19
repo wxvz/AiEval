@@ -1,7 +1,12 @@
 import { config } from '../config.js';
 import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
+import {
+  DEFAULT_LLM_TEMPERATURE,
+  type ChatMessage,
+  type LlmCompletion,
+  type LlmProvider,
+} from './types.js';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -26,7 +31,7 @@ export function createOpenRouterProvider(): LlmProvider {
         body: JSON.stringify({
           model,
           messages,
-          temperature: 0.3,
+          temperature: options?.temperature ?? DEFAULT_LLM_TEMPERATURE,
           ...(options?.json ? { response_format: { type: 'json_object' } } : {}),
         }),
       });

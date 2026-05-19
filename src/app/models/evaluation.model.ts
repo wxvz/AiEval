@@ -10,6 +10,9 @@ export interface RubricCriterion {
 
 export type CriteriaMode = 'default' | 'custom';
 
+/** Placeholder title/prompt when starting full automation from the create page. */
+export const AUTOMATION_METADATA_STUB = '(automation pending)';
+
 export const DEFAULT_CRITERIA: RubricCriterion[] = [
   {
     id: 'default-accuracy',

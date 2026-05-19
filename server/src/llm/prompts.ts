@@ -11,6 +11,33 @@ import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluatio
 export const GENERATE_SYSTEM =
   'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
+export const TITLE_GENERATE_SYSTEM = `You create clear evaluation titles for an AI response evaluation app. Generate one concise title that can later be used to create a challenging prompt for comparing language model answers. The title should be specific, balanced, realistic, and not too broad. Choose a topic yourself. Across separate requests, vary the subject area and angle; do not reuse the same topic or near-duplicate wording. Avoid vague titles, clickbait, jokes, or overly broad topics. Output only the title, with no extra explanation.`;
+
+/** @deprecated Use {@link buildTitleGenerateUser} for autonomous title generation. */
+export const TITLE_GENERATE_USER = 'Generate an evaluation title.';
+
+const TITLE_TOPIC_DOMAINS = [
+  'science and technology',
+  'public policy and civic life',
+  'business and economics',
+  'health and medicine',
+  'education and learning',
+  'environment and sustainability',
+  'ethics and philosophy',
+  'arts and culture',
+  'history and society',
+  'work and careers',
+  'communication and media',
+  'law and regulation',
+] as const;
+
+export function buildTitleGenerateUser(): string {
+  const domain = TITLE_TOPIC_DOMAINS[Math.floor(Math.random() * TITLE_TOPIC_DOMAINS.length)]!;
+  const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+  return `Generate an evaluation title. Lean toward the "${domain}" area for this request, but keep the title specific and balanced. Request id: ${requestId}.`;
+}
+
 export const PROMPT_GENERATE_SYSTEM = `You draft evaluation prompts for comparing how different language models answer the same user request. Given only an evaluation title, write one clear user prompt that models should answer directly.
 
 Use plain text only: no JSON, markdown fences, headings, labels, or meta commentary. Do not write a long essay-style task unless the title clearly asks for an essay.

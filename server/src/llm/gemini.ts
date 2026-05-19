@@ -1,6 +1,11 @@
 import { config } from '../config.js';
 import { llmFetch } from './llm-fetch.js';
-import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
+import {
+  DEFAULT_LLM_TEMPERATURE,
+  type ChatMessage,
+  type LlmCompletion,
+  type LlmProvider,
+} from './types.js';
 
 function toGeminiContents(messages: ChatMessage[]): {
   systemInstruction?: { parts: { text: string }[] };
@@ -35,7 +40,7 @@ export function createGeminiProvider(): LlmProvider {
           ...(systemInstruction ? { systemInstruction } : {}),
           contents,
           generationConfig: {
-            temperature: 0.3,
+            temperature: options?.temperature ?? DEFAULT_LLM_TEMPERATURE,
             ...(options?.json ? { responseMimeType: 'application/json' } : {}),
           },
         }),

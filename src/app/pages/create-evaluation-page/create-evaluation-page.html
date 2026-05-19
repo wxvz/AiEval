@@ -2,6 +2,11 @@
 
 <app-evaluation-form #evaluationForm submitLabel="Create" (submitted)="onSubmit($event)" />
 
+<p class="text-muted small mb-2">
+  <strong>Generate prompt</strong> fills the title and prompt fields (or uses your title if you entered one).
+  <strong>Run full automation</strong> generates a title and prompt automatically, then runs the full pipeline—fields can be left empty.
+</p>
+
 <div class="d-flex flex-wrap gap-2 mb-4">
   <button
     type="button"
@@ -39,7 +44,7 @@
     [hideButton]="true"
     buttonLabel="Run full automation"
     runningLabel="Running full automation…"
-    statusHint="Generating, scoring, and drafting an improved answer. This may take a few minutes."
+    statusHint="Generating title and prompt, then answers, scores, and an improved answer. This may take a few minutes."
     successMessage="Full automation complete."
     errorMessage="Full automation failed."
     confirmForceTitle="Replace answers?"
