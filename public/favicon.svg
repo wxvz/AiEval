@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="AiEval">
+  <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+  <path
+    fill="#fff"
+    d="M16 7l7 18h-3.4l-1.4-3.6H13.8L12.4 25H9l7-18zm0 6.2L13.6 19h4.8L16 13.2z"
+  />
+</svg>
