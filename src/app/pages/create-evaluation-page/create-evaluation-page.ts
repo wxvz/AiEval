@@ -59,6 +59,22 @@ export class CreateEvaluationPage {
     return id ? this.evaluationService.isAutomating(id) : false;
   });
 
+  protected readonly automationBlocksActions = computed(() => {
+    const id = this.createdEvaluationId();
+
+    if (!id) {
+      return this.evaluationService.isAutomating();
+    }
+
+    const evaluation = this.evaluationService.getById(id);
+
+    if (evaluation?.automatedAt) {
+      return false;
+    }
+
+    return this.evaluationService.isAutomating(id);
+  });
+
   protected readonly displayTokenUsage = computed(() => {
     const id = this.createdEvaluationId();
 
@@ -94,9 +110,13 @@ export class CreateEvaluationPage {
   protected readonly canRunFullAutomation = computed(
     () =>
       !this.creating() &&
-      !this.automating() &&
+      !this.automationBlocksActions() &&
       !this.createdEvaluationId() &&
       !this.hasPartialFormForAutomation(),
+  );
+
+  protected readonly showFullAutomationRerun = computed(
+    () => !!this.createdEvaluationId() && this.automationComplete(),
   );
 
   protected readonly automationComplete = computed(() => {
@@ -142,7 +162,7 @@ export class CreateEvaluationPage {
       return Promise.resolve();
     }
 
-    if (this.generatingPrompt() || this.creating() || this.automating()) {
+    if (this.generatingPrompt() || this.creating() || this.automationBlocksActions()) {
       return Promise.resolve();
     }
 
@@ -167,6 +187,24 @@ export class CreateEvaluationPage {
       .finally(() => {
         this.generatingPrompt.set(false);
       });
+  }
+
+  protected onAutomationFinished(evaluation: Evaluation): void {
+    this.syncFormFromEvaluation(evaluation);
+  }
+
+  protected onAutomationStatusDismissed(): void {
+    const id = this.createdEvaluationId();
+
+    if (!id) {
+      return;
+    }
+
+    const evaluation = this.evaluationService.getById(id);
+
+    if (evaluation) {
+      this.syncFormFromEvaluation(evaluation);
+    }
   }
 
   protected onRunFullAutomation(): Promise<void> {
@@ -229,5 +267,24 @@ export class CreateEvaluationPage {
       success: 'Evaluation created.',
       error: 'Could not create evaluation.',
     });
+  }
+
+  private syncFormFromEvaluation(evaluation: Evaluation): void {
+    const form = this.evaluationForm();
+
+    if (!form) {
+      return;
+    }
+
+    const title = evaluation.title.trim();
+    const prompt = evaluation.prompt.trim();
+
+    if (title && title !== AUTOMATION_METADATA_STUB) {
+      form.setTitle(title);
+    }
+
+    if (prompt && prompt !== AUTOMATION_METADATA_STUB) {
+      form.setPrompt(prompt);
+    }
   }
 }

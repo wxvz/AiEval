@@ -19,7 +19,7 @@
   <button
     type="button"
     class="btn btn-outline-secondary btn-sm"
-    [disabled]="generatingPrompt() || creating() || automating()"
+    [disabled]="generatingPrompt() || creating() || automationBlocksActions()"
     (click)="onGeneratePrompt()"
   >
     @if (generatingPrompt()) {
@@ -28,28 +28,30 @@
       Generate prompt
     }
   </button>
-  <button
-    type="button"
-    class="btn btn-outline-primary btn-sm"
-    [disabled]="!canRunFullAutomation()"
-    (click)="onRunFullAutomation()"
-  >
-    @if (creating()) {
-      Creating…
-    } @else if (automating()) {
-      Running full automation…
-    } @else {
-      Run full automation
-    }
-  </button>
+  @if (!showFullAutomationRerun()) {
+    <button
+      type="button"
+      class="btn btn-outline-primary btn-sm"
+      [disabled]="!canRunFullAutomation()"
+      (click)="onRunFullAutomation()"
+    >
+      @if (creating()) {
+        Creating…
+      } @else if (automationBlocksActions()) {
+        Running full automation…
+      } @else {
+        Run full automation
+      }
+    </button>
+  }
 </div>
 
 @if (createdEvaluationId(); as evaluationId) {
   <app-automation-controls
     [evaluationId]="evaluationId"
     phase="full"
-    [autoStart]="true"
-    [hideButton]="true"
+    [autoStart]="!showFullAutomationRerun()"
+    [hideButton]="!showFullAutomationRerun()"
     buttonLabel="Run full automation"
     runningLabel="Running full automation…"
     statusHint="Running the full pipeline—answers, scores, and an improved answer. This may take a few minutes."
@@ -58,6 +60,8 @@
     confirmForceTitle="Replace answers?"
     confirmForceMessage="Replace existing answers and re-run full automation? Scores, winner, and improved answer will be cleared."
     confirmForceLabel="Replace and run"
+    (automationFinished)="onAutomationFinished($event)"
+    (statusDismissed)="onAutomationStatusDismissed()"
   />
 
   @if (automationComplete()) {

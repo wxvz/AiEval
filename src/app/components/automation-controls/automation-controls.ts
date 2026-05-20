@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 
 import {
   ConfirmDeleteModal,
@@ -48,6 +48,9 @@ export class AutomationControlsComponent {
   readonly confirmForceLabel = input('Replace and run');
   readonly autoStart = input(false);
   readonly hideButton = input(false);
+
+  readonly automationFinished = output<Evaluation>();
+  readonly statusDismissed = output<void>();
 
   private autoStartTriggered = false;
 
@@ -171,8 +174,13 @@ export class AutomationControlsComponent {
   }
 
   protected onDismissAutomationStatus(): void {
+    if (this.automating()) {
+      this.evaluationService.cancelAutomation(this.evaluationId());
+    }
+
     this.automationOutcome.set(idleAutomationOutcome());
     this.progressSteps.set([]);
+    this.statusDismissed.emit();
   }
 
   private needsForceConfirm(): boolean {
@@ -198,7 +206,7 @@ export class AutomationControlsComponent {
     this.progressSteps.set(['Starting automation…']);
 
     try {
-      await this.evaluationService.automate(
+      const evaluation = await this.evaluationService.automate(
         this.evaluationId(),
         { force, phase: this.phase() },
         {
@@ -219,6 +227,8 @@ export class AutomationControlsComponent {
           },
         },
       );
+
+      this.automationFinished.emit(evaluation);
     } catch (error) {
       this.cancelProviderChoicePrompt();
       const message = error instanceof Error ? error.message : this.errorMessage();
