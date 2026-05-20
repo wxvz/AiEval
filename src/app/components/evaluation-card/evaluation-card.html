@@ -4,7 +4,6 @@
     <p class="card-text evaluation-card__prompt text-muted small flex-grow-1">{{ evaluation().prompt }}</p>
     <p class="card-text evaluation-card__meta mb-0">
       <span class="badge evaluation-card__badge">{{ evaluation().answers.length }} answers</span>
-      <span class="badge evaluation-card__badge evaluation-card__badge--muted">{{ evaluation().updatedAt | date: 'mediumDate' }}</span>
     </p>
     <div class="evaluation-card__actions d-flex flex-wrap gap-2 mt-3">
       <a class="btn btn-sm btn-primary" [routerLink]="['/evaluations', evaluation().id, 'edit']">Edit</a>
