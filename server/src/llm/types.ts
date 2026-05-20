@@ -1,4 +1,13 @@
-import type { Evaluation } from '../types/evaluation.js';
+import type { Evaluation, TokenUsageTotals } from '../types/evaluation.js';
+
+export type { TokenUsageTotals };
+
+export interface LlmTokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimated?: boolean;
+}
 
 export type ProviderName = 'ollama' | 'groq' | 'openrouter' | 'gemini' | 'huggingface';
 
@@ -24,6 +33,7 @@ export interface LlmCompletion {
   text: string;
   /** Populated when the provider routes to a different model (e.g. OpenRouter `openrouter/free`). */
   resolvedModel?: string;
+  usage?: LlmTokenUsage;
 }
 
 export interface LlmProvider {
@@ -71,6 +81,7 @@ export type AutomationProgressEvent =
   | { type: 'winner_picked'; answerId: string; label: string }
   | { type: 'improved_generating' }
   | { type: 'improved_done' }
+  | { type: 'token_usage'; usage: TokenUsageTotals }
   | { type: 'status'; status: AutomationRunStatus; runId?: string }
   | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
   | {
