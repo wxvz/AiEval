@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
-import type { LlmCompletion, ResolvedLlmSetup } from './types.js';
+import type { LlmCompletion, LlmTokenUsage, ResolvedLlmSetup } from './types.js';
 
 let lastCallAt = 0;
 let interCallDelayMutex: Promise<void> = Promise.resolve();
@@ -50,6 +50,7 @@ export interface CompleteContext {
   onCloudProviderSwitch?: (cloudSetup: ResolvedLlmSetup) => void;
   onPreferLocalProvider?: () => void;
   abortSignal?: AbortSignal;
+  recordUsage?: (usage: LlmTokenUsage) => void;
 }
 
 export async function completeWithRetry(
@@ -62,14 +63,7 @@ export async function completeWithRetry(
     await waitInterCallDelay();
 
     try {
-      const start = Date.now();
-      const result = await fn();
-      logEvent('info', LogEvents.llmResponse, {
-        ...context,
-        durationMs: Date.now() - start,
-        outputLength: result.text.length,
-      });
-      return result;
+      return await fn();
     } catch (error) {
       if (isRateLimitError(error) && attempt < config.llmMaxRetries) {
         const backoff = config.llmBackoffBaseMs * 2 ** attempt;

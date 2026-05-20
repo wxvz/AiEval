@@ -5,6 +5,7 @@ import { AutomationControlsComponent } from '../../components/automation-control
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/improved-answer-editor';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -16,6 +17,7 @@ import { EvaluationService } from '../../services/evaluation.service';
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
+    TokenUsageBadge,
   ],
   templateUrl: './improved-answer-page.html',
   styleUrl: './improved-answer-page.css',
@@ -31,6 +33,15 @@ export class ImprovedAnswerPage {
     this.evaluationService.isAutomating(this.evaluationId),
   );
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = computed(() => {
+    const current = this.evaluation();
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
+  });
   protected readonly hasWinner = computed(
     () =>
       !!this.evaluation()?.winnerAnswerId ||

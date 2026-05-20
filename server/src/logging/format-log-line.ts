@@ -45,10 +45,20 @@ function eventBody(event: string, payload: Record<string, unknown>): string | un
     case 'http.request':
       return `${ctx['method']} ${ctx['path']} → ${ctx['status']} (${ctx['durationMs']}ms)`;
     case 'llm.request':
+      if (typeof ctx['totalTokens'] === 'number') {
+        const estimated = ctx['estimated'] ? '~' : '';
+        return `LLM → ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${estimated}${ctx['totalTokens']} tokens)`;
+      }
+
       return `LLM → ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${ctx['promptLength']} chars)`;
     case 'llm.prompt':
       return `LLM prompt [${ctx['label']}] (${ctx['promptLength']} chars)`;
     case 'llm.response':
+      if (typeof ctx['totalTokens'] === 'number') {
+        const estimated = ctx['estimated'] ? '~' : '';
+        return `LLM ← ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${ctx['durationMs']}ms, ${estimated}${ctx['totalTokens']} tokens)`;
+      }
+
       return `LLM ← ${ctx['provider']}/${ctx['model']}${ctx['step'] ? ` [${ctx['step']}]` : ''} (${ctx['durationMs']}ms, ${ctx['outputLength']} chars)`;
     case 'llm.retry':
       return `LLM retry ${ctx['provider']}/${ctx['model']} attempt ${ctx['attempt']}${ctx['message'] ? `: ${ctx['message']}` : ''}`;

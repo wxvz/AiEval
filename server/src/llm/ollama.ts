@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { llmFetch } from './llm-fetch.js';
+import { parseOllamaUsage } from './parse-usage.js';
 import { DEFAULT_LLM_TEMPERATURE, type ChatMessage, type LlmProvider } from './types.js';
 
 export function createOllamaProvider(): LlmProvider {
@@ -23,8 +24,15 @@ export function createOllamaProvider(): LlmProvider {
         throw new Error(`Ollama request failed: ${response.status}`);
       }
 
-      const body = (await response.json()) as { message?: { content?: string } };
-      return { text: body.message?.content?.trim() ?? '' };
+      const body = (await response.json()) as {
+        message?: { content?: string };
+        prompt_eval_count?: number;
+        eval_count?: number;
+      };
+      const text = body.message?.content?.trim() ?? '';
+      const usage = parseOllamaUsage(body);
+
+      return { text, ...(usage ? { usage } : {}) };
     },
   };
 }

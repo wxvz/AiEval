@@ -17,6 +17,7 @@ import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
 import { chat, chatJson } from '../llm/chat.js';
 import type { CompleteContext } from '../llm/rate-limit.js';
+import { createTokenAccumulator, type TokenAccumulator } from '../llm/token-accumulator.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
 import {
   buildBatchScorePrompt,
@@ -110,6 +111,7 @@ function createLlmCallContext(
   evaluationId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  accumulator: TokenAccumulator,
 ): CompleteContext {
   let switchedToCloud = false;
   let providerChoicePromise: Promise<boolean> | null = null;
@@ -154,9 +156,17 @@ function createLlmCallContext(
     onPreferLocalProvider: () => {
       ctx.skipSlowFallback = true;
     },
+    recordUsage: (usage) => {
+      accumulator.add(usage);
+      emit(onProgress, { type: 'token_usage', usage: accumulator.totals() });
+    },
   };
 
   return ctx;
+}
+
+function tokenUsageField(accumulator: TokenAccumulator): { tokenUsage: ReturnType<TokenAccumulator['totals']> } {
+  return { tokenUsage: accumulator.totals() };
 }
 
 async function generateAnswers(
@@ -544,7 +554,8 @@ async function runGeneratePhase(
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
   const { prompt, criteria } = requirePromptAndCriteria(doc);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
 
   const answers = await generateAnswers(
     setup,
@@ -561,7 +572,7 @@ async function runGeneratePhase(
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
     doc._id,
-    { answers, updatedAt: now },
+    { answers, updatedAt: now, ...tokenUsageField(accumulator) },
     { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
     'generating',
   );
@@ -583,7 +594,8 @@ async function runScorePhase(
     throw new AutomationError('Add answers before auto-scoring.', 'scoring');
   }
 
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
   const scored = await scoreAnswers(
     setup,
     evaluationId,
@@ -606,6 +618,7 @@ async function runScorePhase(
       winnerAnswerId,
       automatedAt: now,
       updatedAt: now,
+      ...tokenUsageField(accumulator),
     },
     undefined,
     'scoring',
@@ -629,7 +642,8 @@ async function runImprovedPhase(
     throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
   }
 
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
   const improvedAnswer = await synthesizeImproved(
     setup,
     evaluationId,
@@ -647,7 +661,7 @@ async function runImprovedPhase(
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
     doc._id,
-    { improvedAnswer, updatedAt: now },
+    { improvedAnswer, updatedAt: now, ...tokenUsageField(accumulator) },
     undefined,
     'improved',
   );
@@ -660,6 +674,7 @@ async function ensureAutomationMetadata(
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  accumulator: TokenAccumulator,
 ): Promise<EvaluationDocument> {
   if (!needsAutomationMetadataPrep(doc)) {
     return doc;
@@ -668,12 +683,20 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const { title, prompt } = await generateEvaluationMetadata();
+  const { title, prompt } = await generateEvaluationMetadata({
+    runId,
+    evaluationId,
+    abortSignal: signal,
+    recordUsage: (usage) => {
+      accumulator.add(usage);
+      emit(onProgress, { type: 'token_usage', usage: accumulator.totals() });
+    },
+  });
   const now = new Date().toISOString();
 
   const saved = await persistEvaluation(
     doc._id,
-    { title, prompt, updatedAt: now },
+    { title, prompt, updatedAt: now, ...tokenUsageField(accumulator) },
     undefined,
     'generating',
   );
@@ -699,9 +722,10 @@ async function runFullPipeline(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal, accumulator);
   const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
 
   const answers = await generateAnswers(
     setup,
@@ -758,6 +782,7 @@ async function runFullPipeline(
       improvedAnswer,
       automatedAt: now,
       updatedAt: now,
+      ...tokenUsageField(accumulator),
     },
     undefined,
     'improved',

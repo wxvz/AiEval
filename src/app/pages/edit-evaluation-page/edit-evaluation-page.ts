@@ -12,6 +12,7 @@ import {
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -27,6 +28,7 @@ import { EvaluationService } from '../../services/evaluation.service';
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
+    TokenUsageBadge,
   ],
   templateUrl: './edit-evaluation-page.html',
   styleUrl: './edit-evaluation-page.css',
@@ -42,6 +44,15 @@ export class EditEvaluationPage {
     this.evaluationService.isAutomating(this.evaluationId),
   );
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = computed(() => {
+    const current = this.evaluation();
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
+  });
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();
 

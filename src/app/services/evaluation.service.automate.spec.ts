@@ -36,6 +36,62 @@ describe('EvaluationService.automate', () => {
     httpMock.verify();
   });
 
+  it('updates automationTokenUsage on token_usage SSE events', async () => {
+    vi.useFakeTimers();
+
+    class MockEventSource {
+      onmessage: ((event: MessageEvent) => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(public url: string) {
+        queueMicrotask(() => {
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'token_usage',
+              usage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+            }),
+          } as MessageEvent);
+        });
+        setTimeout(() => {
+          this.onmessage?.({
+            data: JSON.stringify({
+              type: 'complete',
+              status: 'completed',
+              evaluation: {
+                ...evaluation,
+                tokenUsage: { promptTokens: 100, completionTokens: 50, totalTokens: 150 },
+              },
+            }),
+          } as MessageEvent);
+        }, 20);
+      }
+
+      close(): void {
+        // noop
+      }
+    }
+
+    vi.stubGlobal('EventSource', MockEventSource);
+
+    const promise = service.automate('eval-1');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(service.automationTokenUsage()).toEqual({
+      promptTokens: 100,
+      completionTokens: 50,
+      totalTokens: 150,
+    });
+
+    await vi.advanceTimersByTimeAsync(20);
+    const result = await promise;
+
+    expect(result.tokenUsage?.totalTokens).toBe(150);
+    expect(service.getById('eval-1')?.tokenUsage?.totalTokens).toBe(150);
+    expect(service.automationTokenUsage()).toBeNull();
+
+    vi.useRealTimers();
+  });
+
   it('resolves when EventSource receives complete event', async () => {
     class MockEventSource {
       onmessage: ((event: MessageEvent) => void) | null = null;

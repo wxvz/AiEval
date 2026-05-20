@@ -4,6 +4,7 @@ import {
   ConfirmDeleteModal,
 } from '../confirm-delete-modal/confirm-delete-modal';
 import { LoadingSpinner } from '../loading-spinner/loading-spinner';
+import { TokenUsageBadge } from '../token-usage-badge/token-usage-badge';
 import {
   ProviderChoiceDetails,
   ProviderChoiceModal,
@@ -24,7 +25,7 @@ const AUTO_DISMISS_MS = 3000;
 
 @Component({
   selector: 'app-automation-controls',
-  imports: [LoadingSpinner, ConfirmDeleteModal, ProviderChoiceModal],
+  imports: [LoadingSpinner, ConfirmDeleteModal, ProviderChoiceModal, TokenUsageBadge],
   templateUrl: './automation-controls.html',
 })
 export class AutomationControlsComponent {
@@ -64,6 +65,16 @@ export class AutomationControlsComponent {
   protected readonly evaluation = computed(() =>
     this.evaluationService.getById(this.evaluationId()),
   );
+
+  protected readonly displayTokenUsage = computed(() => {
+    const current = this.evaluation();
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
+  });
 
   protected readonly canRun = computed(() => {
     const current = this.evaluation();

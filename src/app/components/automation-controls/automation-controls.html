@@ -30,6 +30,9 @@
             </button>
           </div>
           <p class="text-muted small mb-2">{{ statusHint() }}</p>
+          <div class="mb-2">
+            <app-token-usage-badge [usage]="displayTokenUsage()" [live]="true" />
+          </div>
         } @else if (automationOutcome().status === 'completed') {
           <p class="text-success small mb-2">Automation finished successfully.</p>
         } @else if (automationOutcome().status === 'cancelled') {
@@ -37,6 +40,9 @@
         } @else if (automationOutcome().status === 'failed') {
           <p class="text-danger small mb-2">Automation did not complete.</p>
         }
+        <div class="mb-2">
+          <app-token-usage-badge [usage]="displayTokenUsage()" />
+        </div>
         <ul class="small mb-0 ps-3">
           @for (step of progressSteps(); track $index) {
             <li>{{ step }}</li>

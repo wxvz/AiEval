@@ -1,13 +1,16 @@
 @if (!evaluation()) {
   <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
 } @else {
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
     <h1 class="h3 mb-0">Improved answer: {{ evaluation()!.title }}</h1>
-    @if (automating()) {
-      <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">Back to edit</span>
-    } @else {
-      <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
-    }
+    <div class="d-flex align-items-center gap-2 ms-auto">
+      <app-token-usage-badge [usage]="displayTokenUsage()" [live]="automating()" />
+      @if (automating()) {
+        <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">Back to edit</span>
+      } @else {
+        <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">Back to edit</a>
+      }
+    </div>
   </div>
 
   @if (!hasWinner()) {

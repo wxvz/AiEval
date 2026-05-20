@@ -2,10 +2,14 @@ import { chat } from './chat.js';
 import { buildPromptGenerateUser, PROMPT_GENERATE_SYSTEM } from './prompts.js';
 import { resolveProvider } from './provider.js';
 import { stripModelArtifacts } from './sanitize-model-output.js';
+import type { CompleteContext } from './rate-limit.js';
 
 const MIN_PROMPT_LENGTH = 10;
 
-export async function generateEvaluationPrompt(title: string): Promise<string> {
+export async function generateEvaluationPrompt(
+  title: string,
+  extraContext: Partial<CompleteContext> = {},
+): Promise<string> {
   const setup = await resolveProvider();
   const completion = await chat(
     setup.provider,
@@ -14,7 +18,12 @@ export async function generateEvaluationPrompt(title: string): Promise<string> {
       { role: 'system', content: PROMPT_GENERATE_SYSTEM },
       { role: 'user', content: buildPromptGenerateUser(title) },
     ],
-    { step: 'generating', provider: setup.providerName, model: setup.judgeModel.model },
+    {
+      step: 'generating',
+      provider: setup.providerName,
+      model: setup.judgeModel.model,
+      ...extraContext,
+    },
   );
 
   const prompt = stripModelArtifacts(completion.text).trim();

@@ -17,7 +17,7 @@ describe('generateEvaluationMetadata', () => {
     const result = await generateEvaluationMetadata();
 
     expect(generateEvaluationTitle).toHaveBeenCalled();
-    expect(generateEvaluationPrompt).toHaveBeenCalledWith('Generated title');
+    expect(generateEvaluationPrompt).toHaveBeenCalledWith('Generated title', {});
     expect(result).toEqual({
       title: 'Generated title',
       prompt: 'Generated prompt for evaluation.',

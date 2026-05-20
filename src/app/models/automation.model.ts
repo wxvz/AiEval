@@ -1,4 +1,5 @@
 import { Evaluation } from './evaluation.model';
+import { TokenUsageTotals } from './token-usage.model';
 
 export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
 
@@ -37,6 +38,7 @@ export type AutomationProgressEvent =
   | { type: 'winner_picked'; answerId: string; label: string }
   | { type: 'improved_generating' }
   | { type: 'improved_done' }
+  | { type: 'token_usage'; usage: TokenUsageTotals }
   | { type: 'status'; status: AutomationRunStatus; runId?: string }
   | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
   | {
@@ -72,6 +74,8 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
       return 'Drafting improved answer…';
     case 'improved_done':
       return 'Improved answer ready';
+    case 'token_usage':
+      return `Tokens: ${event.usage.totalTokens.toLocaleString()}${event.usage.estimated ? ' (est.)' : ''}`;
     case 'status':
       return '';
     case 'complete':

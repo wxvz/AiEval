@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
+import { parseOpenAiCompatibleUsage } from './parse-usage.js';
 import {
   DEFAULT_LLM_TEMPERATURE,
   type ChatMessage,
@@ -42,12 +43,17 @@ export function createOpenRouterProvider(): LlmProvider {
 
       const body = (await response.json()) as OpenRouterChatResponse;
       const text = body.choices?.[0]?.message?.content?.trim() ?? '';
+      const usage = parseOpenAiCompatibleUsage(body);
       const resolvedModel =
         typeof body.model === 'string' && body.model.length > 0 && body.model !== model
           ? body.model
           : undefined;
 
-      return { text, ...(resolvedModel ? { resolvedModel } : {}) };
+      return {
+        text,
+        ...(usage ? { usage } : {}),
+        ...(resolvedModel ? { resolvedModel } : {}),
+      };
     },
   };
 }

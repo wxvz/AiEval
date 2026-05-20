@@ -7,6 +7,7 @@ import {
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -17,6 +18,7 @@ import { EvaluationService } from '../../services/evaluation.service';
     EvaluationForm,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
+    TokenUsageBadge,
   ],
   templateUrl: './create-evaluation-page.html',
   styleUrl: './create-evaluation-page.css',
@@ -55,6 +57,22 @@ export class CreateEvaluationPage {
     const id = this.createdEvaluationId();
 
     return id ? this.evaluationService.isAutomating(id) : false;
+  });
+
+  protected readonly displayTokenUsage = computed(() => {
+    const id = this.createdEvaluationId();
+
+    if (!id) {
+      return null;
+    }
+
+    const current = this.evaluationService.getById(id);
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
   });
 
   protected readonly hasPartialFormForAutomation = computed(() => {

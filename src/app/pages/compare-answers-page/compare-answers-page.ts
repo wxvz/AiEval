@@ -5,6 +5,7 @@ import { AutomationControlsComponent } from '../../components/automation-control
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
@@ -77,6 +78,7 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
     RouterLink,
     ScoreSummary,
     WinnerBadge,
+    TokenUsageBadge,
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
@@ -100,6 +102,15 @@ export class CompareAnswersPage {
   protected readonly selectedAnswerIndex = signal(0);
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = computed(() => {
+    const current = this.evaluation();
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
+  });
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();
 
