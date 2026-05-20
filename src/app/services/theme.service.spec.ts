@@ -14,25 +14,41 @@ describe('ThemeService', () => {
     const service = TestBed.inject(ThemeService);
 
     expect(service.theme()).toBe('dark');
+    expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark');
   });
 
-  it('defaults to light when matchMedia is unavailable', () => {
-    const originalMatchMedia = window.matchMedia;
+  it('defaults to system when nothing is stored', () => {
+    const service = TestBed.inject(ThemeService);
 
+    expect(service.theme()).toBe('system');
+  });
+
+  it('resolves system theme from matchMedia', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,
-      value: undefined,
+      writable: true,
+      value: (query: string) => ({
+        matches: query.includes('dark'),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }),
     });
 
-    try {
-      const service = TestBed.inject(ThemeService);
+    const service = TestBed.inject(ThemeService);
 
-      expect(service.theme()).toBe('light');
-    } finally {
-      Object.defineProperty(window, 'matchMedia', {
-        configurable: true,
-        value: originalMatchMedia,
-      });
-    }
+    service.setTheme('system');
+
+    expect(document.documentElement.getAttribute('data-bs-theme')).toBe('dark');
+  });
+
+  it('resetTheme removes storage and reapplies', () => {
+    localStorage.setItem('aieval-theme', 'dark');
+
+    const service = TestBed.inject(ThemeService);
+
+    service.resetTheme();
+
+    expect(localStorage.getItem('aieval-theme')).toBeNull();
+    expect(service.theme()).toBe('system');
   });
 });

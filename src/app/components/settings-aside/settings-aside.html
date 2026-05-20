@@ -1,0 +1,197 @@
+<div
+  #offcanvas
+  class="offcanvas offcanvas-end settings-aside"
+  [id]="offcanvasId"
+  tabindex="-1"
+  [attr.aria-labelledby]="offcanvasId + 'Label'"
+>
+  <div class="offcanvas-header border-bottom">
+    <h2 class="offcanvas-title h5 mb-0" [id]="offcanvasId + 'Label'">Settings</h2>
+    <button
+      type="button"
+      class="btn-close"
+      data-bs-dismiss="offcanvas"
+      aria-label="Close settings"
+    ></button>
+  </div>
+
+  <div class="offcanvas-body">
+    <section class="settings-aside__section" aria-labelledby="settingsAppearanceHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAppearanceHeading">Appearance</h3>
+      <div class="settings-aside__options" role="radiogroup" aria-label="Theme">
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="theme"
+            value="light"
+            [checked]="theme() === 'light'"
+            (change)="setTheme('light')"
+          />
+          Light
+        </label>
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="theme"
+            value="dark"
+            [checked]="theme() === 'dark'"
+            (change)="setTheme('dark')"
+          />
+          Dark
+        </label>
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="theme"
+            value="system"
+            [checked]="theme() === 'system'"
+            (change)="setTheme('system')"
+          />
+          System
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsAutomationHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAutomationHeading">Automation</h3>
+      <p class="text-muted small mb-2">When local Ollama is slow</p>
+      <div class="settings-aside__options" role="radiogroup" aria-label="Provider preference">
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="providerPreference"
+            value="ask"
+            [checked]="automationProviderPreference() === 'ask'"
+            (change)="setAutomationProviderPreference('ask')"
+          />
+          Ask each time
+        </label>
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="providerPreference"
+            value="local"
+            [checked]="automationProviderPreference() === 'local'"
+            (change)="setAutomationProviderPreference('local')"
+          />
+          Prefer local
+        </label>
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="providerPreference"
+            value="cloud"
+            [checked]="automationProviderPreference() === 'cloud'"
+            (change)="setAutomationProviderPreference('cloud')"
+          />
+          Prefer cloud
+        </label>
+      </div>
+      <label class="settings-aside__checkbox mt-2">
+        <input
+          type="checkbox"
+          [checked]="autoDismissAutomationStatus()"
+          (change)="setAutoDismissAutomationStatus($any($event.target).checked)"
+        />
+        Auto-dismiss automation messages
+      </label>
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsEvaluationsHeading">
+      <h3 class="settings-aside__heading h6" id="settingsEvaluationsHeading">New evaluations</h3>
+      <div class="settings-aside__options" role="radiogroup" aria-label="Default rubric">
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="defaultCriteriaMode"
+            value="default"
+            [checked]="defaultCriteriaMode() === 'default'"
+            (change)="setDefaultCriteriaMode('default')"
+          />
+          Built-in criteria
+        </label>
+        <label class="settings-aside__option">
+          <input
+            type="radio"
+            name="defaultCriteriaMode"
+            value="custom"
+            [checked]="defaultCriteriaMode() === 'custom'"
+            (change)="setDefaultCriteriaMode('custom')"
+          />
+          Start with custom
+        </label>
+      </div>
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsServerHeading">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+        <h3 class="settings-aside__heading h6 mb-0" id="settingsServerHeading">Server</h3>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="refreshStatus()"
+          [disabled]="statusLoading()"
+        >
+          Refresh
+        </button>
+      </div>
+
+      @if (statusLoading() && !status()) {
+        <p class="text-muted small mb-0">Loading server status…</p>
+      } @else if (statusError()) {
+        <p class="text-danger small mb-0">{{ statusError() }}</p>
+      } @else if (status(); as serverStatus) {
+        <ul class="settings-aside__status-list small mb-0">
+          <li>
+            <span class="text-muted">MongoDB</span>
+            <span [class.text-warning]="!serverStatus.mongo.ok">{{ mongoStatusLabel(serverStatus.mongo) }}</span>
+          </li>
+          <li>
+            <span class="text-muted">LLM preset</span>
+            <span>{{ serverStatus.llmPreset }}</span>
+          </li>
+          @if (serverStatus.activeProvider; as active) {
+            <li>
+              <span class="text-muted">Active provider</span>
+              <span>{{ formatProvider(active.name) }} — judge: {{ active.judgeModel }}</span>
+            </li>
+          } @else {
+            <li>
+              <span class="text-muted">Active provider</span>
+              <span class="text-warning">none available</span>
+            </li>
+          }
+          @for (probe of serverStatus.providers; track probe.name) {
+            <li>
+              <span class="text-muted">{{ formatProvider(probe.name) }}</span>
+              <span>{{ providerStatusLabel(probe) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsLeaderboardHeading">
+      <h3 class="settings-aside__heading h6" id="settingsLeaderboardHeading">Leaderboard</h3>
+      <p class="text-muted small mb-2">Top models by winning answers</p>
+      <app-model-leaderboard [entries]="leaderboardEntries()" />
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsDataHeading">
+      <h3 class="settings-aside__heading h6" id="settingsDataHeading">Data</h3>
+      <button type="button" class="btn btn-outline-danger btn-sm" (click)="resetPreferences()">
+        Reset all preferences
+      </button>
+    </section>
+
+    <section class="settings-aside__section" aria-labelledby="settingsAboutHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAboutHeading">About</h3>
+      <p class="text-muted small mb-2">
+        Compare AI answers against a rubric, pick a winner, and draft an improved response.
+      </p>
+      <a routerLink="/about" class="btn btn-outline-primary btn-sm" data-bs-dismiss="offcanvas">
+        About AiEval
+      </a>
+    </section>
+  </div>
+</div>

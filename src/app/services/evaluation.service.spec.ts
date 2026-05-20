@@ -19,6 +19,7 @@ describe('EvaluationService criteria modes', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
@@ -53,6 +54,28 @@ describe('EvaluationService criteria modes', () => {
     };
   }
 
+  it('uses the settings default criteria mode when creating evaluations', async () => {
+    localStorage.setItem('aieval-settings-default-criteria-mode', 'custom');
+
+    const service = await createService();
+
+    const createPromise = service.create({
+      title: 'Custom mode evaluation',
+      prompt: 'Start in custom rubric mode.',
+    });
+
+    const post = httpMock.expectOne('/api/evaluations');
+    expect(post.request.body).toEqual({
+      title: 'Custom mode evaluation',
+      prompt: 'Start in custom rubric mode.',
+      criteriaMode: 'custom',
+    });
+    post.flush(savedEvaluation({ criteriaMode: 'custom' }));
+
+    const created = await createPromise;
+    expect(created.criteriaMode).toBe('custom');
+  });
+
   it('defaults newly created evaluations to default criteria mode', async () => {
     const service = await createService();
 
@@ -65,6 +88,7 @@ describe('EvaluationService criteria modes', () => {
     expect(post.request.body).toEqual({
       title: 'New evaluation',
       prompt: 'Evaluate these model answers for quality.',
+      criteriaMode: 'default',
     });
     post.flush(savedEvaluation());
 

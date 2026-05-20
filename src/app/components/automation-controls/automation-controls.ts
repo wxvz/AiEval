@@ -18,6 +18,9 @@ import {
   idleAutomationOutcome,
 } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
+import { SettingsService } from '../../services/settings.service';
+
+const AUTO_DISMISS_MS = 3000;
 
 @Component({
   selector: 'app-automation-controls',
@@ -26,6 +29,7 @@ import { EvaluationService } from '../../services/evaluation.service';
 })
 export class AutomationControlsComponent {
   private readonly evaluationService = inject(EvaluationService);
+  private readonly settingsService = inject(SettingsService);
 
   private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
   private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
@@ -89,6 +93,24 @@ export class AutomationControlsComponent {
 
       this.autoStartTriggered = true;
       void this.runAutomate(false);
+    });
+
+    effect((onCleanup) => {
+      if (!this.settingsService.autoDismissAutomationStatus()) {
+        return;
+      }
+
+      const outcome = this.automationOutcome().status;
+
+      if (outcome !== 'completed' && outcome !== 'failed' && outcome !== 'cancelled') {
+        return;
+      }
+
+      const timeoutId = window.setTimeout(() => {
+        this.onDismissAutomationStatus();
+      }, AUTO_DISMISS_MS);
+
+      onCleanup(() => window.clearTimeout(timeoutId));
     });
   }
 
@@ -207,6 +229,16 @@ export class AutomationControlsComponent {
   private promptProviderChoice(
     event: Extract<AutomationProgressEvent, { type: 'slow_provider_prompt' }>,
   ): Promise<boolean> {
+    const preference = this.settingsService.automationProviderPreference();
+
+    if (preference === 'local') {
+      return Promise.resolve(false);
+    }
+
+    if (preference === 'cloud' && event.cloudProvider) {
+      return Promise.resolve(true);
+    }
+
     const details: ProviderChoiceDetails = {
       currentProvider: event.currentProvider,
       cloudProvider: event.cloudProvider,

@@ -2,7 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { EvaluationService } from '../../services/evaluation.service';
-import { ThemeService } from '../../services/theme.service';
+import { SettingsService } from '../../services/settings.service';
 
 @Component({
   selector: 'app-navbar',
@@ -12,12 +12,11 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class Navbar {
   private readonly evaluationService = inject(EvaluationService);
-  private readonly themeService = inject(ThemeService);
+  private readonly settingsService = inject(SettingsService);
 
   protected readonly automating = computed(() => this.evaluationService.isAutomating());
-  protected readonly theme = this.themeService.theme;
 
-  protected toggleTheme(): void {
-    this.themeService.toggleTheme();
+  protected openSettings(): void {
+    this.settingsService.open();
   }
 }
