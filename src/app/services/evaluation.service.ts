@@ -19,6 +19,7 @@ import {
 } from '../models';
 import { FeedbackService } from './feedback.service';
 import { messageFromHttpError } from './http-error-message';
+import { SettingsService } from './settings.service';
 
 const API = '/api/evaluations';
 
@@ -34,6 +35,7 @@ export class EvaluationService {
   private readonly http = inject(HttpClient);
   private readonly feedback = inject(FeedbackService);
   private readonly ngZone = inject(NgZone);
+  private readonly settings = inject(SettingsService);
 
   private readonly evaluationsSignal = signal<Evaluation[]>([]);
   private readonly loadingSignal = signal(true);
@@ -133,6 +135,7 @@ export class EvaluationService {
       this.http.post<Evaluation>(API, {
         title: dto.title.trim(),
         prompt: dto.prompt.trim(),
+        criteriaMode: dto.criteriaMode ?? this.settings.defaultCriteriaMode(),
         ...(dto.criteria ? { criteria: dto.criteria } : {}),
       }),
     )

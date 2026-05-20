@@ -1,0 +1,339 @@
+<div
+  #offcanvas
+  class="offcanvas offcanvas-end settings-aside"
+  [id]="offcanvasId"
+  tabindex="-1"
+  [attr.aria-labelledby]="offcanvasId + 'Label'"
+>
+  <div class="offcanvas-header border-bottom">
+    <h2 class="offcanvas-title h5 mb-0" [id]="offcanvasId + 'Label'">Settings</h2>
+    <button
+      type="button"
+      class="btn-close"
+      (click)="dismiss()"
+      aria-label="Close settings"
+    ></button>
+  </div>
+
+  <div class="offcanvas-body">
+    <section class="settings-aside__card" aria-labelledby="settingsAppearanceHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAppearanceHeading">Appearance</h3>
+      <div class="settings-aside__segmented btn-group btn-group-sm w-100" role="radiogroup" aria-label="Theme">
+        <input
+          type="radio"
+          class="btn-check"
+          name="theme"
+          id="settings-theme-light"
+          [checked]="theme() === 'light'"
+          (change)="setTheme('light')"
+        />
+        <label class="btn btn-outline-primary" for="settings-theme-light">Light</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="theme"
+          id="settings-theme-dark"
+          [checked]="theme() === 'dark'"
+          (change)="setTheme('dark')"
+        />
+        <label class="btn btn-outline-primary" for="settings-theme-dark">Dark</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="theme"
+          id="settings-theme-system"
+          [checked]="theme() === 'system'"
+          (change)="setTheme('system')"
+        />
+        <label class="btn btn-outline-primary" for="settings-theme-system">System</label>
+      </div>
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsAutomationHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAutomationHeading">Automation</h3>
+      <p class="settings-aside__hint text-muted small mb-2">When local Ollama is slow</p>
+      <div class="settings-aside__segmented btn-group btn-group-sm w-100 mb-2" role="radiogroup" aria-label="Provider preference">
+        <input
+          type="radio"
+          class="btn-check"
+          name="providerPreference"
+          id="settings-provider-ask"
+          [checked]="automationProviderPreference() === 'ask'"
+          (change)="setAutomationProviderPreference('ask')"
+        />
+        <label class="btn btn-outline-primary" for="settings-provider-ask">Ask</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="providerPreference"
+          id="settings-provider-local"
+          [checked]="automationProviderPreference() === 'local'"
+          (change)="setAutomationProviderPreference('local')"
+        />
+        <label class="btn btn-outline-primary" for="settings-provider-local">Local</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="providerPreference"
+          id="settings-provider-cloud"
+          [checked]="automationProviderPreference() === 'cloud'"
+          (change)="setAutomationProviderPreference('cloud')"
+        />
+        <label class="btn btn-outline-primary" for="settings-provider-cloud">Cloud</label>
+      </div>
+      <label class="settings-aside__checkbox">
+        <input
+          type="checkbox"
+          [checked]="autoDismissAutomationStatus()"
+          (change)="setAutoDismissAutomationStatus($any($event.target).checked)"
+        />
+        Auto-dismiss automation messages
+      </label>
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsModelsHeading">
+      <h3 class="settings-aside__heading h6" id="settingsModelsHeading">Models</h3>
+      <p class="settings-aside__hint text-muted small mb-2">
+        Fast uses all-small models when rate-limited. Applies immediately; restart restores the
+        <code>.env</code> default ({{ envDefaultPresetLabel() }}).
+      </p>
+      @if (serverSettingsError()) {
+        <p class="text-danger small mb-2">{{ serverSettingsError() }}</p>
+      }
+      <div
+        class="settings-aside__segmented btn-group btn-group-sm w-100"
+        role="radiogroup"
+        aria-label="Performance preset"
+      >
+        <input
+          type="radio"
+          class="btn-check"
+          name="llmPreset"
+          id="settings-preset-balanced"
+          [checked]="serverLlmPreset() === 'balanced'"
+          [disabled]="presetDisabled()"
+          (change)="setLlmPreset('balanced')"
+        />
+        <label class="btn btn-outline-primary" for="settings-preset-balanced">Balanced</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="llmPreset"
+          id="settings-preset-fast"
+          [checked]="serverLlmPreset() === 'fast'"
+          [disabled]="presetDisabled()"
+          (change)="setLlmPreset('fast')"
+        />
+        <label class="btn btn-outline-primary" for="settings-preset-fast">Fast</label>
+      </div>
+      @if (serverSettingsLoading() || serverSettingsPatching()) {
+        <p class="text-muted small mt-2 mb-0">Updating preset…</p>
+      }
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsEvaluationsHeading">
+      <h3 class="settings-aside__heading h6" id="settingsEvaluationsHeading">New evaluations</h3>
+      <div class="settings-aside__segmented btn-group btn-group-sm w-100" role="radiogroup" aria-label="Default rubric">
+        <input
+          type="radio"
+          class="btn-check"
+          name="defaultCriteriaMode"
+          id="settings-criteria-default"
+          [checked]="defaultCriteriaMode() === 'default'"
+          (change)="setDefaultCriteriaMode('default')"
+        />
+        <label class="btn btn-outline-primary" for="settings-criteria-default">Built-in</label>
+
+        <input
+          type="radio"
+          class="btn-check"
+          name="defaultCriteriaMode"
+          id="settings-criteria-custom"
+          [checked]="defaultCriteriaMode() === 'custom'"
+          (change)="setDefaultCriteriaMode('custom')"
+        />
+        <label class="btn btn-outline-primary" for="settings-criteria-custom">Custom</label>
+      </div>
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsServerHeading">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+        <h3 class="settings-aside__heading h6 mb-0" id="settingsServerHeading">Server</h3>
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="refreshStatus(true)"
+          [disabled]="statusRefreshing()"
+        >
+          @if (statusRefreshing()) {
+            Refreshing…
+          } @else {
+            Refresh
+          }
+        </button>
+      </div>
+
+      @if (statusError() && !status()) {
+        <p class="text-danger small mb-0">{{ statusError() }}</p>
+      } @else if (status(); as serverStatus) {
+        <div
+          class="settings-aside__banner small mb-3"
+          [class.settings-aside__banner--success]="aggregateReady()"
+          [class.settings-aside__banner--danger]="!aggregateReady()"
+          role="status"
+        >
+          {{ aggregateMessage() }}
+        </div>
+
+        @if (preferenceHint(); as hint) {
+          <p class="settings-aside__hint text-muted small mb-3">{{ hint }}</p>
+        }
+
+        <ul class="settings-aside__status-list mb-3">
+          <li class="settings-aside__status-row">
+            <div class="settings-aside__status-label">
+              <span
+                class="settings-aside__dot"
+                [class.settings-aside__dot--success]="serverStatus.mongo.ok"
+                [class.settings-aside__dot--danger]="!serverStatus.mongo.ok"
+                aria-hidden="true"
+              ></span>
+              <span>MongoDB</span>
+            </div>
+            <span
+              class="settings-aside__pill"
+              [class.text-success]="serverStatus.mongo.ok"
+              [class.text-danger]="!serverStatus.mongo.ok"
+            >
+              {{ serverStatus.mongo.ok ? 'Available' : 'Unavailable' }}
+            </span>
+            <span class="settings-aside__detail text-muted small">{{ mongoStatusLabel(serverStatus.mongo) }}</span>
+          </li>
+
+          @if (serverStatus.activeProvider; as active) {
+            <li class="settings-aside__status-row">
+              <div class="settings-aside__status-label">
+                <span class="settings-aside__dot settings-aside__dot--success" aria-hidden="true"></span>
+                <span>Active provider</span>
+              </div>
+              <span class="settings-aside__pill text-success">Available</span>
+              <span class="settings-aside__detail text-muted small">
+                {{ formatProvider(active.name) }} — judge: {{ active.judgeModel }}
+              </span>
+            </li>
+          } @else {
+            <li class="settings-aside__status-row">
+              <div class="settings-aside__status-label">
+                <span class="settings-aside__dot settings-aside__dot--danger" aria-hidden="true"></span>
+                <span>Active provider</span>
+              </div>
+              <span class="settings-aside__pill text-danger">Unavailable</span>
+              <span class="settings-aside__detail text-muted small">No provider is ready</span>
+            </li>
+          }
+
+          @for (probe of serverStatus.providers; track probe.name) {
+            <li class="settings-aside__status-row">
+              <details class="settings-aside__provider-details">
+                <summary class="settings-aside__provider-summary">
+                  <span class="settings-aside__status-label">
+                    <span
+                      class="settings-aside__dot"
+                      [class.settings-aside__dot--success]="probe.status === 'ready'"
+                      [class.settings-aside__dot--danger]="probe.status !== 'ready'"
+                      aria-hidden="true"
+                    ></span>
+                    <span>{{ formatProvider(probe.name) }}</span>
+                  </span>
+                  <span
+                    class="settings-aside__pill"
+                    [class.text-success]="probe.status === 'ready'"
+                    [class.text-danger]="probe.status !== 'ready'"
+                  >
+                    {{ probe.status === 'ready' ? 'Available' : 'Unavailable' }}
+                  </span>
+                </summary>
+                <span class="settings-aside__detail text-muted small">
+                  {{ providerStatusLabel(probe) }}
+                </span>
+              </details>
+            </li>
+          }
+        </ul>
+
+        <p class="settings-aside__hint text-muted small mb-0">
+          Database URL and API keys are configured in the server
+          <code>.env</code> file.
+          <a routerLink="/about" fragment="server-setup" (click)="dismiss()">Setup help</a>
+        </p>
+      } @else {
+        <p class="text-muted small mb-0">Loading server status…</p>
+      }
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsDataHeading">
+      <h3 class="settings-aside__heading h6" id="settingsDataHeading">Data</h3>
+
+      <div class="settings-aside__subsection">
+        <h4 class="settings-aside__subheading small text-muted text-uppercase">Evaluations</h4>
+        <p class="mb-2 small">
+          {{ evaluationCount() }} {{ evaluationCount() === 1 ? 'evaluation' : 'evaluations' }} loaded
+        </p>
+        @if (evaluationsLoadError()) {
+          <p class="text-danger small">{{ evaluationsLoadError() }}</p>
+        }
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          (click)="reloadEvaluations()"
+          [disabled]="evaluationsLoading()"
+        >
+          @if (evaluationsLoading()) {
+            Reloading…
+          } @else {
+            Reload evaluations
+          }
+        </button>
+      </div>
+
+      <div class="settings-aside__subsection">
+        <h4 class="settings-aside__subheading small text-muted text-uppercase">Stored preferences</h4>
+        <dl class="settings-aside__prefs mb-0">
+          @for (item of preferencesSummary(); track item.label) {
+            <div class="settings-aside__pref-row">
+              <dt>{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      <div class="settings-aside__subsection">
+        <h4 class="settings-aside__subheading small text-muted text-uppercase">Model leaderboard</h4>
+        <p class="settings-aside__hint text-muted small mb-2">Top models by winning answers</p>
+        <app-model-leaderboard [entries]="leaderboardEntries()" />
+      </div>
+
+      <div class="settings-aside__subsection">
+        <button type="button" class="btn btn-outline-danger btn-sm" (click)="resetPreferences()">
+          Reset all preferences
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-aside__card" aria-labelledby="settingsAboutHeading">
+      <h3 class="settings-aside__heading h6" id="settingsAboutHeading">About</h3>
+      <p class="settings-aside__hint text-muted small mb-2">
+        Compare AI answers against a rubric, pick a winner, and draft an improved response.
+      </p>
+      <a routerLink="/about" class="btn btn-outline-primary btn-sm" (click)="dismiss()">
+        About AiEval
+      </a>
+    </section>
+  </div>
+</div>

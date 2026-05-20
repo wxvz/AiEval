@@ -33,3 +33,26 @@ export async function closeDb(): Promise<void> {
   client = undefined;
   db = undefined;
 }
+
+export type MongoProbeStatus =
+  | { ok: true; dbName: string }
+  | { ok: false; dbName: string; reason: string };
+
+export async function probeMongo(): Promise<MongoProbeStatus> {
+  const dbName = config.dbName;
+
+  if (!db) {
+    return { ok: false, dbName, reason: 'not connected' };
+  }
+
+  try {
+    await db.admin().command({ ping: 1 });
+    return { ok: true, dbName };
+  } catch (error) {
+    return {
+      ok: false,
+      dbName,
+      reason: error instanceof Error ? error.message : 'ping failed',
+    };
+  }
+}

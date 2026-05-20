@@ -69,7 +69,7 @@ export type CreateCriterionDto = Pick<RubricCriterion, 'name' | 'maxPoints'> &
   Partial<Pick<RubricCriterion, 'description'>>;
 
 export type CreateEvaluationDto = Pick<Evaluation, 'title' | 'prompt'> &
-  Partial<Pick<Evaluation, 'criteria'>>;
+  Partial<Pick<Evaluation, 'criteria' | 'criteriaMode'>>;
 
 export type UpdateEvaluationDto = Partial<
   Pick<

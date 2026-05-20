@@ -1,4 +1,4 @@
-import { Component, computed, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
@@ -8,6 +8,9 @@ import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
+import { SettingsService } from '../../services/settings.service';
+
+const AUTO_DISMISS_MS = 3000;
 
 export function upsertCriterionScore(
   scores: Score[],
@@ -84,6 +87,7 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
 export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
+  private readonly settingsService = inject(SettingsService);
 
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
@@ -113,6 +117,24 @@ export class CompareAnswersPage {
 
     return normalizeAnswerIndex(this.selectedAnswerIndex(), answerCount);
   });
+
+  constructor() {
+    effect((onCleanup) => {
+      if (!this.settingsService.autoDismissAutomationStatus()) {
+        return;
+      }
+
+      if (!this.showAutomationBanner() || this.automationBannerDismissed()) {
+        return;
+      }
+
+      const timeoutId = window.setTimeout(() => {
+        this.automationBannerDismissed.set(true);
+      }, AUTO_DISMISS_MS);
+
+      onCleanup(() => window.clearTimeout(timeoutId));
+    });
+  }
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {

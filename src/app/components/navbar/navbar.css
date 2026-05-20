@@ -32,7 +32,7 @@
   font-weight: 600;
 }
 
-.theme-toggle {
+.settings-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -45,7 +45,7 @@
   text-decoration: none;
 }
 
-.theme-toggle:hover {
+.settings-toggle:hover:not(.disabled) {
   color: var(--aieval-primary);
   background-color: color-mix(in srgb, var(--aieval-primary) 10%, transparent);
 }

@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongodb';
 
 import { config } from '../config.js';
+import { getLlmPreset } from '../runtime-settings.js';
 import { getEvaluationsCollection } from '../db.js';
 import { needsAutomationMetadataPrep } from './constants.js';
 import { getActiveCriteria } from './criteria.js';
@@ -905,7 +906,7 @@ export async function runEvaluationAutomation(options: {
     evaluationId,
     force,
     phase,
-    preset: config.llmPreset,
+    preset: getLlmPreset(),
   });
 
   let workingDoc = doc;

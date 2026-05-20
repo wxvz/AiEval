@@ -1,0 +1,17 @@
+@if (entries().length === 0) {
+  <p class="text-muted small mb-0">
+    No winners yet — mark a winner on Compare or run auto-score.
+  </p>
+} @else {
+  <ol class="model-leaderboard__list mb-0">
+    @for (entry of entries(); track entry.label) {
+      <li class="model-leaderboard__item">
+        <span class="model-leaderboard__rank" aria-hidden="true">{{ entry.rank }}</span>
+        <span class="model-leaderboard__label">{{ entry.label }}</span>
+        <span class="model-leaderboard__count text-muted small">
+          {{ entry.winCount }} {{ entry.winCount === 1 ? 'win' : 'wins' }}
+        </span>
+      </li>
+    }
+  </ol>
+}

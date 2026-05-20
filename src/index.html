@@ -17,7 +17,9 @@
       var stored = localStorage.getItem(key);
       var theme = stored === 'light' || stored === 'dark'
         ? stored
-        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        : stored === 'system' || !stored
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : 'light';
       document.documentElement.setAttribute('data-bs-theme', theme);
     })();
   </script>
