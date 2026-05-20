@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { getLlmPreset } from '../runtime-settings.js';
 import type { ModelRef, ProviderName } from './types.js';
 
 interface ProviderPreset {
@@ -185,7 +186,7 @@ export function resolveModelsForProvider(providerName: ProviderName): {
   answerModels: ModelRef[];
   judgeModel: ModelRef;
 } {
-  const preset = PRESETS[providerName][config.llmPreset];
+  const preset = PRESETS[providerName][getLlmPreset()];
   const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
   const answerIds = resolveModelsFromEntries(customAnswerEntries, providerName, preset.answer);
   const judgeId = resolveJudgeModel(config.llmJudgeModel, providerName, preset.judge);

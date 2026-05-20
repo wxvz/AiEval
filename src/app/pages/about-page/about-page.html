@@ -49,6 +49,18 @@
       </li>
     </ol>
 
+    <h2 class="h5 mb-3" id="server-setup">Server setup</h2>
+    <p class="mb-3">
+      AiEval reads server configuration from a <code>.env</code> file in the project root. Copy
+      <code>.env.example</code> to <code>.env</code> and set at least <code>MONGODB_URI</code>. API keys
+      for cloud providers are optional fallbacks when Ollama is unavailable.
+    </p>
+    <p class="mb-4 text-muted small">
+      You can change the performance preset (Balanced / Fast) in Settings → Models without editing
+      <code>.env</code>; the choice applies until the API restarts, when <code>LLM_PRESET</code> in
+      <code>.env</code> is used again.
+    </p>
+
     <a routerLink="/" class="btn btn-primary">Go to dashboard</a>
   </div>
 </div>

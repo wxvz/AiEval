@@ -183,7 +183,7 @@ cp .env.example .env
 | `OPENROUTER_APP_TITLE` | App title sent to OpenRouter (default: `AiEval`) |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
-| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`) |
+| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`). Override at runtime in **Settings → Models** until the API restarts. |
 | `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
 | `LLM_JUDGE_MODEL` | Override judge as `provider:model` (e.g. `openrouter:meta-llama/llama-3.3-70b-instruct:free`). Ignored if the provider does not match the active automation provider. |
 | `LLM_CONCURRENCY` | Max parallel answer-generation calls (default: `3`). Use `1` for OpenRouter free / `openrouter/free`. |

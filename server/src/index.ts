@@ -8,6 +8,7 @@ import { logEvent } from './logging/logger.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { createAutomationRouter } from './routes/automation.js';
 import { createEvaluationsRouter } from './routes/evaluations.js';
+import { createSettingsRouter } from './routes/settings.js';
 import { createStatusRouter } from './routes/status.js';
 import { runStartupPreflight } from './startup/preflight.js';
 
@@ -28,6 +29,7 @@ async function start(): Promise<void> {
   await runStartupPreflight();
 
   app.use('/api/status', createStatusRouter());
+  app.use('/api/settings', createSettingsRouter());
   app.use('/api/evaluations', createAutomationRouter());
   app.use('/api/evaluations', createEvaluationsRouter());
 

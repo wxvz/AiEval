@@ -13,7 +13,6 @@ export type MongoStatus = { ok: true; dbName: string } | { ok: false; dbName: st
 
 export interface AppStatus {
   mongo: MongoStatus;
-  llmPreset: 'balanced' | 'fast';
   providers: ProviderProbeStatus[];
   activeProvider: {
     name: ProviderName;

@@ -79,7 +79,6 @@ describe('GET /api/status', () => {
     expect(status).toBe(200);
     expect(body).toEqual({
       mongo: { ok: true, dbName: 'aieval-test' },
-      llmPreset: 'balanced',
       providers: [
         {
           name: 'ollama',
