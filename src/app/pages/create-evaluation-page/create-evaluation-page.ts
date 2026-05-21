@@ -10,6 +10,7 @@ import { LeaveDuringAutomationComponent } from '../../components/leave-during-au
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
+import { useAutomationPageContext } from '../../utils/automation-page-context';
 
 @Component({
   selector: 'app-create-evaluation-page',
@@ -31,9 +32,45 @@ export class CreateEvaluationPage {
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
   protected readonly createdEvaluationId = signal<string | null>(null);
+  private readonly automationPage = useAutomationPageContext(() => this.createdEvaluationId());
+
+  protected readonly completedEvaluationIds = signal<string[]>([]);
+  private readonly automationSessionKey = signal(0);
   protected readonly generatingPrompt = signal(false);
   protected readonly creating = signal(false);
   private readonly formFieldsVersion = signal(0);
+
+  protected readonly automating = this.automationPage.automating;
+  protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
+
+  protected readonly activeAutomationSession = computed(() => {
+    const id = this.createdEvaluationId();
+    const key = this.automationSessionKey();
+
+    if (!id) {
+      return [] as { key: string; evaluationId: string }[];
+    }
+
+    return [{ key: `${key}:${id}`, evaluationId: id }];
+  });
+
+  protected readonly showActiveAutomationControls = computed(() => {
+    const id = this.createdEvaluationId();
+
+    if (!id) {
+      return false;
+    }
+
+    if (this.automating()) {
+      return true;
+    }
+
+    if (!this.automationComplete()) {
+      return true;
+    }
+
+    return !this.completedEvaluationIds().includes(id);
+  });
 
   constructor() {
     effect((onCleanup) => {
@@ -53,12 +90,6 @@ export class CreateEvaluationPage {
     });
   }
 
-  protected readonly automating = computed(() => {
-    const id = this.createdEvaluationId();
-
-    return id ? this.evaluationService.isAutomating(id) : false;
-  });
-
   protected readonly automationBlocksActions = computed(() => {
     const id = this.createdEvaluationId();
 
@@ -73,22 +104,6 @@ export class CreateEvaluationPage {
     }
 
     return this.evaluationService.isAutomating(id);
-  });
-
-  protected readonly displayTokenUsage = computed(() => {
-    const id = this.createdEvaluationId();
-
-    if (!id) {
-      return null;
-    }
-
-    const current = this.evaluationService.getById(id);
-
-    if (this.automating()) {
-      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
-    }
-
-    return current?.tokenUsage;
   });
 
   protected readonly hasPartialFormForAutomation = computed(() => {
@@ -113,6 +128,11 @@ export class CreateEvaluationPage {
       !this.automationBlocksActions() &&
       !this.createdEvaluationId() &&
       !this.hasPartialFormForAutomation(),
+  );
+
+  protected readonly canRunNewFullAutomation = computed(
+    () =>
+      this.showFullAutomationRerun() && !this.creating() && !this.automationBlocksActions(),
   );
 
   protected readonly showFullAutomationRerun = computed(
@@ -189,8 +209,12 @@ export class CreateEvaluationPage {
       });
   }
 
+  protected getEvaluation(id: string): Evaluation | undefined {
+    return this.evaluationService.getById(id);
+  }
+
   protected onAutomationFinished(evaluation: Evaluation): void {
-    this.syncFormFromEvaluation(evaluation);
+    this.applyAutomationResult(evaluation);
   }
 
   protected onAutomationStatusDismissed(): void {
@@ -203,19 +227,57 @@ export class CreateEvaluationPage {
     const evaluation = this.evaluationService.getById(id);
 
     if (evaluation) {
-      this.syncFormFromEvaluation(evaluation);
+      this.applyAutomationResult(evaluation);
     }
   }
 
   protected onRunFullAutomation(): Promise<void> {
-    if (!this.canRunFullAutomation() || this.isPartialFormForAutomation()) {
+    if (!this.canRunFullAutomation()) {
       return Promise.resolve();
     }
 
+    return this.startFullAutomation({ useFormValues: true });
+  }
+
+  protected onRunNewFullAutomation(): Promise<void> {
+    if (!this.canRunNewFullAutomation()) {
+      return Promise.resolve();
+    }
+
+    const currentId = this.createdEvaluationId();
+
+    if (currentId) {
+      this.rememberCompletedEvaluation(currentId);
+    }
+
+    return this.startFullAutomation({ clearForm: true });
+  }
+
+  private applyAutomationResult(evaluation: Evaluation): void {
+    this.rememberCompletedEvaluation(evaluation.id);
+    this.syncFormFromEvaluation(evaluation);
+  }
+
+  private startFullAutomation(options: {
+    clearForm?: boolean;
+    useFormValues?: boolean;
+  }): Promise<void> {
+    const form = this.evaluationForm();
+
+    if (options.clearForm && form) {
+      form.setTitle('');
+      form.setPrompt('');
+    }
+
+    const value = options.useFormValues
+      ? this.resolveFullAutomationCreateValue()
+      : this.stubCreateValue();
+
     this.creating.set(true);
 
-    return this.createEvaluation(this.resolveFullAutomationCreateValue())
+    return this.createEvaluation(value)
       .then((created) => {
+        this.automationSessionKey.update((key) => key + 1);
         this.createdEvaluationId.set(created.id);
       })
       .catch(() => undefined)
@@ -224,28 +286,30 @@ export class CreateEvaluationPage {
       });
   }
 
-  private isPartialFormForAutomation(): boolean {
-    const form = this.evaluationForm();
+  private rememberCompletedEvaluation(id: string): void {
+    const evaluation = this.evaluationService.getById(id);
 
-    if (!form) {
-      return false;
+    if (!evaluation?.automatedAt) {
+      return;
     }
 
-    const { title, prompt } = form.getValue();
-    const hasTitle = title.trim().length > 0;
-    const hasPrompt = prompt.trim().length > 0;
+    this.completedEvaluationIds.update((ids) =>
+      ids.includes(id) ? ids : [...ids, id],
+    );
+  }
 
-    return hasTitle !== hasPrompt;
+  private stubCreateValue(): EvaluationFormValue {
+    return {
+      title: AUTOMATION_METADATA_STUB,
+      prompt: AUTOMATION_METADATA_STUB,
+    };
   }
 
   private resolveFullAutomationCreateValue(): EvaluationFormValue {
     const form = this.evaluationForm();
 
     if (!form) {
-      return {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
-      };
+      return this.stubCreateValue();
     }
 
     const { title, prompt } = form.getValue();
@@ -256,10 +320,7 @@ export class CreateEvaluationPage {
       return { title: trimmedTitle, prompt: trimmedPrompt };
     }
 
-    return {
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
-    };
+    return this.stubCreateValue();
   }
 
   private createEvaluation(value: EvaluationFormValue): Promise<Evaluation> {

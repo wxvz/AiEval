@@ -10,6 +10,7 @@ import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { SettingsService } from '../../services/settings.service';
+import { useAutomationPageContext } from '../../utils/automation-page-context';
 
 const AUTO_DISMISS_MS = 3000;
 
@@ -95,22 +96,14 @@ export class CompareAnswersPage {
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly automating = computed(() =>
-    this.evaluationService.isAutomating(this.evaluationId),
-  );
+  private readonly automationPage = useAutomationPageContext(() => this.evaluationId);
+
+  protected readonly automating = this.automationPage.automating;
 
   protected readonly selectedAnswerIndex = signal(0);
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
-  protected readonly displayTokenUsage = computed(() => {
-    const current = this.evaluation();
-
-    if (this.automating()) {
-      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
-    }
-
-    return current?.tokenUsage;
-  });
+  protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();
 

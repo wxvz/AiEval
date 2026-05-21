@@ -3,19 +3,44 @@
   <app-token-usage-badge [usage]="displayTokenUsage()" [live]="automating()" />
 </div>
 
-<app-evaluation-form submitLabel="Create" (submitted)="onSubmit($event)" />
-
-<p class="text-muted small mb-2">
-  <strong>Generate prompt</strong> fills the title and prompt fields (or uses your title if you entered one).
-  <strong>Run full automation</strong> uses your title and prompt when both are filled; otherwise it generates them, then runs answers, scoring, and an improved answer.
+<p class="text-muted small mb-3">
+  <strong>Run full automation</strong> is the main path: it creates an evaluation, generates a title and prompt when
+  needed, then runs answers, scoring, and an improved answer. Use <strong>Generate prompt</strong> to preview title and
+  prompt first. <strong>Create manually</strong> saves the form and opens the edit page for a hands-on setup.
 </p>
-@if (hasPartialFormForAutomation()) {
-  <p class="text-muted small mb-2">
-    Fill both title and prompt, or leave both empty, before running full automation.
-  </p>
-}
 
-<div class="d-flex flex-wrap gap-2 mb-4">
+<div class="d-flex flex-wrap gap-2 mb-3 create-page__primary-actions">
+  @if (!showFullAutomationRerun()) {
+    <button
+      type="button"
+      class="btn btn-primary btn-sm"
+      [disabled]="!canRunFullAutomation()"
+      (click)="onRunFullAutomation()"
+    >
+      @if (creating()) {
+        Creating…
+      } @else if (automationBlocksActions()) {
+        Running full automation…
+      } @else {
+        Run full automation
+      }
+    </button>
+  } @else {
+    <button
+      type="button"
+      class="btn btn-primary btn-sm"
+      [disabled]="!canRunNewFullAutomation()"
+      (click)="onRunNewFullAutomation()"
+    >
+      @if (creating()) {
+        Creating…
+      } @else if (automationBlocksActions()) {
+        Running full automation…
+      } @else {
+        Rerun full automation
+      }
+    </button>
+  }
   <button
     type="button"
     class="btn btn-outline-secondary btn-sm"
@@ -28,52 +53,72 @@
       Generate prompt
     }
   </button>
-  @if (!showFullAutomationRerun()) {
-    <button
-      type="button"
-      class="btn btn-outline-primary btn-sm"
-      [disabled]="!canRunFullAutomation()"
-      (click)="onRunFullAutomation()"
-    >
-      @if (creating()) {
-        Creating…
-      } @else if (automationBlocksActions()) {
-        Running full automation…
-      } @else {
-        Run full automation
-      }
-    </button>
-  }
 </div>
 
-@if (createdEvaluationId(); as evaluationId) {
-  <app-automation-controls
-    [evaluationId]="evaluationId"
-    phase="full"
-    [autoStart]="!showFullAutomationRerun()"
-    [hideButton]="!showFullAutomationRerun()"
-    buttonLabel="Run full automation"
-    runningLabel="Running full automation…"
-    statusHint="Running the full pipeline—answers, scores, and an improved answer. This may take a few minutes."
-    successMessage="Full automation complete."
-    errorMessage="Full automation failed."
-    confirmForceTitle="Replace answers?"
-    confirmForceMessage="Replace existing answers and re-run full automation? Scores, winner, and improved answer will be cleared."
-    confirmForceLabel="Replace and run"
-    (automationFinished)="onAutomationFinished($event)"
-    (statusDismissed)="onAutomationStatusDismissed()"
-  />
+@if (hasPartialFormForAutomation()) {
+  <p class="text-muted small mb-3">
+    Fill both title and prompt, or leave both empty, before running full automation.
+  </p>
+}
 
-  @if (automationComplete()) {
-    <div class="d-flex flex-wrap gap-2 mt-3">
-      <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">
-        Compare answers
-      </a>
-      <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'edit']">
-        Edit evaluation
-      </a>
-    </div>
+@if (showFullAutomationRerun()) {
+  <p class="text-muted small mb-3">
+    When a run finishes, Compare and Edit links appear in the completed list below. Use <strong>Rerun full automation</strong> to
+    start another full pipeline on a fresh evaluation.
+  </p>
+}
+
+<app-evaluation-form submitLabel="Create manually" (submitted)="onSubmit($event)" />
+
+@if (showActiveAutomationControls()) {
+  @for (session of activeAutomationSession(); track session.key) {
+    <app-automation-controls
+      class="d-block mt-4"
+      [evaluationId]="session.evaluationId"
+      phase="full"
+      [autoStart]="!showFullAutomationRerun()"
+      [hideButton]="!showFullAutomationRerun()"
+      buttonLabel="Run full automation"
+      runningLabel="Running full automation…"
+      statusHint="Running the full pipeline—answers, scores, and an improved answer. This may take a few minutes."
+      successMessage="Full automation complete."
+      errorMessage="Full automation failed."
+      confirmForceTitle="Replace answers?"
+      confirmForceMessage="Replace existing answers and re-run full automation? Scores, winner, and improved answer will be cleared."
+      confirmForceLabel="Replace and run"
+      (automationFinished)="onAutomationFinished($event)"
+      (statusDismissed)="onAutomationStatusDismissed()"
+    />
   }
+}
+
+@if (completedEvaluationIds().length > 0) {
+  <section class="create-page__completed">
+    <h2 class="create-page__completed-heading">Completed evaluations</h2>
+    <div class="create-page__completed-list">
+      @for (completedId of completedEvaluationIds(); track completedId) {
+        @if (getEvaluation(completedId); as completed) {
+          <div class="create-page__eval-bubble">
+            <p class="create-page__eval-bubble-title">{{ completed.title }}</p>
+            <div class="create-page__eval-bubble-actions">
+              <a
+                class="btn btn-outline-primary btn-sm"
+                [routerLink]="['/evaluations', completedId, 'compare']"
+              >
+                Compare answers
+              </a>
+              <a
+                class="btn btn-outline-secondary btn-sm"
+                [routerLink]="['/evaluations', completedId, 'edit']"
+              >
+                Edit evaluation
+              </a>
+            </div>
+          </div>
+        }
+      }
+    </div>
+  </section>
 }
 
 <app-leave-during-automation [evaluationId]="createdEvaluationId()" />
