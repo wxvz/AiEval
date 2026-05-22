@@ -442,6 +442,13 @@ async function scoreAnswers(
 ): Promise<Answer[]> {
   assertNotCancelled(signal, 'scoring');
 
+  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+
+  emit(onProgress, {
+    type: 'scoring_batch',
+    modelLabel: candidates[0]?.label ?? setup.judgeModel.label,
+  });
+
   for (const answer of answers) {
     emit(onProgress, { type: 'scoring', answerId: answer.id, label: answer.label });
     logEvent('info', LogEvents.automationScoring, {
@@ -459,7 +466,6 @@ async function scoreAnswers(
 
   const userContent = buildBatchScorePrompt(prompt, criteria, answers);
   const messages: ChatMessage[] = [judgeSystem, { role: 'user', content: userContent }];
-  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
 
   const rows = await callSingleModelWithFallback(
     candidates,
@@ -639,19 +645,22 @@ async function synthesizeImproved(
 ): Promise<ImprovedAnswer> {
   assertNotCancelled(signal, 'improved');
 
-  emit(onProgress, { type: 'improved_generating' });
-  logEvent('info', LogEvents.automationImprovedGenerating, {
-    runId,
-    evaluationId,
-    step: 'improved',
-  });
-
   const improvedPrompt = buildImprovedPrompt(prompt, criteria, answers, winner);
   const improvedMessages: ChatMessage[] = [
     { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
     { role: 'user', content: improvedPrompt },
   ];
   const improvedCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+
+  emit(onProgress, {
+    type: 'improved_generating',
+    modelLabel: improvedCandidates[0]?.label ?? setup.judgeModel.label,
+  });
+  logEvent('info', LogEvents.automationImprovedGenerating, {
+    runId,
+    evaluationId,
+    step: 'improved',
+  });
 
   const improved = await callSingleModelWithFallback(
     improvedCandidates,
@@ -1224,7 +1233,6 @@ export async function runEvaluationAutomation(options: {
     emit(onProgress, {
       type: 'provider_resolved',
       provider: setup.providerName,
-      models: [...setup.answerModels.map((m) => m.label), setup.judgeModel.label],
     });
     logEvent('info', LogEvents.automationProviderResolved, {
       runId,

@@ -65,7 +65,7 @@ export function automationStatusFromError(
 }
 
 export type AutomationProgressEvent =
-  | { type: 'provider_resolved'; provider: string; models: string[] }
+  | { type: 'provider_resolved'; provider: string }
   | { type: 'provider_fallback'; from: string; to: string }
   | {
       type: 'slow_provider_prompt';
@@ -91,10 +91,11 @@ export type AutomationProgressEvent =
       slotIndex?: number;
     }
   | { type: 'answer_generated'; answerId: string; label: string }
+  | { type: 'scoring_batch'; modelLabel: string }
   | { type: 'scoring'; answerId: string; label: string }
   | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
   | { type: 'winner_picked'; answerId: string; label: string }
-  | { type: 'improved_generating' }
+  | { type: 'improved_generating'; modelLabel: string }
   | { type: 'improved_done' }
   | { type: 'token_usage'; usage: TokenUsageTotals }
   | { type: 'status'; status: AutomationRunStatus; runId?: string }
