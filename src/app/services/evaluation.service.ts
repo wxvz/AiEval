@@ -470,6 +470,12 @@ export class EvaluationService {
             return;
           }
 
+          if (event.type === 'metadata_generated') {
+            this.replaceEvaluation(event.evaluation);
+            callbacks?.onProgress?.(event);
+            return;
+          }
+
           if (event.type === 'complete') {
             try {
               callbacks?.onProgress?.(event);

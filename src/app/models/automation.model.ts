@@ -31,7 +31,22 @@ export type AutomationProgressEvent =
       cloudProvider: string | null;
       elapsedLabel: string;
     }
+  | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
+  | {
+      type: 'step_paused';
+      step: string;
+      reason: 'rate_limit';
+      completed: number;
+      pending: number;
+    }
+  | {
+      type: 'model_fallback';
+      step: string;
+      fromModel: string;
+      toModel: string;
+      slotIndex?: number;
+    }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }
   | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
@@ -58,8 +73,16 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
       return event.cloudProvider
         ? `Waiting: use ${event.cloudProvider} or keep ${event.currentProvider}?`
         : `Waiting: keep using ${event.currentProvider}?`;
+    case 'metadata_generated':
+      return 'Title and prompt ready';
     case 'generating':
       return `Generating ${event.modelLabel} (${event.index}/${event.total})…`;
+    case 'step_paused':
+      return `Paused (${event.completed} done, ${event.pending} pending) — retrying after rate limit…`;
+    case 'model_fallback':
+      return event.slotIndex !== undefined
+        ? `Retrying slot ${event.slotIndex + 1} with ${event.toModel} (was ${event.fromModel})`
+        : `Retrying with ${event.toModel} (was ${event.fromModel})`;
     case 'answer_generated':
       return `Generated answer: ${event.label}`;
     case 'scoring':

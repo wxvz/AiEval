@@ -88,6 +88,24 @@ export class CreateEvaluationPage {
 
       onCleanup(() => subscription.unsubscribe());
     });
+
+    effect(() => {
+      if (!this.automating()) {
+        return;
+      }
+
+      const id = this.createdEvaluationId();
+
+      if (!id) {
+        return;
+      }
+
+      const evaluation = this.evaluationService.getById(id);
+
+      if (evaluation) {
+        this.syncFormFromEvaluation(evaluation);
+      }
+    });
   }
 
   protected readonly automationBlocksActions = computed(() => {

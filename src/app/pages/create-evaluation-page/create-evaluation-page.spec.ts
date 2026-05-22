@@ -229,6 +229,45 @@ describe('CreateEvaluationPage', () => {
     expect(form!.getValue().prompt).toBe('Synced prompt text for the evaluation.');
   });
 
+  it('syncs title and prompt into the form when metadata arrives during automation', () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    evaluationService.automatingEvaluationId.set('eval-live');
+    page['createdEvaluationId'].set('eval-live');
+    evaluationService['evaluationsSignal'].update((list) => [
+      ...list,
+      {
+        id: 'eval-live',
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+        criteriaMode: 'default',
+        criteria: [],
+        answers: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+
+    evaluationService['evaluationsSignal'].update((list) =>
+      list.map((item) =>
+        item.id === 'eval-live'
+          ? {
+              ...item,
+              title: 'Live title',
+              prompt: 'Live prompt text for the evaluation.',
+            }
+          : item,
+      ),
+    );
+
+    fixture.detectChanges();
+
+    expect(form!.getValue().title).toBe('Live title');
+    expect(form!.getValue().prompt).toBe('Live prompt text for the evaluation.');
+  });
+
   it('showActiveAutomationControls is false when automation complete and eval is listed', () => {
     const evaluation = {
       id: 'eval-complete',

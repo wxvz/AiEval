@@ -74,7 +74,22 @@ export type AutomationProgressEvent =
       cloudProvider: string | null;
       elapsedLabel: string;
     }
+  | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
+  | {
+      type: 'step_paused';
+      step: AutomationStep;
+      reason: 'rate_limit';
+      completed: number;
+      pending: number;
+    }
+  | {
+      type: 'model_fallback';
+      step: AutomationStep;
+      fromModel: string;
+      toModel: string;
+      slotIndex?: number;
+    }
   | { type: 'answer_generated'; answerId: string; label: string }
   | { type: 'scoring'; answerId: string; label: string }
   | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }

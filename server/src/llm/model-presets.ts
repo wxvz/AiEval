@@ -1,6 +1,8 @@
 import { config } from '../config.js';
-import { getLlmPreset } from '../runtime-settings.js';
+import { getLlmPreset, type LlmPreset } from '../runtime-settings.js';
 import type { ModelRef, ProviderName } from './types.js';
+
+export type ModelRole = 'answer' | 'judge';
 
 interface ProviderPreset {
   balanced: { answer: string[]; judge: string };
@@ -195,4 +197,27 @@ export function resolveModelsForProvider(providerName: ProviderName): {
     answerModels: answerIds.map((model) => ({ model, label: modelIdToLabel(model) })),
     judgeModel: { model: judgeId, label: modelIdToLabel(judgeId) },
   };
+}
+
+/** Resolve one model id for a slot/role without building the full answer model list. */
+export function resolveSingleModel(
+  providerName: ProviderName,
+  role: ModelRole,
+  slotIndex: number,
+  preset: LlmPreset = getLlmPreset(),
+): string {
+  const providerPreset = PRESETS[providerName][preset];
+
+  if (role === 'judge') {
+    return resolveJudgeModel(config.llmJudgeModel, providerName, providerPreset.judge);
+  }
+
+  const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
+  const answerIds = resolveModelsFromEntries(
+    customAnswerEntries,
+    providerName,
+    providerPreset.answer,
+  );
+
+  return answerIds[slotIndex] ?? answerIds[answerIds.length - 1]!;
 }

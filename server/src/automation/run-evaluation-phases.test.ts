@@ -1,15 +1,39 @@
 import { ObjectId } from 'mongodb';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getActiveCriteria } from './criteria.js';
+import { initialScoresForCriteria } from './scores.js';
 import type { EvaluationDocument } from '../types/evaluation.js';
 
-const updateOne = vi.fn().mockResolvedValue({ modifiedCount: 1 });
+const { updateOne, resolveProvider } = vi.hoisted(() => ({
+  updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
+  resolveProvider: vi.fn(),
+}));
 
 vi.mock('../db.js', () => ({
   getEvaluationsCollection: () => ({ updateOne }),
 }));
+vi.mock('../llm/provider.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../llm/provider.js')>();
 
-const { AutomationError, prepareDocForPhase } = await import('./run-evaluation.js');
+  return {
+    ...actual,
+    resolveProvider,
+  };
+});
+
+import { AutomationError, prepareDocForPhase } from './run-evaluation.js';
+
+const mockSetup = {
+  providerName: 'groq' as const,
+  provider: { name: 'groq' as const, complete: vi.fn() },
+  answerModels: [
+    { model: 'm1', label: 'M1' },
+    { model: 'm2', label: 'M2' },
+    { model: 'm3', label: 'M3' },
+  ],
+  judgeModel: { model: 'judge', label: 'Judge' },
+};
 
 function baseDoc(overrides: Partial<EvaluationDocument> = {}): EvaluationDocument {
   return {
@@ -28,18 +52,35 @@ function baseDoc(overrides: Partial<EvaluationDocument> = {}): EvaluationDocumen
 describe('prepareDocForPhase', () => {
   beforeEach(() => {
     updateOne.mockClear();
+    resolveProvider.mockResolvedValue(mockSetup);
   });
 
-  it('throws for generate when answers exist without force', async () => {
-    const doc = baseDoc({
+  it('allows generate resume when fewer answers than expected models', async () => {
+    const doc = baseDoc();
+    const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
+    const docWithPartial = baseDoc({
       answers: [
         {
           id: 'a1',
           evaluationId: 'eval',
           label: 'M1',
           content: 'Hi',
-          scores: [],
+          scores: initialScoresForCriteria(criteria),
         },
+      ],
+    });
+
+    const result = await prepareDocForPhase(docWithPartial, 'generate', false);
+
+    expect(result.answers).toHaveLength(1);
+  });
+
+  it('throws for generate when all answer slots are filled without force', async () => {
+    const doc = baseDoc({
+      answers: [
+        { id: 'a1', evaluationId: 'eval', label: 'M1', content: 'One', scores: [] },
+        { id: 'a2', evaluationId: 'eval', label: 'M2', content: 'Two', scores: [] },
+        { id: 'a3', evaluationId: 'eval', label: 'M3', content: 'Three', scores: [] },
       ],
     });
 

@@ -27,12 +27,17 @@ async function waitInterCallDelay(): Promise<void> {
   await slot;
 }
 
-function isRateLimitError(error: unknown): boolean {
+export function isRateLimitError(error: unknown): boolean {
   if (error instanceof Error && error.message.includes('429')) {
     return true;
   }
 
   return false;
+}
+
+/** True when per-call retries are exhausted and the error is still a rate limit. */
+export function isRateLimitExhausted(error: unknown): boolean {
+  return isRateLimitError(error);
 }
 
 export interface CompleteContext {
