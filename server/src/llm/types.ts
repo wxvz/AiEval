@@ -1,4 +1,13 @@
-import type { Evaluation } from '../types/evaluation.js';
+import type { Evaluation, TokenUsageTotals } from '../types/evaluation.js';
+
+export type { TokenUsageTotals };
+
+export interface LlmTokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  estimated?: boolean;
+}
 
 export type ProviderName = 'ollama' | 'groq' | 'openrouter' | 'gemini' | 'huggingface';
 
@@ -24,6 +33,7 @@ export interface LlmCompletion {
   text: string;
   /** Populated when the provider routes to a different model (e.g. OpenRouter `openrouter/free`). */
   resolvedModel?: string;
+  usage?: LlmTokenUsage;
 }
 
 export interface LlmProvider {
@@ -55,7 +65,7 @@ export function automationStatusFromError(
 }
 
 export type AutomationProgressEvent =
-  | { type: 'provider_resolved'; provider: string; models: string[] }
+  | { type: 'provider_resolved'; provider: string }
   | { type: 'provider_fallback'; from: string; to: string }
   | {
       type: 'slow_provider_prompt';
@@ -64,13 +74,30 @@ export type AutomationProgressEvent =
       cloudProvider: string | null;
       elapsedLabel: string;
     }
+  | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
+  | {
+      type: 'step_paused';
+      step: AutomationStep;
+      reason: 'rate_limit';
+      completed: number;
+      pending: number;
+    }
+  | {
+      type: 'model_fallback';
+      step: AutomationStep;
+      fromModel: string;
+      toModel: string;
+      slotIndex?: number;
+    }
   | { type: 'answer_generated'; answerId: string; label: string }
+  | { type: 'scoring_batch'; modelLabel: string }
   | { type: 'scoring'; answerId: string; label: string }
   | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
   | { type: 'winner_picked'; answerId: string; label: string }
-  | { type: 'improved_generating' }
+  | { type: 'improved_generating'; modelLabel: string }
   | { type: 'improved_done' }
+  | { type: 'token_usage'; usage: TokenUsageTotals }
   | { type: 'status'; status: AutomationRunStatus; runId?: string }
   | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
   | {

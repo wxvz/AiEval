@@ -2,11 +2,12 @@ import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent, logPromptSnippet } from '../logging/logger.js';
 import { isSlowRequestError, resolveProviderModelForCall } from './groq-fallback.js';
+import { estimateUsage } from './parse-usage.js';
 import { completeWithRetry, type CompleteContext } from './rate-limit.js';
 import { JSON_RETRY_SYSTEM } from './prompts.js';
 import { parseJsonText } from './parse-json.js';
 import { resolveFirstCloudProvider } from './provider.js';
-import type { ChatMessage, LlmCompletion, LlmProvider } from './types.js';
+import type { ChatMessage, LlmCompletion, LlmProvider, LlmTokenUsage } from './types.js';
 
 function mergeSignals(...signals: (AbortSignal | undefined)[]): AbortSignal | undefined {
   const active = signals.filter((signal): signal is AbortSignal => !!signal);
@@ -20,6 +21,42 @@ function mergeSignals(...signals: (AbortSignal | undefined)[]): AbortSignal | un
   }
 
   return AbortSignal.any(active);
+}
+
+function resolveUsage(completion: LlmCompletion, messages: ChatMessage[]): LlmTokenUsage {
+  return completion.usage ?? estimateUsage(messages, completion.text);
+}
+
+function finalizeCompletion(
+  completion: LlmCompletion,
+  messages: ChatMessage[],
+  context: CompleteContext,
+): LlmCompletion {
+  const usage = resolveUsage(completion, messages);
+  context.recordUsage?.(usage);
+  return { ...completion, usage };
+}
+
+async function completeAndRecord(
+  fn: () => Promise<LlmCompletion>,
+  messages: ChatMessage[],
+  context: CompleteContext,
+): Promise<LlmCompletion> {
+  const start = Date.now();
+  const completion = await completeWithRetry(fn, context);
+  const finalized = finalizeCompletion(completion, messages, context);
+
+  logEvent('info', LogEvents.llmResponse, {
+    ...context,
+    durationMs: Date.now() - start,
+    outputLength: finalized.text.length,
+    promptTokens: finalized.usage!.promptTokens,
+    completionTokens: finalized.usage!.completionTokens,
+    totalTokens: finalized.usage!.totalTokens,
+    ...(finalized.usage!.estimated ? { estimated: true } : {}),
+  });
+
+  return finalized;
 }
 
 export async function chat(
@@ -48,13 +85,14 @@ export async function chat(
   const requestSignal = mergeSignals(context.abortSignal, slowSignal);
 
   try {
-    return await completeWithRetry(
-      async () =>
+    return await completeAndRecord(
+      () =>
         provider.complete(model, messages, {
           json: context.json,
           signal: requestSignal,
           temperature: context.temperature,
         }),
+      messages,
       { ...context, provider: provider.name, model },
     );
   } catch (error) {
@@ -96,13 +134,14 @@ export async function chat(
 
       context.onCloudProviderSwitch?.(cloudSetup);
 
-      return completeWithRetry(
-        async () =>
+      return completeAndRecord(
+        () =>
           cloudSetup.provider.complete(cloudModel, messages, {
             json: context.json,
             signal: mergeSignals(context.abortSignal),
             temperature: context.temperature,
           }),
+        messages,
         { ...context, provider: cloudSetup.providerName, model: cloudModel },
       );
     }
@@ -117,13 +156,14 @@ export async function chat(
 
     context.onPreferLocalProvider?.();
 
-    return completeWithRetry(
-      async () =>
+    return completeAndRecord(
+      () =>
         provider.complete(model, messages, {
           json: context.json,
           signal: mergeSignals(context.abortSignal),
           temperature: context.temperature,
         }),
+      messages,
       { ...context, provider: provider.name, model },
     );
   }

@@ -1,0 +1,18 @@
+.token-usage-badge {
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.35em 0.65em;
+  background-color: color-mix(in srgb, var(--bs-secondary-color) 15%, transparent);
+  color: var(--bs-secondary-color);
+  border: none;
+}
+
+.token-usage-badge--live {
+  animation: token-usage-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes token-usage-pulse {
+  50% {
+    opacity: 0.65;
+  }
+}

@@ -33,6 +33,7 @@ describe('createOpenRouterProvider', () => {
       mockOpenRouterResponse({
         model: 'meta-llama/llama-3.2-3b-instruct:free',
         choices: [{ message: { content: 'hello' } }],
+        usage: { prompt_tokens: 4, completion_tokens: 6, total_tokens: 10 },
       }),
     );
 
@@ -41,7 +42,10 @@ describe('createOpenRouterProvider', () => {
       { role: 'user', content: 'hi' },
     ]);
 
-    expect(result).toEqual({ text: 'hello' });
+    expect(result).toEqual({
+      text: 'hello',
+      usage: { promptTokens: 4, completionTokens: 6, totalTokens: 10 },
+    });
   });
 
   it('includes resolvedModel when OpenRouter routes to a different model', async () => {

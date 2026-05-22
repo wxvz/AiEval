@@ -1,5 +1,9 @@
 import type { ObjectId } from 'mongodb';
 
+import type { TokenUsageTotals } from './token-usage.js';
+
+export type { TokenUsageTotals };
+
 export interface RubricCriterion {
   id: string;
   name: string;
@@ -45,6 +49,7 @@ export interface Evaluation {
   improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
   automatedAt?: string;
+  tokenUsage?: TokenUsageTotals;
   createdAt: string;
   updatedAt: string;
 }

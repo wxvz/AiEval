@@ -162,6 +162,333 @@ describe('CreateEvaluationPage', () => {
     });
   });
 
+  it('automationBlocksActions is false after automation completes', () => {
+    const evaluation = {
+      id: 'eval-done',
+      title: 'Generated title',
+      prompt: 'Generated prompt for the evaluation run.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-done');
+
+    expect(page['automationBlocksActions']()).toBe(false);
+  });
+
+  it('automationBlocksActions is true while automation is in progress', () => {
+    evaluationService.automatingEvaluationId.set('eval-1');
+    page['createdEvaluationId'].set('eval-1');
+
+    expect(page['automationBlocksActions']()).toBe(true);
+  });
+
+  it('showFullAutomationRerun is true when automation completed', () => {
+    const evaluation = {
+      id: 'eval-done',
+      title: 'Done',
+      prompt: 'Done prompt for evaluation.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-done');
+
+    expect(page['showFullAutomationRerun']()).toBe(true);
+    expect(page['canRunFullAutomation']()).toBe(false);
+  });
+
+  it('onAutomationFinished syncs title and prompt into the form', () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    page['onAutomationFinished']({
+      id: 'eval-sync',
+      title: 'Synced title',
+      prompt: 'Synced prompt text for the evaluation.',
+      criteriaMode: 'default',
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(form!.getValue().title).toBe('Synced title');
+    expect(form!.getValue().prompt).toBe('Synced prompt text for the evaluation.');
+  });
+
+  it('syncs title and prompt into the form when metadata arrives during automation', () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    evaluationService.automatingEvaluationId.set('eval-live');
+    page['createdEvaluationId'].set('eval-live');
+    evaluationService['evaluationsSignal'].update((list) => [
+      ...list,
+      {
+        id: 'eval-live',
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+        criteriaMode: 'default',
+        criteria: [],
+        answers: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+
+    evaluationService['evaluationsSignal'].update((list) =>
+      list.map((item) =>
+        item.id === 'eval-live'
+          ? {
+              ...item,
+              title: 'Live title',
+              prompt: 'Live prompt text for the evaluation.',
+            }
+          : item,
+      ),
+    );
+
+    fixture.detectChanges();
+
+    expect(form!.getValue().title).toBe('Live title');
+    expect(form!.getValue().prompt).toBe('Live prompt text for the evaluation.');
+  });
+
+  it('showActiveAutomationControls is false when automation complete and eval is listed', () => {
+    const evaluation = {
+      id: 'eval-complete',
+      title: 'Complete title',
+      prompt: 'Complete prompt.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-complete');
+    page['completedEvaluationIds'].set(['eval-complete']);
+
+    expect(page['showActiveAutomationControls']()).toBe(false);
+  });
+
+  it('showActiveAutomationControls is true while automation is running', () => {
+    evaluationService.automatingEvaluationId.set('eval-run');
+    page['createdEvaluationId'].set('eval-run');
+
+    expect(page['showActiveAutomationControls']()).toBe(true);
+  });
+
+  it('onAutomationFinished adds evaluation id to completedEvaluationIds', () => {
+    const evaluation = {
+      id: 'eval-complete',
+      title: 'Complete title',
+      prompt: 'Complete prompt.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-complete');
+
+    page['onAutomationFinished'](evaluation);
+
+    expect(page['completedEvaluationIds']()).toEqual(['eval-complete']);
+  });
+
+  it('onRunNewFullAutomation remembers prior eval and switches to new id', async () => {
+    const prior = {
+      id: 'eval-a',
+      title: 'Evaluation A',
+      prompt: 'Prompt A.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const created = {
+      id: 'eval-b',
+      title: AUTOMATION_METADATA_STUB,
+      prompt: AUTOMATION_METADATA_STUB,
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, prior]);
+    page['createdEvaluationId'].set('eval-a');
+    page['completedEvaluationIds'].set(['eval-a']);
+
+    const createSpy = vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    await page['onRunNewFullAutomation']();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      {
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+    expect(page['completedEvaluationIds']()).toEqual(['eval-a']);
+    expect(page['createdEvaluationId']()).toBe('eval-b');
+    expect(page['activeAutomationSession']()).toEqual([{ key: '1:eval-b', evaluationId: 'eval-b' }]);
+  });
+
+  it('onRunNewFullAutomation creates with stubs when form has prior title and prompt', async () => {
+    const prior = {
+      id: 'eval-a',
+      title: 'Evaluation A',
+      prompt: 'Prompt A.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const created = {
+      id: 'eval-b',
+      title: AUTOMATION_METADATA_STUB,
+      prompt: AUTOMATION_METADATA_STUB,
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, prior]);
+    page['createdEvaluationId'].set('eval-a');
+
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    form!.form.controls.title.setValue('Synced title from first run');
+    form!.form.controls.prompt.setValue('Synced prompt from first run.');
+
+    const createSpy = vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    await page['onRunNewFullAutomation']();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      {
+        title: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB,
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
+    expect(form!.getValue().title).toBe('');
+    expect(form!.getValue().prompt).toBe('');
+  });
+
+  it('completedEvaluationIds keeps id when active eval loses automatedAt during re-run', () => {
+    const evaluation = {
+      id: 'eval-rerun',
+      title: 'Rerun eval',
+      prompt: 'Rerun prompt.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-rerun');
+    page['completedEvaluationIds'].set(['eval-rerun']);
+
+    evaluationService['evaluationsSignal'].update((list) =>
+      list.map((item) =>
+        item.id === 'eval-rerun' ? { ...item, automatedAt: undefined } : item,
+      ),
+    );
+
+    expect(page['automationComplete']()).toBe(false);
+    expect(page['completedEvaluationIds']()).toEqual(['eval-rerun']);
+  });
+
+  it('onAutomationStatusDismissed remembers completed evaluation', () => {
+    const evaluation = {
+      id: 'eval-dismiss-remember',
+      title: 'Dismiss title',
+      prompt: 'Dismiss prompt.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-dismiss-remember');
+
+    page['onAutomationStatusDismissed']();
+
+    expect(page['completedEvaluationIds']()).toEqual(['eval-dismiss-remember']);
+  });
+
+  it('onAutomationStatusDismissed syncs evaluation into the form', () => {
+    const evaluation = {
+      id: 'eval-dismiss',
+      title: 'Dismiss title',
+      prompt: 'Dismiss prompt text for the evaluation.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      automatedAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    evaluationService['evaluationsSignal'].update((list) => [...list, evaluation]);
+    page['createdEvaluationId'].set('eval-dismiss');
+
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    page['onAutomationStatusDismissed']();
+
+    expect(form!.getValue().title).toBe('Dismiss title');
+    expect(form!.getValue().prompt).toBe('Dismiss prompt text for the evaluation.');
+  });
+
   it('onGeneratePrompt uses existing title when valid', async () => {
     const form = page['evaluationForm']();
 

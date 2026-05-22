@@ -18,7 +18,7 @@ export type ProviderProbeStatus =
     }
   | { name: ProviderName; status: 'unavailable'; reason: string };
 
-function createProvider(name: ProviderName): LlmProvider {
+export function createLlmProvider(name: ProviderName): LlmProvider {
   switch (name) {
     case 'ollama':
       return createOllamaProvider();
@@ -52,19 +52,43 @@ async function tryResolve(name: ProviderName): Promise<ResolvedLlmSetup | null> 
 
   return {
     providerName: name,
-    provider: createProvider(name),
+    provider: createLlmProvider(name),
     answerModels,
     judgeModel,
   };
 }
 
-const PROVIDER_ORDER: ProviderName[] = [
+export const PROVIDER_ORDER: ProviderName[] = [
   'ollama',
   'groq',
   'openrouter',
   'gemini',
   'huggingface',
 ];
+
+export async function isProviderAvailable(name: ProviderName): Promise<boolean> {
+  if (name === 'ollama') {
+    return isOllamaHealthy();
+  }
+
+  if (name === 'groq') {
+    return hasGroqCredentials();
+  }
+
+  if (name === 'openrouter') {
+    return hasOpenRouterCredentials();
+  }
+
+  if (name === 'gemini') {
+    return hasGeminiCredentials();
+  }
+
+  if (name === 'huggingface') {
+    return hasHuggingFaceCredentials();
+  }
+
+  return false;
+}
 
 export async function resolveProvider(): Promise<ResolvedLlmSetup> {
   for (const name of PROVIDER_ORDER) {

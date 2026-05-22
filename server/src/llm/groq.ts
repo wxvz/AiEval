@@ -1,6 +1,7 @@
 import { config } from '../config.js';
 import { throwLlmHttpError } from './llm-http-error.js';
 import { llmFetch } from './llm-fetch.js';
+import { parseOpenAiCompatibleUsage } from './parse-usage.js';
 import {
   DEFAULT_LLM_TEMPERATURE,
   type ChatMessage,
@@ -39,9 +40,17 @@ async function openAiCompatibleComplete(
 
   const body = (await response.json()) as {
     choices?: { message?: { content?: string } }[];
+    usage?: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      total_tokens?: number;
+    };
   };
 
-  return { text: body.choices?.[0]?.message?.content?.trim() ?? '' };
+  const text = body.choices?.[0]?.message?.content?.trim() ?? '';
+  const usage = parseOpenAiCompatibleUsage(body);
+
+  return { text, ...(usage ? { usage } : {}) };
 }
 
 export function createGroqProvider(): LlmProvider {

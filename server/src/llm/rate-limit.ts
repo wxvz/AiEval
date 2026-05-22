@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
-import type { LlmCompletion, ResolvedLlmSetup } from './types.js';
+import type { LlmCompletion, LlmTokenUsage, ResolvedLlmSetup } from './types.js';
 
 let lastCallAt = 0;
 let interCallDelayMutex: Promise<void> = Promise.resolve();
@@ -27,12 +27,17 @@ async function waitInterCallDelay(): Promise<void> {
   await slot;
 }
 
-function isRateLimitError(error: unknown): boolean {
+export function isRateLimitError(error: unknown): boolean {
   if (error instanceof Error && error.message.includes('429')) {
     return true;
   }
 
   return false;
+}
+
+/** True when per-call retries are exhausted and the error is still a rate limit. */
+export function isRateLimitExhausted(error: unknown): boolean {
+  return isRateLimitError(error);
 }
 
 export interface CompleteContext {
@@ -50,6 +55,7 @@ export interface CompleteContext {
   onCloudProviderSwitch?: (cloudSetup: ResolvedLlmSetup) => void;
   onPreferLocalProvider?: () => void;
   abortSignal?: AbortSignal;
+  recordUsage?: (usage: LlmTokenUsage) => void;
 }
 
 export async function completeWithRetry(
@@ -62,14 +68,7 @@ export async function completeWithRetry(
     await waitInterCallDelay();
 
     try {
-      const start = Date.now();
-      const result = await fn();
-      logEvent('info', LogEvents.llmResponse, {
-        ...context,
-        durationMs: Date.now() - start,
-        outputLength: result.text.length,
-      });
-      return result;
+      return await fn();
     } catch (error) {
       if (isRateLimitError(error) && attempt < config.llmMaxRetries) {
         const backoff = config.llmBackoffBaseMs * 2 ** attempt;

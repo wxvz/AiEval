@@ -8,6 +8,7 @@ import {
   AutomationProgressEvent,
   AutomationRunStatus,
   CriteriaMode,
+  TokenUsageTotals,
   CreateAnswerDto,
   CreateCriterionDto,
   CreateEvaluationDto,
@@ -48,6 +49,7 @@ export class EvaluationService {
   readonly count = computed(() => this.evaluationsSignal().length);
 
   readonly automatingEvaluationId = signal<string | null>(null);
+  readonly automationTokenUsage = signal<TokenUsageTotals | null>(null);
 
   isAutomating(evaluationId?: string): boolean {
     const id = this.automatingEvaluationId();
@@ -321,6 +323,7 @@ export class EvaluationService {
   private clearActiveAutomation(): void {
     this.activeAutomation = null;
     this.automatingEvaluationId.set(null);
+    this.automationTokenUsage.set(null);
   }
 
   private disposeActiveAutomation(notifyServer: boolean): void {
@@ -425,6 +428,7 @@ export class EvaluationService {
 
       this.activeAutomation = { evaluationId, eventSource, runState, clearTimer, abort };
       this.automatingEvaluationId.set(evaluationId);
+      this.automationTokenUsage.set(this.getById(evaluationId)?.tokenUsage ?? null);
 
       timeoutId = setTimeout(() => {
         if (settled) {
@@ -457,6 +461,18 @@ export class EvaluationService {
 
           if (event.type === 'status') {
             callbacks?.onStatus?.(event.status);
+            return;
+          }
+
+          if (event.type === 'token_usage') {
+            this.automationTokenUsage.set(event.usage);
+            callbacks?.onProgress?.(event);
+            return;
+          }
+
+          if (event.type === 'metadata_generated') {
+            this.replaceEvaluation(event.evaluation);
+            callbacks?.onProgress?.(event);
             return;
           }
 

@@ -18,11 +18,66 @@
     actionLink="/evaluations/new"
   />
 } @else {
-  <div class="row g-4">
-    @for (evaluation of evaluations(); track evaluation.id) {
-      <div class="col-md-6 col-xl-4">
-        <app-evaluation-card [evaluation]="evaluation" (deleteRequested)="requestDelete($event)" />
-      </div>
+  <div class="evaluation-day-list">
+    @for (group of dayGroups(); track group.dayKey) {
+      <details class="evaluation-day">
+        <summary class="evaluation-day__summary">
+          <span class="evaluation-day__date">{{ group.label }}</span>
+          <span class="evaluation-day__chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="evaluation-day__panel">
+          <div class="row g-4">
+            @for (evaluation of evaluationsForPage(group); track evaluation.id) {
+              <div class="col-md-6 col-xl-4">
+                <app-evaluation-card
+                  [evaluation]="evaluation"
+                  (deleteRequested)="requestDelete($event)"
+                />
+              </div>
+            }
+          </div>
+          @if (showDayPagination(group)) {
+            <nav class="evaluation-day__pagination" [attr.aria-label]="'Pagination for ' + group.label">
+              <ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item" [class.disabled]="dayPageIndex(group) === 0">
+                  <button
+                    type="button"
+                    class="page-link"
+                    [disabled]="dayPageIndex(group) === 0"
+                    (click)="setDayPage(group.dayKey, dayPageIndex(group) - 1, group.evaluations.length)"
+                  >
+                    Previous
+                  </button>
+                </li>
+                @for (page of dayPageNumbers(group); track page) {
+                  <li class="page-item" [class.active]="page === dayPageIndex(group)">
+                    <button
+                      type="button"
+                      class="page-link"
+                      (click)="setDayPage(group.dayKey, page, group.evaluations.length)"
+                    >
+                      {{ page + 1 }}
+                    </button>
+                  </li>
+                }
+                <li
+                  class="page-item"
+                  [class.disabled]="dayPageIndex(group) >= dayPageCount(group) - 1"
+                >
+                  <button
+                    type="button"
+                    class="page-link"
+                    [disabled]="dayPageIndex(group) >= dayPageCount(group) - 1"
+                    (click)="setDayPage(group.dayKey, dayPageIndex(group) + 1, group.evaluations.length)"
+                  >
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          }
+        </div>
+      </details>
     }
   </div>
 }

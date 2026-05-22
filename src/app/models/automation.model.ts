@@ -1,4 +1,6 @@
+import { formatProviderLabel } from '../components/provider-choice-modal/provider-choice-modal';
 import { Evaluation } from './evaluation.model';
+import { TokenUsageTotals } from './token-usage.model';
 
 export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
 
@@ -21,7 +23,7 @@ export function automationStatusFromError(
 }
 
 export type AutomationProgressEvent =
-  | { type: 'provider_resolved'; provider: string; models: string[] }
+  | { type: 'provider_resolved'; provider: string }
   | { type: 'provider_fallback'; from: string; to: string }
   | {
       type: 'slow_provider_prompt';
@@ -30,13 +32,30 @@ export type AutomationProgressEvent =
       cloudProvider: string | null;
       elapsedLabel: string;
     }
+  | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
+  | {
+      type: 'step_paused';
+      step: string;
+      reason: 'rate_limit';
+      completed: number;
+      pending: number;
+    }
+  | {
+      type: 'model_fallback';
+      step: string;
+      fromModel: string;
+      toModel: string;
+      slotIndex?: number;
+    }
   | { type: 'answer_generated'; answerId: string; label: string }
+  | { type: 'scoring_batch'; modelLabel: string }
   | { type: 'scoring'; answerId: string; label: string }
   | { type: 'scored'; answerId: string; totalPoints: number; notes?: string }
   | { type: 'winner_picked'; answerId: string; label: string }
-  | { type: 'improved_generating' }
+  | { type: 'improved_generating'; modelLabel: string }
   | { type: 'improved_done' }
+  | { type: 'token_usage'; usage: TokenUsageTotals }
   | { type: 'status'; status: AutomationRunStatus; runId?: string }
   | { type: 'complete'; evaluation: Evaluation; status: 'completed' }
   | {
@@ -49,17 +68,29 @@ export type AutomationProgressEvent =
 export function automationProgressLabel(event: AutomationProgressEvent): string {
   switch (event.type) {
     case 'provider_resolved':
-      return `Using ${event.provider} (${event.models.join(', ')})`;
+      return `Using Provider ${formatProviderLabel(event.provider)}`;
     case 'provider_fallback':
       return `Switching provider: ${event.from} → ${event.to}`;
     case 'slow_provider_prompt':
       return event.cloudProvider
         ? `Waiting: use ${event.cloudProvider} or keep ${event.currentProvider}?`
         : `Waiting: keep using ${event.currentProvider}?`;
-    case 'generating':
-      return `Generating ${event.modelLabel} (${event.index}/${event.total})…`;
+    case 'metadata_generated':
+      return 'Title and prompt ready';
+    case 'generating': {
+      const suffix = event.total > 1 ? ` (${event.index}/${event.total})` : '';
+      return `${event.modelLabel} is generating answer${suffix}`;
+    }
+    case 'step_paused':
+      return `Paused (${event.completed} done, ${event.pending} pending) — retrying after rate limit…`;
+    case 'model_fallback':
+      return event.slotIndex !== undefined
+        ? `Retrying slot ${event.slotIndex + 1} with ${event.toModel} (was ${event.fromModel})`
+        : `Retrying with ${event.toModel} (was ${event.fromModel})`;
     case 'answer_generated':
       return `Generated answer: ${event.label}`;
+    case 'scoring_batch':
+      return `${event.modelLabel} — Scoring answers`;
     case 'scoring':
       return `Scoring ${event.label}…`;
     case 'scored':
@@ -69,9 +100,11 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
     case 'winner_picked':
       return `Winner: ${event.label}`;
     case 'improved_generating':
-      return 'Drafting improved answer…';
+      return `${event.modelLabel} — Drafting improved answer`;
     case 'improved_done':
       return 'Improved answer ready';
+    case 'token_usage':
+      return `Tokens: ${event.usage.totalTokens.toLocaleString()}${event.usage.estimated ? ' (est.)' : ''}`;
     case 'status':
       return '';
     case 'complete':

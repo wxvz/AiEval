@@ -5,10 +5,12 @@ import { AutomationControlsComponent } from '../../components/automation-control
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ScoreSummary } from '../../components/score-summary/score-summary';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { SettingsService } from '../../services/settings.service';
+import { useAutomationPageContext } from '../../utils/automation-page-context';
 
 const AUTO_DISMISS_MS = 3000;
 
@@ -77,6 +79,7 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
     RouterLink,
     ScoreSummary,
     WinnerBadge,
+    TokenUsageBadge,
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
@@ -93,13 +96,14 @@ export class CompareAnswersPage {
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly automating = computed(() =>
-    this.evaluationService.isAutomating(this.evaluationId),
-  );
+  private readonly automationPage = useAutomationPageContext(() => this.evaluationId);
+
+  protected readonly automating = this.automationPage.automating;
 
   protected readonly selectedAnswerIndex = signal(0);
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();
 

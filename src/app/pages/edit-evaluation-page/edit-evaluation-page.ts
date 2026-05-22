@@ -1,6 +1,8 @@
 import { Component, computed, HostListener, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
+import { useAutomationPageContext } from '../../utils/automation-page-context';
+
 import { AnswerCard } from '../../components/answer-card/answer-card';
 import { AnswerForm, AnswerFormValue } from '../../components/answer-form/answer-form';
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
@@ -12,6 +14,7 @@ import {
   EvaluationFormValue,
 } from '../../components/evaluation-form/evaluation-form';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { CriteriaMode } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 
@@ -27,6 +30,7 @@ import { EvaluationService } from '../../services/evaluation.service';
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
+    TokenUsageBadge,
   ],
   templateUrl: './edit-evaluation-page.html',
   styleUrl: './edit-evaluation-page.css',
@@ -38,10 +42,11 @@ export class EditEvaluationPage {
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly automating = computed(() =>
-    this.evaluationService.isAutomating(this.evaluationId),
-  );
+  private readonly automationPage = useAutomationPageContext(() => this.evaluationId);
+
+  protected readonly automating = this.automationPage.automating;
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();
 

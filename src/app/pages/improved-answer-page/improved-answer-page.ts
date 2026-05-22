@@ -5,8 +5,10 @@ import { AutomationControlsComponent } from '../../components/automation-control
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { ImprovedAnswerEditor } from '../../components/improved-answer-editor/improved-answer-editor';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
+import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { ImprovedAnswer } from '../../models/improved-answer.model';
 import { EvaluationService } from '../../services/evaluation.service';
+import { useAutomationPageContext } from '../../utils/automation-page-context';
 
 @Component({
   selector: 'app-improved-answer-page',
@@ -16,6 +18,7 @@ import { EvaluationService } from '../../services/evaluation.service';
     EmptyState,
     AutomationControlsComponent,
     LeaveDuringAutomationComponent,
+    TokenUsageBadge,
   ],
   templateUrl: './improved-answer-page.html',
   styleUrl: './improved-answer-page.css',
@@ -27,10 +30,11 @@ export class ImprovedAnswerPage {
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
   protected readonly evaluationId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly automating = computed(() =>
-    this.evaluationService.isAutomating(this.evaluationId),
-  );
+  private readonly automationPage = useAutomationPageContext(() => this.evaluationId);
+
+  protected readonly automating = this.automationPage.automating;
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly hasWinner = computed(
     () =>
       !!this.evaluation()?.winnerAnswerId ||

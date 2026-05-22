@@ -17,6 +17,7 @@ import { LogEvents } from '../logging/events.js';
 import { logEvent } from '../logging/logger.js';
 import { chat, chatJson } from '../llm/chat.js';
 import type { CompleteContext } from '../llm/rate-limit.js';
+import { createTokenAccumulator, type TokenAccumulator } from '../llm/token-accumulator.js';
 import { mapWithConcurrency } from '../util/concurrency.js';
 import {
   buildBatchScorePrompt,
@@ -37,7 +38,18 @@ import {
 } from './run-registry.js';
 import { modelIdToLabel } from '../llm/model-presets.js';
 import { generateEvaluationMetadata } from './metadata.js';
-import { resolveNextProvider, resolveProvider } from '../llm/provider.js';
+import { createLlmProvider, resolveProvider } from '../llm/provider.js';
+import {
+  answersFromSlots,
+  buildFallbackCandidates,
+  callSingleModelWithFallback,
+  mapAnswersToSlots,
+  pendingSlotIndices,
+  validateAnswersForScoring,
+  validateScoredAnswers,
+  type FallbackCandidate,
+} from './resilient-llm.js';
+import { isRateLimitExhausted } from '../llm/rate-limit.js';
 import type {
   AutomationPhase,
   AutomationProgressEvent,
@@ -77,7 +89,11 @@ function emit(onProgress: ProgressCallback, event: AutomationProgressEvent): voi
   onProgress(event);
 }
 
-const PIPELINE_STEPS = ['generating', 'scoring', 'improved'] as const satisfies readonly AutomationStep[];
+const PIPELINE_STEPS = [
+  'generating',
+  'scoring',
+  'improved',
+] as const satisfies readonly AutomationStep[];
 
 function logAutomationStepComplete(
   completed: (typeof PIPELINE_STEPS)[number],
@@ -110,6 +126,7 @@ function createLlmCallContext(
   evaluationId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  accumulator: TokenAccumulator,
 ): CompleteContext {
   let switchedToCloud = false;
   let providerChoicePromise: Promise<boolean> | null = null;
@@ -154,9 +171,141 @@ function createLlmCallContext(
     onPreferLocalProvider: () => {
       ctx.skipSlowFallback = true;
     },
+    recordUsage: (usage) => {
+      accumulator.add(usage);
+      emit(onProgress, { type: 'token_usage', usage: accumulator.totals() });
+    },
   };
 
   return ctx;
+}
+
+function tokenUsageField(accumulator: TokenAccumulator): {
+  tokenUsage: ReturnType<TokenAccumulator['totals']>;
+} {
+  return { tokenUsage: accumulator.totals() };
+}
+
+function modelFallbackHandlers(
+  onProgress: ProgressCallback,
+  step: AutomationStep,
+  slotIndex?: number,
+  pause?: { completed: number; pending: number },
+) {
+  let pauseEmitted = false;
+
+  return {
+    onModelFallback: (fromModel: string, toModel: string, index?: number) => {
+      if (pause && !pauseEmitted) {
+        pauseEmitted = true;
+        emit(onProgress, {
+          type: 'step_paused',
+          step,
+          reason: 'rate_limit',
+          completed: pause.completed,
+          pending: pause.pending,
+        });
+      }
+
+      emit(onProgress, {
+        type: 'model_fallback',
+        step,
+        fromModel,
+        toModel,
+        ...(index !== undefined ? { slotIndex: index } : {}),
+      });
+    },
+  };
+}
+
+function candidateKey(candidate: FallbackCandidate): string {
+  return `${candidate.providerName}:${candidate.model}`;
+}
+
+async function persistGenerateCheckpoint(
+  docId: ObjectId,
+  answers: Answer[],
+  accumulator: TokenAccumulator,
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  await persistEvaluation(
+    docId,
+    { answers, updatedAt: now, ...tokenUsageField(accumulator) },
+    { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+    'generating',
+  );
+}
+
+async function generateOneAnswerSlot(
+  setup: ResolvedLlmSetup,
+  evaluationId: string,
+  prompt: string,
+  criteria: RubricCriterion[],
+  slotIndex: number,
+  runId: string,
+  onProgress: ProgressCallback,
+  signal: AbortSignal,
+  llmCtx: CompleteContext,
+  candidate: FallbackCandidate,
+): Promise<Answer> {
+  assertNotCancelled(signal, 'generating');
+
+  const total = setup.answerModels.length;
+  const generateMessages: ChatMessage[] = [
+    { role: 'system', content: GENERATE_SYSTEM },
+    { role: 'user', content: prompt },
+  ];
+
+  emit(onProgress, {
+    type: 'generating',
+    modelLabel: candidate.label,
+    index: slotIndex + 1,
+    total,
+  });
+  logEvent('info', LogEvents.automationGenerating, {
+    runId,
+    evaluationId,
+    provider: candidate.providerName,
+    model: candidate.model,
+    step: 'generating',
+  });
+
+  const provider =
+    candidate.providerName === setup.providerName
+      ? setup.provider
+      : createLlmProvider(candidate.providerName);
+
+  const start = Date.now();
+  const completion = await chat(provider, candidate.model, generateMessages, {
+    ...llmCtx,
+    provider: candidate.providerName,
+    model: candidate.model,
+    step: 'generating',
+  });
+  const label = modelIdToLabel(completion.resolvedModel ?? candidate.model);
+
+  const answer: Answer = {
+    id: crypto.randomUUID(),
+    evaluationId,
+    label,
+    content: stripModelArtifacts(completion.text),
+    scores: initialScoresForCriteria(criteria),
+  };
+
+  logEvent('info', LogEvents.automationAnswerGenerated, {
+    runId,
+    evaluationId,
+    provider: candidate.providerName,
+    model: candidate.model,
+    ...(completion.resolvedModel ? { resolvedModel: completion.resolvedModel } : {}),
+    step: 'generating',
+    durationMs: Date.now() - start,
+    answerId: answer.id,
+  });
+  emit(onProgress, { type: 'answer_generated', answerId: answer.id, label: answer.label });
+
+  return answer;
 }
 
 async function generateAnswers(
@@ -168,59 +317,116 @@ async function generateAnswers(
   onProgress: ProgressCallback,
   signal: AbortSignal,
   llmCtx: CompleteContext,
+  options?: {
+    existingAnswers?: Answer[];
+    docId?: ObjectId;
+    accumulator?: TokenAccumulator;
+  },
 ): Promise<Answer[]> {
   const total = setup.answerModels.length;
-  const generateMessages: ChatMessage[] = [
-    { role: 'system', content: GENERATE_SYSTEM },
-    { role: 'user', content: prompt },
-  ];
+  const slots = mapAnswersToSlots(options?.existingAnswers ?? [], setup);
+  const attempted = new Set<string>();
 
-  return mapWithConcurrency(setup.answerModels, config.llmConcurrency, async (modelRef, index) => {
+  for (const [index, slot] of slots.entries()) {
+    if (slot) {
+      const modelRef = setup.answerModels[index];
+
+      if (modelRef) {
+        attempted.add(`${setup.providerName}:${modelRef.model}`);
+      }
+    }
+  }
+
+  let pending = pendingSlotIndices(slots);
+
+  if (pending.length > 0) {
+    await mapWithConcurrency(pending, config.llmConcurrency, async (slotIndex) => {
+      assertNotCancelled(signal, 'generating');
+
+      const modelRef = setup.answerModels[slotIndex]!;
+
+      try {
+        const answer = await generateOneAnswerSlot(
+          setup,
+          evaluationId,
+          prompt,
+          criteria,
+          slotIndex,
+          runId,
+          onProgress,
+          signal,
+          llmCtx,
+          {
+            providerName: setup.providerName,
+            model: modelRef.model,
+            label: modelRef.label,
+          },
+        );
+        slots[slotIndex] = answer;
+        attempted.add(`${setup.providerName}:${modelRef.model}`);
+      } catch (error) {
+        if (!isRateLimitExhausted(error)) {
+          throw error;
+        }
+
+        attempted.add(`${setup.providerName}:${modelRef.model}`);
+      }
+    });
+  }
+
+  pending = pendingSlotIndices(slots);
+
+  if (pending.length > 0 && options?.docId && options.accumulator) {
+    const checkpointAnswers = answersFromSlots(slots);
+    validateAnswersForScoring(checkpointAnswers, criteria, total);
+    await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator);
+    emit(onProgress, {
+      type: 'step_paused',
+      step: 'generating',
+      reason: 'rate_limit',
+      completed: checkpointAnswers.length,
+      pending: pending.length,
+    });
+  }
+
+  for (const slotIndex of pending) {
     assertNotCancelled(signal, 'generating');
 
-    emit(onProgress, {
-      type: 'generating',
-      modelLabel: modelRef.label,
-      index: index + 1,
-      total,
-    });
-    logEvent('info', LogEvents.automationGenerating, {
-      runId,
-      evaluationId,
-      provider: setup.providerName,
-      model: modelRef.model,
-      step: 'generating',
-    });
+    const candidates = await buildFallbackCandidates(setup, 'answer', slotIndex);
 
-    const start = Date.now();
-    const completion = await chat(setup.provider, modelRef.model, generateMessages, {
-      ...llmCtx,
-      step: 'generating',
-    });
-    const label = modelIdToLabel(completion.resolvedModel ?? modelRef.model);
+    slots[slotIndex] = await callSingleModelWithFallback(
+      candidates,
+      modelFallbackHandlers(onProgress, 'generating', slotIndex),
+      slotIndex,
+      async (_provider, _model, candidate) =>
+        generateOneAnswerSlot(
+          setup,
+          evaluationId,
+          prompt,
+          criteria,
+          slotIndex,
+          runId,
+          onProgress,
+          signal,
+          llmCtx,
+          candidate,
+        ),
+      attempted,
+    );
+  }
 
-    const answer: Answer = {
-      id: crypto.randomUUID(),
-      evaluationId,
-      label,
-      content: stripModelArtifacts(completion.text),
-      scores: initialScoresForCriteria(criteria),
-    };
+  const answers = answersFromSlots(slots);
 
-    logEvent('info', LogEvents.automationAnswerGenerated, {
-      runId,
-      evaluationId,
-      provider: setup.providerName,
-      model: modelRef.model,
-      ...(completion.resolvedModel ? { resolvedModel: completion.resolvedModel } : {}),
-      step: 'generating',
-      durationMs: Date.now() - start,
-      answerId: answer.id,
-    });
-    emit(onProgress, { type: 'answer_generated', answerId: answer.id, label: answer.label });
+  if (answers.length !== total) {
+    throw new AutomationError(
+      'Could not generate all model answers after rate-limit retries.',
+      'generating',
+    );
+  }
 
-    return answer;
-  });
+  validateAnswersForScoring(answers, criteria, total);
+
+  return answers;
 }
 
 async function scoreAnswers(
@@ -235,6 +441,13 @@ async function scoreAnswers(
   llmCtx: CompleteContext,
 ): Promise<Answer[]> {
   assertNotCancelled(signal, 'scoring');
+
+  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+
+  emit(onProgress, {
+    type: 'scoring_batch',
+    modelLabel: candidates[0]?.label ?? setup.judgeModel.label,
+  });
 
   for (const answer of answers) {
     emit(onProgress, { type: 'scoring', answerId: answer.id, label: answer.label });
@@ -252,13 +465,23 @@ async function scoreAnswers(
   };
 
   const userContent = buildBatchScorePrompt(prompt, criteria, answers);
+  const messages: ChatMessage[] = [judgeSystem, { role: 'user', content: userContent }];
 
-  const rows = await chatJson(
-    setup.provider,
-    setup.judgeModel.model,
-    [judgeSystem, { role: 'user', content: userContent }],
-    { ...llmCtx, step: 'scoring' },
-    (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
+  const rows = await callSingleModelWithFallback(
+    candidates,
+    modelFallbackHandlers(onProgress, 'scoring', undefined, {
+      completed: answers.length,
+      pending: 1,
+    }),
+    undefined,
+    async (provider, model) =>
+      chatJson(
+        provider,
+        model,
+        messages,
+        { ...llmCtx, provider: provider.name, model, step: 'scoring' },
+        (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
+      ),
   );
 
   const scored = rows.map((row, index) => {
@@ -353,15 +576,28 @@ async function rebalanceTiedScores(
 
   assertNotCancelled(signal, 'scoring');
 
-  const rankings = await chatJson(
-    setup.provider,
-    setup.judgeModel.model,
-    [
-      { role: 'system', content: JUDGE_RANK_SYSTEM },
-      { role: 'user', content: buildComparativeRankPrompt(prompt, criteria, answers) },
-    ],
-    { ...llmCtx, step: 'scoring' },
-    (raw) => parseComparativeRankings(raw, answers.map((answer) => answer.id)),
+  const rankMessages: ChatMessage[] = [
+    { role: 'system', content: JUDGE_RANK_SYSTEM },
+    { role: 'user', content: buildComparativeRankPrompt(prompt, criteria, answers) },
+  ];
+  const rankCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+
+  const rankings = await callSingleModelWithFallback(
+    rankCandidates,
+    modelFallbackHandlers(onProgress, 'scoring'),
+    undefined,
+    async (provider, model) =>
+      chatJson(
+        provider,
+        model,
+        rankMessages,
+        { ...llmCtx, provider: provider.name, model, step: 'scoring' },
+        (raw) =>
+          parseComparativeRankings(
+            raw,
+            answers.map((answer) => answer.id),
+          ),
+      ),
   );
 
   const bestPercent = Math.max(...rankings.map((entry) => entry.qualityPercent));
@@ -378,7 +614,8 @@ async function rebalanceTiedScores(
   });
 
   return answers.map((answer) => {
-    const qualityPercent = rankings.find((entry) => entry.answerId === answer.id)?.qualityPercent ?? 0;
+    const qualityPercent =
+      rankings.find((entry) => entry.answerId === answer.id)?.qualityPercent ?? 0;
     const factor = qualityPercent / bestPercent;
 
     if (factor === 1) {
@@ -408,23 +645,35 @@ async function synthesizeImproved(
 ): Promise<ImprovedAnswer> {
   assertNotCancelled(signal, 'improved');
 
-  emit(onProgress, { type: 'improved_generating' });
+  const improvedPrompt = buildImprovedPrompt(prompt, criteria, answers, winner);
+  const improvedMessages: ChatMessage[] = [
+    { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
+    { role: 'user', content: improvedPrompt },
+  ];
+  const improvedCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+
+  emit(onProgress, {
+    type: 'improved_generating',
+    modelLabel: improvedCandidates[0]?.label ?? setup.judgeModel.label,
+  });
   logEvent('info', LogEvents.automationImprovedGenerating, {
     runId,
     evaluationId,
     step: 'improved',
   });
 
-  const improvedPrompt = buildImprovedPrompt(prompt, criteria, answers, winner);
-  const improved = await chatJson(
-    setup.provider,
-    setup.judgeModel.model,
-    [
-      { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
-      { role: 'user', content: improvedPrompt },
-    ],
-    { ...llmCtx, step: 'improved' },
-    parseImprovedAnswer,
+  const improved = await callSingleModelWithFallback(
+    improvedCandidates,
+    modelFallbackHandlers(onProgress, 'improved'),
+    undefined,
+    async (provider, model) =>
+      chatJson(
+        provider,
+        model,
+        improvedMessages,
+        { ...llmCtx, provider: provider.name, model, step: 'improved' },
+        parseImprovedAnswer,
+      ),
   );
 
   logEvent('info', LogEvents.automationImprovedDone, { runId, evaluationId, step: 'improved' });
@@ -445,11 +694,9 @@ async function persistEvaluation(
     update.$unset = unset;
   }
 
-  const result = await getEvaluationsCollection().findOneAndUpdate(
-    { _id: docId },
-    update,
-    { returnDocument: 'after' },
-  );
+  const result = await getEvaluationsCollection().findOneAndUpdate({ _id: docId }, update, {
+    returnDocument: 'after',
+  });
 
   if (!result) {
     throw new AutomationError('Failed to save evaluation.', errorStep);
@@ -476,9 +723,10 @@ function finishAutomation(
   return evaluation;
 }
 
-function requirePromptAndCriteria(
-  doc: EvaluationDocument,
-): { prompt: string; criteria: RubricCriterion[] } {
+function requirePromptAndCriteria(doc: EvaluationDocument): {
+  prompt: string;
+  criteria: RubricCriterion[];
+} {
   const prompt = doc.prompt;
 
   if (!prompt.trim()) {
@@ -544,7 +792,8 @@ async function runGeneratePhase(
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
   const { prompt, criteria } = requirePromptAndCriteria(doc);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
 
   const answers = await generateAnswers(
     setup,
@@ -555,13 +804,14 @@ async function runGeneratePhase(
     onProgress,
     signal,
     llmCtx,
+    { existingAnswers: doc.answers, docId: doc._id, accumulator },
   );
   logAutomationStepComplete('generating', runId, evaluationId);
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
     doc._id,
-    { answers, updatedAt: now },
+    { answers, updatedAt: now, ...tokenUsageField(accumulator) },
     { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
     'generating',
   );
@@ -583,7 +833,8 @@ async function runScorePhase(
     throw new AutomationError('Add answers before auto-scoring.', 'scoring');
   }
 
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
   const scored = await scoreAnswers(
     setup,
     evaluationId,
@@ -595,9 +846,15 @@ async function runScorePhase(
     signal,
     llmCtx,
   );
+  validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
 
-  const { answersWithWinner, winnerAnswerId } = await applyWinner(scored, runId, evaluationId, onProgress);
+  const { answersWithWinner, winnerAnswerId } = await applyWinner(
+    scored,
+    runId,
+    evaluationId,
+    onProgress,
+  );
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
     doc._id,
@@ -606,6 +863,7 @@ async function runScorePhase(
       winnerAnswerId,
       automatedAt: now,
       updatedAt: now,
+      ...tokenUsageField(accumulator),
     },
     undefined,
     'scoring',
@@ -629,7 +887,8 @@ async function runImprovedPhase(
     throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
   }
 
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
   const improvedAnswer = await synthesizeImproved(
     setup,
     evaluationId,
@@ -647,7 +906,7 @@ async function runImprovedPhase(
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
     doc._id,
-    { improvedAnswer, updatedAt: now },
+    { improvedAnswer, updatedAt: now, ...tokenUsageField(accumulator) },
     undefined,
     'improved',
   );
@@ -660,6 +919,7 @@ async function ensureAutomationMetadata(
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  accumulator: TokenAccumulator,
 ): Promise<EvaluationDocument> {
   if (!needsAutomationMetadataPrep(doc)) {
     return doc;
@@ -668,12 +928,20 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const { title, prompt } = await generateEvaluationMetadata();
+  const { title, prompt } = await generateEvaluationMetadata({
+    runId,
+    evaluationId,
+    abortSignal: signal,
+    recordUsage: (usage) => {
+      accumulator.add(usage);
+      emit(onProgress, { type: 'token_usage', usage: accumulator.totals() });
+    },
+  });
   const now = new Date().toISOString();
 
   const saved = await persistEvaluation(
     doc._id,
-    { title, prompt, updatedAt: now },
+    { title, prompt, updatedAt: now, ...tokenUsageField(accumulator) },
     undefined,
     'generating',
   );
@@ -686,6 +954,10 @@ async function ensureAutomationMetadata(
     nextStep: 'generating',
   });
 
+  emit(onProgress, {
+    type: 'metadata_generated',
+    evaluation: toApiEvaluation(saved),
+  });
   emit(onProgress, { type: 'status', status: 'running', runId });
 
   return saved;
@@ -699,9 +971,10 @@ async function runFullPipeline(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal, accumulator);
   const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
 
   const answers = await generateAnswers(
     setup,
@@ -712,8 +985,11 @@ async function runFullPipeline(
     onProgress,
     signal,
     llmCtx,
+    { docId: preparedDoc._id, accumulator },
   );
   logAutomationStepComplete('generating', runId, evaluationId);
+
+  await persistGenerateCheckpoint(preparedDoc._id, answers, accumulator);
 
   const scored = await scoreAnswers(
     setup,
@@ -726,6 +1002,7 @@ async function runFullPipeline(
     signal,
     llmCtx,
   );
+  validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
 
   const { answersWithWinner, winner, winnerAnswerId } = await applyWinner(
@@ -758,6 +1035,7 @@ async function runFullPipeline(
       improvedAnswer,
       automatedAt: now,
       updatedAt: now,
+      ...tokenUsageField(accumulator),
     },
     undefined,
     'improved',
@@ -808,10 +1086,20 @@ export async function prepareDocForPhase(
   switch (phase) {
     case 'generate': {
       if (doc.answers.length > 0 && !force) {
-        throw new AutomationError(
-          'Evaluation already has answers. Re-run with force=true after confirming.',
-          'generating',
-        );
+        const setup = await resolveProvider();
+        const expectedCount = setup.answerModels.length;
+        const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
+
+        if (doc.answers.length >= expectedCount) {
+          throw new AutomationError(
+            'Evaluation already has answers. Re-run with force=true after confirming.',
+            'generating',
+          );
+        }
+
+        validateAnswersForScoring(doc.answers, criteria, expectedCount);
+
+        return doc;
       }
 
       if (force && doc.answers.length > 0) {
@@ -865,7 +1153,10 @@ export async function prepareDocForPhase(
       const winner = findWinnerAnswer(doc.answers, doc.winnerAnswerId);
 
       if (!winner) {
-        throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
+        throw new AutomationError(
+          'Mark a winner before generating an improved answer.',
+          'improved',
+        );
       }
 
       if (doc.improvedAnswer && !force) {
@@ -942,10 +1233,6 @@ export async function runEvaluationAutomation(options: {
     emit(onProgress, {
       type: 'provider_resolved',
       provider: setup.providerName,
-      models: [
-        ...setup.answerModels.map((m) => m.label),
-        setup.judgeModel.label,
-      ],
     });
     logEvent('info', LogEvents.automationProviderResolved, {
       runId,
@@ -955,33 +1242,7 @@ export async function runEvaluationAutomation(options: {
       judge: setup.judgeModel.model,
     });
 
-    const runPhase = () =>
-      runPhaseWithSetup(setup, workingDoc, runId, onProgress, signal, phase);
-
-    try {
-      return await runPhase();
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('429')) {
-        const fallback = await resolveNextProvider(setup.providerName);
-
-        if (fallback) {
-          logEvent('warn', LogEvents.automationProviderFallback, {
-            runId,
-            evaluationId,
-            message: `Fallback from ${setup.providerName} to ${fallback.providerName}`,
-          });
-          emit(onProgress, {
-            type: 'provider_fallback',
-            from: setup.providerName,
-            to: fallback.providerName,
-          });
-          setup = fallback;
-          return await runPhase();
-        }
-      }
-
-      throw error;
-    }
+    return runPhaseWithSetup(setup, workingDoc, runId, onProgress, signal, phase);
   } catch (error) {
     if (error instanceof AutomationError) {
       logEvent('error', LogEvents.automationFailed, {

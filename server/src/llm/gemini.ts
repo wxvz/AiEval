@@ -1,5 +1,6 @@
 import { config } from '../config.js';
 import { llmFetch } from './llm-fetch.js';
+import { parseGeminiUsage } from './parse-usage.js';
 import {
   DEFAULT_LLM_TEMPERATURE,
   type ChatMessage,
@@ -57,7 +58,10 @@ export function createGeminiProvider(): LlmProvider {
         candidates?: { content?: { parts?: { text?: string }[] } }[];
       };
 
-      return { text: body.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '' };
+      const text = body.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+      const usage = parseGeminiUsage(body);
+
+      return { text, ...(usage ? { usage } : {}) };
     },
   };
 }

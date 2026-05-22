@@ -1,9 +1,10 @@
-import { Component, computed, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 
 import {
   ConfirmDeleteModal,
 } from '../confirm-delete-modal/confirm-delete-modal';
 import { LoadingSpinner } from '../loading-spinner/loading-spinner';
+import { TokenUsageBadge } from '../token-usage-badge/token-usage-badge';
 import {
   ProviderChoiceDetails,
   ProviderChoiceModal,
@@ -24,7 +25,7 @@ const AUTO_DISMISS_MS = 3000;
 
 @Component({
   selector: 'app-automation-controls',
-  imports: [LoadingSpinner, ConfirmDeleteModal, ProviderChoiceModal],
+  imports: [LoadingSpinner, ConfirmDeleteModal, ProviderChoiceModal, TokenUsageBadge],
   templateUrl: './automation-controls.html',
 })
 export class AutomationControlsComponent {
@@ -48,6 +49,9 @@ export class AutomationControlsComponent {
   readonly autoStart = input(false);
   readonly hideButton = input(false);
 
+  readonly automationFinished = output<Evaluation>();
+  readonly statusDismissed = output<void>();
+
   private autoStartTriggered = false;
 
   protected readonly automationOutcome = signal<AutomationOutcome>(idleAutomationOutcome());
@@ -64,6 +68,16 @@ export class AutomationControlsComponent {
   protected readonly evaluation = computed(() =>
     this.evaluationService.getById(this.evaluationId()),
   );
+
+  protected readonly displayTokenUsage = computed(() => {
+    const current = this.evaluation();
+
+    if (this.automating()) {
+      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+    }
+
+    return current?.tokenUsage;
+  });
 
   protected readonly canRun = computed(() => {
     const current = this.evaluation();
@@ -160,8 +174,13 @@ export class AutomationControlsComponent {
   }
 
   protected onDismissAutomationStatus(): void {
+    if (this.automating()) {
+      this.evaluationService.cancelAutomation(this.evaluationId());
+    }
+
     this.automationOutcome.set(idleAutomationOutcome());
     this.progressSteps.set([]);
+    this.statusDismissed.emit();
   }
 
   private needsForceConfirm(): boolean {
@@ -187,7 +206,7 @@ export class AutomationControlsComponent {
     this.progressSteps.set(['Starting automation…']);
 
     try {
-      await this.evaluationService.automate(
+      const evaluation = await this.evaluationService.automate(
         this.evaluationId(),
         { force, phase: this.phase() },
         {
@@ -208,6 +227,8 @@ export class AutomationControlsComponent {
           },
         },
       );
+
+      this.automationFinished.emit(evaluation);
     } catch (error) {
       this.cancelProviderChoicePrompt();
       const message = error instanceof Error ? error.message : this.errorMessage();

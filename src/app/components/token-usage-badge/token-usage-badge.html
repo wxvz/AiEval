@@ -1,0 +1,9 @@
+@if (visible()) {
+  <span
+    class="badge token-usage-badge"
+    [class.token-usage-badge--live]="live()"
+    [attr.title]="usage()!.estimated ? 'Estimated from character counts when provider usage was unavailable' : 'Total LLM tokens for this evaluation'"
+  >
+    {{ label() }}
+  </span>
+}
