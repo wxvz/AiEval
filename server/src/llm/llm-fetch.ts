@@ -1,12 +1,20 @@
-import { Agent, fetch } from 'undici';
-
 import { config } from '../config.js';
 
-const llmHttpAgent = new Agent({
-  headersTimeout: config.llmRequestTimeoutMs,
-  bodyTimeout: config.llmRequestTimeoutMs,
-});
+function mergeFetchSignals(userSignal?: AbortSignal | null): AbortSignal {
+  const timeoutSignal = AbortSignal.timeout(config.llmRequestTimeoutMs);
 
-export function llmFetch(url: string | URL, init?: Parameters<typeof fetch>[1]): ReturnType<typeof fetch> {
-  return fetch(url, { ...init, dispatcher: llmHttpAgent });
+  if (!userSignal) {
+    return timeoutSignal;
+  }
+
+  return AbortSignal.any([userSignal, timeoutSignal]);
+}
+
+export function llmFetch(url: string | URL, init?: RequestInit): Promise<Response> {
+  const { signal: userSignal, ...rest } = init ?? {};
+
+  return fetch(url, {
+    ...rest,
+    signal: mergeFetchSignals(userSignal),
+  });
 }

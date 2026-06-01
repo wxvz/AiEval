@@ -4,7 +4,15 @@ const { chat } = vi.hoisted(() => ({
   chat: vi.fn(),
 }));
 
+const { chatWithModelFallback } = vi.hoisted(() => ({
+  chatWithModelFallback: vi.fn(),
+}));
+
 vi.mock('./chat.js', () => ({ chat }));
+vi.mock('../automation/resilient-llm.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../automation/resilient-llm.js')>();
+  return { ...actual, chatWithModelFallback };
+});
 vi.mock('./provider.js', () => ({
   resolveProvider: vi.fn().mockResolvedValue({
     providerName: 'groq',
@@ -16,6 +24,7 @@ vi.mock('./provider.js', () => ({
 
 import { buildTitleGenerateUser, TITLE_GENERATE_SYSTEM } from './prompts.js';
 import { generateEvaluationTitle, TITLE_GENERATION_TEMPERATURE } from './generate-title.js';
+import type { ResolvedLlmSetup } from './types.js';
 
 describe('buildTitleGenerateUser', () => {
   it('includes a rotating domain hint and unique request id', () => {
@@ -57,5 +66,43 @@ describe('generateEvaluationTitle', () => {
     chat.mockResolvedValue({ text: 'Hi' });
 
     await expect(generateEvaluationTitle()).rejects.toThrow(/too short/i);
+  });
+
+  it('uses chatWithModelFallback when automation options are provided', async () => {
+    chatWithModelFallback.mockResolvedValue({
+      text: '  Fallback-generated title  ',
+    });
+
+    const automationSetup = {
+      providerName: 'groq',
+      provider: { name: 'groq' },
+      judgeModel: { model: 'judge-model', label: 'Judge' },
+      answerModels: [],
+    } as ResolvedLlmSetup;
+    const handlers = { onModelFallback: vi.fn() };
+
+    const title = await generateEvaluationTitle(
+      { runId: 'run-1', evaluationId: 'eval-1' },
+      { setup: automationSetup, handlers },
+    );
+
+    expect(title).toBe('Fallback-generated title');
+    expect(chatWithModelFallback).toHaveBeenCalledOnce();
+    expect(chat).not.toHaveBeenCalled();
+    expect(chatWithModelFallback).toHaveBeenCalledWith(
+      automationSetup,
+      'judge',
+      0,
+      handlers,
+      expect.arrayContaining([
+        expect.objectContaining({ content: TITLE_GENERATE_SYSTEM }),
+        expect.objectContaining({ content: expect.stringContaining('Generate an evaluation title.') }),
+      ]),
+      expect.objectContaining({
+        runId: 'run-1',
+        evaluationId: 'eval-1',
+        temperature: TITLE_GENERATION_TEMPERATURE,
+      }),
+    );
   });
 });

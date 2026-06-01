@@ -40,4 +40,52 @@ describe('resolveModelsForProvider', () => {
       'shared-model',
     ]);
   });
+
+  it('coerces LLM_JUDGE_MODEL when it matches an answer slot', async () => {
+    vi.stubEnv('LLM_ANSWER_MODELS', '');
+    vi.stubEnv(
+      'LLM_JUDGE_MODEL',
+      'groq:llama-3.1-8b-instant',
+    );
+
+    const { resolveModelsForProvider } = await import('./model-presets.js');
+    const { answerModels, judgeModel } = resolveModelsForProvider('groq');
+
+    expect(answerModels.map((entry) => entry.model)).toContain('llama-3.1-8b-instant');
+    expect(judgeModel.model).toBe('llama-3.3-70b-versatile');
+  });
+});
+
+describe('preset judge separation', () => {
+  const providers = ['ollama', 'groq', 'openrouter', 'gemini', 'huggingface'] as const;
+  const presets = ['balanced', 'fast'] as const;
+
+  beforeEach(() => {
+    vi.resetModules();
+    vi.stubEnv('MONGODB_URI', 'mongodb://localhost:27017');
+    vi.stubEnv('LLM_ANSWER_MODELS', '');
+    vi.stubEnv('LLM_JUDGE_MODEL', '');
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  for (const preset of presets) {
+    for (const provider of providers) {
+      it(`${provider} ${preset} judge is not an answer model`, async () => {
+        vi.stubEnv('LLM_PRESET', preset);
+
+        const { resolveModelsForProvider } = await import('./model-presets.js');
+        const { setLlmPreset } = await import('../runtime-settings.js');
+
+        setLlmPreset(preset);
+
+        const { answerModels, judgeModel } = resolveModelsForProvider(provider);
+        const answerIds = answerModels.map((entry) => entry.model);
+
+        expect(answerIds).not.toContain(judgeModel.model);
+      });
+    }
+  }
 });

@@ -1,9 +1,14 @@
 import { getLlmPreset } from '../runtime-settings.js';
+import { chat } from '../llm/chat.js';
 import { resolveProviderModelForCall } from '../llm/groq-fallback.js';
+import {
+  isFallbackEligibleHttpStatus,
+  parseLlmHttpStatusFromError,
+} from '../llm/llm-http-error.js';
 import { modelIdToLabel, resolveSingleModel, type ModelRole } from '../llm/model-presets.js';
 import { createLlmProvider, isProviderAvailable, PROVIDER_ORDER } from '../llm/provider.js';
-import { isRateLimitError } from '../llm/rate-limit.js';
-import type { LlmProvider, ProviderName, ResolvedLlmSetup } from '../llm/types.js';
+import { isRateLimitError, type CompleteContext } from '../llm/rate-limit.js';
+import type { ChatMessage, LlmCompletion, LlmProvider, ProviderName, ResolvedLlmSetup } from '../llm/types.js';
 import type { Answer, RubricCriterion } from '../types/evaluation.js';
 
 export interface FallbackCandidate {
@@ -28,6 +33,12 @@ export function isFallbackEligible(error: unknown): boolean {
 
   if (!(error instanceof Error)) {
     return false;
+  }
+
+  const status = parseLlmHttpStatusFromError(error);
+
+  if (status !== undefined && isFallbackEligibleHttpStatus(status)) {
+    return true;
   }
 
   const message = error.message.toLowerCase();
@@ -58,6 +69,23 @@ function pushCandidate(
     model,
     label: modelIdToLabel(model),
   });
+}
+
+function isAnswerSlotModel(model: string, setup: ResolvedLlmSetup): boolean {
+  return setup.answerModels.some((ref) => ref.model === model);
+}
+
+function pushJudgeCandidate(
+  candidates: FallbackCandidate[],
+  seen: Set<string>,
+  setup: ResolvedLlmSetup,
+  model: string,
+): void {
+  if (isAnswerSlotModel(model, setup)) {
+    return;
+  }
+
+  pushCandidate(candidates, seen, setup.providerName, model);
 }
 
 function minimalSetupForMapping(
@@ -117,12 +145,12 @@ export async function buildFallbackCandidates(
       pushCandidate(candidates, seen, providerName, mapped);
     }
   } else {
-    pushCandidate(candidates, seen, baseSetup.providerName, baseSetup.judgeModel.model);
+    pushJudgeCandidate(candidates, seen, baseSetup, baseSetup.judgeModel.model);
 
     const fastJudge = resolveSingleModel(baseSetup.providerName, 'judge', 0, 'fast');
 
     if (fastJudge !== baseSetup.judgeModel.model) {
-      pushCandidate(candidates, seen, baseSetup.providerName, fastJudge);
+      pushJudgeCandidate(candidates, seen, baseSetup, fastJudge);
     }
 
     const referenceModel = baseSetup.judgeModel.model;
@@ -137,7 +165,7 @@ export async function buildFallbackCandidates(
 
       const targetSetup = minimalSetupForMapping(baseSetup, providerName, activePreset);
       const mapped = resolveProviderModelForCall(baseSetup, targetSetup, referenceModel);
-      pushCandidate(candidates, seen, providerName, mapped);
+      pushJudgeCandidate(candidates, seen, targetSetup, mapped);
     }
   }
 
@@ -194,6 +222,29 @@ export async function callSingleModelWithFallback<T>(
   }
 
   throw new Error('All model fallback candidates were exhausted or skipped.');
+}
+
+export async function chatWithModelFallback(
+  setup: ResolvedLlmSetup,
+  role: ModelRole,
+  slotIndex: number,
+  handlers: ModelFallbackHandlers,
+  messages: ChatMessage[],
+  context: CompleteContext,
+): Promise<LlmCompletion> {
+  const candidates = await buildFallbackCandidates(setup, role, slotIndex);
+
+  return callSingleModelWithFallback(
+    candidates,
+    handlers,
+    slotIndex,
+    (provider, model) =>
+      chat(provider, model, messages, {
+        ...context,
+        provider: provider.name,
+        model,
+      }),
+  );
 }
 
 export function validateAnswersForScoring(

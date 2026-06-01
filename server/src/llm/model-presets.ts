@@ -17,7 +17,7 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
     },
     fast: {
       answer: ['llama3.2:3b', 'llama3.2:3b', 'gemma2:2b'],
-      judge: 'llama3.2:3b',
+      judge: 'llama3.1:8b',
     },
   },
   groq: {
@@ -35,7 +35,7 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
         'meta-llama/llama-4-scout-17b-16e-instruct',
         'qwen/qwen3-32b',
       ],
-      judge: 'llama-3.1-8b-instant',
+      judge: 'llama-3.3-70b-versatile',
     },
   },
   openrouter: {
@@ -53,17 +53,17 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
         'meta-llama/llama-3.2-3b-instruct:free',
         'google/gemma-2-9b-it:free',
       ],
-      judge: 'meta-llama/llama-3.2-3b-instruct:free',
+      judge: 'meta-llama/llama-3.3-70b-instruct:free',
     },
   },
   gemini: {
     balanced: {
       answer: ['gemini-2.0-flash', 'gemini-2.0-flash', 'gemini-2.0-flash'],
-      judge: 'gemini-2.0-flash',
+      judge: 'gemini-2.5-flash',
     },
     fast: {
       answer: ['gemini-2.0-flash', 'gemini-2.0-flash', 'gemini-2.0-flash'],
-      judge: 'gemini-2.0-flash',
+      judge: 'gemini-2.5-flash',
     },
   },
   huggingface: {
@@ -73,7 +73,7 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
         'microsoft/Phi-3-mini-4k-instruct',
         'google/gemma-2-2b-it',
       ],
-      judge: 'Qwen/Qwen2.5-7B-Instruct',
+      judge: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
     },
     fast: {
       answer: [
@@ -81,7 +81,7 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
         'Qwen/Qwen2.5-7B-Instruct',
         'google/gemma-2-2b-it',
       ],
-      judge: 'Qwen/Qwen2.5-7B-Instruct',
+      judge: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
     },
   },
 };
@@ -184,6 +184,37 @@ function resolveJudgeModel(raw: string, providerName: ProviderName, fallback: st
   return entry.model;
 }
 
+function coerceJudgeNotAnswerModel(
+  judgeId: string,
+  answerIds: readonly string[],
+  providerName: ProviderName,
+): string {
+  if (!answerIds.includes(judgeId)) {
+    return judgeId;
+  }
+
+  for (const preset of ['balanced', 'fast'] as const) {
+    const candidate = PRESETS[providerName][preset].judge;
+
+    if (!answerIds.includes(candidate)) {
+      return candidate;
+    }
+  }
+
+  return judgeId;
+}
+
+function resolveJudgeModelForProvider(
+  providerName: ProviderName,
+  preset: LlmPreset,
+  answerIds: readonly string[],
+): string {
+  const fallbackJudge = PRESETS[providerName][preset].judge;
+  const judgeId = resolveJudgeModel(config.llmJudgeModel, providerName, fallbackJudge);
+
+  return coerceJudgeNotAnswerModel(judgeId, answerIds, providerName);
+}
+
 export function resolveModelsForProvider(providerName: ProviderName): {
   answerModels: ModelRef[];
   judgeModel: ModelRef;
@@ -191,7 +222,7 @@ export function resolveModelsForProvider(providerName: ProviderName): {
   const preset = PRESETS[providerName][getLlmPreset()];
   const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
   const answerIds = resolveModelsFromEntries(customAnswerEntries, providerName, preset.answer);
-  const judgeId = resolveJudgeModel(config.llmJudgeModel, providerName, preset.judge);
+  const judgeId = resolveJudgeModelForProvider(providerName, getLlmPreset(), answerIds);
 
   return {
     answerModels: answerIds.map((model) => ({ model, label: modelIdToLabel(model) })),
@@ -208,16 +239,16 @@ export function resolveSingleModel(
 ): string {
   const providerPreset = PRESETS[providerName][preset];
 
-  if (role === 'judge') {
-    return resolveJudgeModel(config.llmJudgeModel, providerName, providerPreset.judge);
-  }
-
   const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
   const answerIds = resolveModelsFromEntries(
     customAnswerEntries,
     providerName,
     providerPreset.answer,
   );
+
+  if (role === 'judge') {
+    return resolveJudgeModelForProvider(providerName, preset, answerIds);
+  }
 
   return answerIds[slotIndex] ?? answerIds[answerIds.length - 1]!;
 }

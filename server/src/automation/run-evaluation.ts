@@ -48,6 +48,7 @@ import {
   validateAnswersForScoring,
   validateScoredAnswers,
   type FallbackCandidate,
+  type ModelFallbackHandlers,
 } from './resilient-llm.js';
 import { isRateLimitExhausted } from '../llm/rate-limit.js';
 import type {
@@ -378,15 +379,18 @@ async function generateAnswers(
 
   if (pending.length > 0 && options?.docId && options.accumulator) {
     const checkpointAnswers = answersFromSlots(slots);
-    validateAnswersForScoring(checkpointAnswers, criteria, total);
-    await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator);
-    emit(onProgress, {
-      type: 'step_paused',
-      step: 'generating',
-      reason: 'rate_limit',
-      completed: checkpointAnswers.length,
-      pending: pending.length,
-    });
+
+    if (checkpointAnswers.length > 0) {
+      validateAnswersForScoring(checkpointAnswers, criteria, total);
+      await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator);
+      emit(onProgress, {
+        type: 'step_paused',
+        step: 'generating',
+        reason: 'rate_limit',
+        completed: checkpointAnswers.length,
+        pending: pending.length,
+      });
+    }
   }
 
   for (const slotIndex of pending) {
@@ -916,10 +920,13 @@ async function runImprovedPhase(
 
 async function ensureAutomationMetadata(
   doc: EvaluationDocument,
+  setup: ResolvedLlmSetup,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
+  llmCtx: CompleteContext,
   accumulator: TokenAccumulator,
+  handlers: ModelFallbackHandlers,
 ): Promise<EvaluationDocument> {
   if (!needsAutomationMetadataPrep(doc)) {
     return doc;
@@ -928,15 +935,7 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const { title, prompt } = await generateEvaluationMetadata({
-    runId,
-    evaluationId,
-    abortSignal: signal,
-    recordUsage: (usage) => {
-      accumulator.add(usage);
-      emit(onProgress, { type: 'token_usage', usage: accumulator.totals() });
-    },
-  });
+  const { title, prompt } = await generateEvaluationMetadata(setup, handlers, llmCtx);
   const now = new Date().toISOString();
 
   const saved = await persistEvaluation(
@@ -972,9 +971,18 @@ async function runFullPipeline(
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
   const accumulator = createTokenAccumulator(doc.tokenUsage);
-  const preparedDoc = await ensureAutomationMetadata(doc, runId, onProgress, signal, accumulator);
-  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const preparedDoc = await ensureAutomationMetadata(
+    doc,
+    setup,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+    accumulator,
+    modelFallbackHandlers(onProgress, 'generating'),
+  );
+  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
 
   const answers = await generateAnswers(
     setup,

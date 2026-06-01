@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { AUTOMATION_METADATA_STUB, needsAutomationMetadataPrep } from './constants.js';
+import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT, needsAutomationMetadataPrep } from './constants.js';
 
 describe('needsAutomationMetadataPrep', () => {
   it('returns true for stub doc with no answers', () => {
     expect(
       needsAutomationMetadataPrep({
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
         answers: [],
       }),
     ).toBe(true);
@@ -17,7 +17,7 @@ describe('needsAutomationMetadataPrep', () => {
     expect(
       needsAutomationMetadataPrep({
         title: 'My title',
-        prompt: AUTOMATION_METADATA_STUB,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
         answers: [],
       }),
     ).toBe(false);
@@ -26,8 +26,8 @@ describe('needsAutomationMetadataPrep', () => {
   it('returns false when answers exist', () => {
     expect(
       needsAutomationMetadataPrep({
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT ,
         answers: [{}],
       }),
     ).toBe(false);

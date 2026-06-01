@@ -71,6 +71,68 @@ describe('resilient generate automation', () => {
     chatJson.mockReset();
   });
 
+  it('runs fallback when every initial slot hits rate limit', async () => {
+    const doc = baseDoc();
+    const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
+    const rateLimitError = new Error('OpenRouter request failed: 429');
+
+    findOne.mockResolvedValue(doc);
+    chat
+      .mockRejectedValueOnce(rateLimitError)
+      .mockRejectedValueOnce(rateLimitError)
+      .mockRejectedValueOnce(rateLimitError)
+      .mockResolvedValueOnce({ text: 'Answer one via fallback' })
+      .mockResolvedValueOnce({ text: 'Answer two via fallback' })
+      .mockResolvedValueOnce({ text: 'Answer three via fallback' });
+
+    const finalAnswers = [
+      {
+        id: '1',
+        evaluationId: doc._id.toString(),
+        label: 'A',
+        content: 'Answer one via fallback',
+        scores: initialScoresForCriteria(criteria),
+      },
+      {
+        id: '2',
+        evaluationId: doc._id.toString(),
+        label: 'B',
+        content: 'Answer two via fallback',
+        scores: initialScoresForCriteria(criteria),
+      },
+      {
+        id: '3',
+        evaluationId: doc._id.toString(),
+        label: 'C',
+        content: 'Answer three via fallback',
+        scores: initialScoresForCriteria(criteria),
+      },
+    ];
+
+    findOneAndUpdate.mockResolvedValue({ ...doc, answers: finalAnswers });
+
+    const onProgress = vi.fn();
+
+    await runEvaluationAutomation({
+      evaluationObjectId: doc._id,
+      runId: 'run-all-rate-limited',
+      force: false,
+      phase: 'generate',
+      onProgress,
+    });
+
+    expect(chat).toHaveBeenCalledTimes(6);
+    expect(chat.mock.calls[0]?.[1]).toBe('model-a');
+    expect(chat.mock.calls[1]?.[1]).toBe('model-b');
+    expect(chat.mock.calls[2]?.[1]).toBe('model-c');
+    expect(chat.mock.calls[3]?.[1]).not.toBe('model-a');
+    expect(chat.mock.calls[4]?.[1]).not.toBe('model-b');
+    expect(chat.mock.calls[5]?.[1]).not.toBe('model-c');
+    expect(onProgress).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'step_paused', step: 'generating' }),
+    );
+  });
+
   it('retries only the failed answer slot after partial rate limit', async () => {
     const doc = baseDoc();
     const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
