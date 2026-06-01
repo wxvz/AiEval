@@ -21,6 +21,17 @@ describe('canRunAutomationPhase', () => {
     expect(canRunAutomationPhase(baseEvaluation(), 'generate')).toBe(true);
   });
 
+  it('blocks generate and full when custom mode has no criteria', () => {
+    const customWithoutCriteria = {
+      ...baseEvaluation(),
+      criteriaMode: 'custom' as const,
+      criteria: [],
+    };
+
+    expect(canRunAutomationPhase(customWithoutCriteria, 'generate')).toBe(false);
+    expect(canRunAutomationPhase(customWithoutCriteria, 'full')).toBe(false);
+  });
+
   it('requires answers and criteria for score', () => {
     expect(canRunAutomationPhase(baseEvaluation(), 'score')).toBe(false);
     expect(

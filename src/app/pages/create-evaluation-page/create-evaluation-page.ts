@@ -8,7 +8,8 @@ import {
 } from '../../components/evaluation-form/evaluation-form';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
-import { AUTOMATION_METADATA_STUB, Evaluation } from '../../models';
+import { Evaluation } from '../../models';
+import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
 import { EvaluationService } from '../../services/evaluation.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
 
@@ -318,8 +319,8 @@ export class CreateEvaluationPage {
 
   private stubCreateValue(): EvaluationFormValue {
     return {
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
     };
   }
 
@@ -358,11 +359,11 @@ export class CreateEvaluationPage {
     const title = evaluation.title.trim();
     const prompt = evaluation.prompt.trim();
 
-    if (title && title !== AUTOMATION_METADATA_STUB) {
+    if (title && title !== AUTOMATION_METADATA_STUB_TITLE) {
       form.setTitle(title);
     }
 
-    if (prompt && prompt !== AUTOMATION_METADATA_STUB) {
+    if (prompt && prompt !== AUTOMATION_METADATA_STUB_PROMPT  ) {
       form.setPrompt(prompt);
     }
   }

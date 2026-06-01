@@ -54,23 +54,48 @@ describe('EvaluationService criteria modes', () => {
     };
   }
 
-  it('uses the settings default criteria mode when creating evaluations', async () => {
+  it('uses default criteria mode when settings prefer custom but no criteria are provided', async () => {
     localStorage.setItem('aieval-settings-default-criteria-mode', 'custom');
 
     const service = await createService();
 
     const createPromise = service.create({
-      title: 'Custom mode evaluation',
-      prompt: 'Start in custom rubric mode.',
+      title: 'Create-page evaluation',
+      prompt: 'Title and prompt only, as in full automation.',
     });
 
     const post = httpMock.expectOne('/api/evaluations');
     expect(post.request.body).toEqual({
-      title: 'Custom mode evaluation',
-      prompt: 'Start in custom rubric mode.',
-      criteriaMode: 'custom',
+      title: 'Create-page evaluation',
+      prompt: 'Title and prompt only, as in full automation.',
+      criteriaMode: 'default',
     });
-    post.flush(savedEvaluation({ criteriaMode: 'custom' }));
+    post.flush(savedEvaluation());
+
+    const created = await createPromise;
+    expect(created.criteriaMode).toBe('default');
+    expect(service.getActiveCriteria(created)).toEqual(DEFAULT_CRITERIA);
+  });
+
+  it('uses custom criteria mode when settings prefer custom and criteria are provided', async () => {
+    localStorage.setItem('aieval-settings-default-criteria-mode', 'custom');
+
+    const service = await createService();
+
+    const createPromise = service.create({
+      title: 'Custom rubric evaluation',
+      prompt: 'Created with custom criteria.',
+      criteria: [customCriterion],
+    });
+
+    const post = httpMock.expectOne('/api/evaluations');
+    expect(post.request.body).toEqual({
+      title: 'Custom rubric evaluation',
+      prompt: 'Created with custom criteria.',
+      criteriaMode: 'custom',
+      criteria: [customCriterion],
+    });
+    post.flush(savedEvaluation({ criteriaMode: 'custom', criteria: [customCriterion] }));
 
     const created = await createPromise;
     expect(created.criteriaMode).toBe('custom');

@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
@@ -11,6 +12,7 @@ import { AutomationControlsComponent } from './automation-controls';
 describe('AutomationControlsComponent dismiss', () => {
   let component: AutomationControlsComponent;
   let evaluationService: EvaluationService;
+  let settingsService: SettingsService;
 
   const evaluation: Evaluation = {
     id: 'eval-1',
@@ -36,6 +38,7 @@ describe('AutomationControlsComponent dismiss', () => {
     });
 
     evaluationService = TestBed.inject(EvaluationService);
+    settingsService = TestBed.inject(SettingsService);
     evaluationService['evaluationsSignal'].set([evaluation]);
 
     const fixture = TestBed.createComponent(AutomationControlsComponent);
@@ -73,5 +76,43 @@ describe('AutomationControlsComponent dismiss', () => {
     component['onDismissAutomationStatus']();
 
     expect(cancelSpy).not.toHaveBeenCalled();
+  });
+
+  describe('auto-dismiss when setting enabled', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      settingsService.setAutoDismissAutomationStatus(true);
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('auto-dismisses completed automation status', () => {
+      component['automationOutcome'].set({ status: 'completed' });
+      TestBed.tick();
+
+      vi.advanceTimersByTime(3000);
+
+      expect(component['automationOutcome']().status).toBe('idle');
+    });
+
+    it('does not auto-dismiss failed automation status', () => {
+      component['automationOutcome'].set({ status: 'failed' });
+      TestBed.tick();
+
+      vi.advanceTimersByTime(3000);
+
+      expect(component['automationOutcome']().status).toBe('failed');
+    });
+
+    it('does not auto-dismiss cancelled automation status', () => {
+      component['automationOutcome'].set({ status: 'cancelled' });
+      TestBed.tick();
+
+      vi.advanceTimersByTime(3000);
+
+      expect(component['automationOutcome']().status).toBe('cancelled');
+    });
   });
 });

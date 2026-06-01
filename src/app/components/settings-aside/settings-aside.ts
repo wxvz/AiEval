@@ -249,7 +249,7 @@ export class SettingsAside {
     }
 
     this.settingsService.setAutoDismissAutomationStatus(enabled);
-    this.feedback.success(`Auto-dismiss automation messages ${formatAutoDismiss(enabled)}.`);
+    this.feedback.success(`Auto-dismiss successful automation messages ${formatAutoDismiss(enabled)}.`);
   }
 
   protected async setLlmPreset(preset: LlmPreset): Promise<void> {

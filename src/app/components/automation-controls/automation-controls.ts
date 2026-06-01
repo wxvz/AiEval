@@ -116,7 +116,7 @@ export class AutomationControlsComponent {
 
       const outcome = this.automationOutcome().status;
 
-      if (outcome !== 'completed' && outcome !== 'failed' && outcome !== 'cancelled') {
+      if (outcome !== 'completed') {
         return;
       }
 

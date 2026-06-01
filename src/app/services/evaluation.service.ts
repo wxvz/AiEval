@@ -133,11 +133,13 @@ export class EvaluationService {
   }
 
   create(dto: CreateEvaluationDto, operationFeedback?: OperationFeedback): Promise<Evaluation> {
+    const criteriaMode = this.resolveCreateCriteriaMode(dto);
+
     return firstValueFrom(
       this.http.post<Evaluation>(API, {
         title: dto.title.trim(),
         prompt: dto.prompt.trim(),
-        criteriaMode: dto.criteriaMode ?? this.settings.defaultCriteriaMode(),
+        criteriaMode,
         ...(dto.criteria ? { criteria: dto.criteria } : {}),
       }),
     )
@@ -596,6 +598,14 @@ export class EvaluationService {
       },
       operationFeedback,
     );
+  }
+
+  /** Custom mode without criteria blocks automation; fall back to default rubric. */
+  private resolveCreateCriteriaMode(dto: CreateEvaluationDto): CriteriaMode {
+    const requested = dto.criteriaMode ?? this.settings.defaultCriteriaMode();
+    const hasCriteria = (dto.criteria?.length ?? 0) > 0;
+
+    return requested === 'custom' && !hasCriteria ? 'default' : requested;
   }
 
   private updateEvaluationAnswers(
