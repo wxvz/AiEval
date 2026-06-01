@@ -58,6 +58,11 @@
   margin-top: 1.25rem;
 }
 
+.evaluation-day__pagination .pagination {
+  gap: 0.5rem;
+}
+
 .evaluation-day__pagination .page-link {
+  margin-left: 0;
   border-radius: var(--bs-border-radius-sm);
 }

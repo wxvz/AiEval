@@ -1,4 +1,4 @@
-export const EVALUATIONS_PER_DAY_PAGE = 9;
+export const EVALUATIONS_PER_DAY_PAGE = 6;
 
 export function pageCount(itemCount: number, pageSize = EVALUATIONS_PER_DAY_PAGE): number {
   return Math.max(1, Math.ceil(itemCount / pageSize));
