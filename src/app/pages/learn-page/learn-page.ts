@@ -19,7 +19,7 @@ export class LearnPage {
     {
       title: 'Neural networks',
       description:
-        'A neural network learns from examples — like flash cards. See how a tiny one guesses answers and gets better with practice.',
+        'A neural network learns from examples, like studying flash cards. See how a tiny one guesses answers and gets better with practice.',
       route: '/learn/neural-network',
       badge: 'Start here',
     },
