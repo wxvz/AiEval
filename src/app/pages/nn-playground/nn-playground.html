@@ -6,8 +6,8 @@
 
     <h1 class="h3 mb-3">Neural networks</h1>
     <p class="lead mb-3">
-      A neural network is a small program that learns from examples — like studying flash cards. You show it
-      two numbers, tell it the right answer, and it tries to guess. When it is wrong, it makes a small
+      A neural network is a small program that learns from examples, like studying flash cards. You show it
+      two numbers, tell it the right answer and it tries to guess. When it is wrong, it makes a small
       correction and tries again.
     </p>
     <p class="text-muted mb-4">
@@ -16,7 +16,7 @@
     </p>
     <p class="text-muted small mb-4">
       Tip: start with the <app-nn-term-hint term="xor" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
-      puzzle — it is a classic example that usually needs more than one
+      puzzle. It is a classic example that usually needs more than one
       <app-nn-term-hint
         term="hiddenNeurons"
         hintId="hiddenNeurons-tip"
@@ -279,7 +279,7 @@
     <div class="card mb-4 nn-playground-card">
       <div class="card-body nn-playground-card-body">
         <h2 class="h5 card-title">
-          <app-nn-term-hint term="probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /> — try one
+          <app-nn-term-hint term="probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />. Try one
           <app-nn-term-hint term="input" hintId="input-probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
         </h2>
         <p class="text-muted small">
@@ -342,5 +342,33 @@
         </div>
       </div>
     </div>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="nn-faq" open>
+        <summary class="nn-faq__question">Why is AND dataset easier?</summary>
+        <p class="mb-0 text-muted">
+          AND is easier because one straight boundary can separate the outputs: only [1, 1] maps to 1, while the
+          other points map to 0. XOR needs a curved split, which is why it usually needs a hidden layer.
+        </p>
+      </details>
+
+      <details class="nn-faq">
+        <summary class="nn-faq__question">What is sigmoid?</summary>
+        <p class="mb-0 text-muted">
+          Sigmoid is an activation function that squeezes any input into a value between 0 and 1. It is useful when
+          outputs are binary-like or probability-like.
+        </p>
+      </details>
+
+      <details class="nn-faq">
+        <summary class="nn-faq__question">What is a hidden layer?</summary>
+        <p class="mb-0 text-muted">
+          A hidden layer is the middle layer between inputs and outputs. It helps the network combine inputs in more
+          flexible ways, so it can learn patterns that a single layer cannot.
+        </p>
+      </details>
+    </section>
   </div>
 </div>

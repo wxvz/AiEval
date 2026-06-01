@@ -223,7 +223,7 @@
               </div>
               <span class="settings-aside__pill text-success">Available</span>
               <span class="settings-aside__detail text-muted small">
-                {{ formatProvider(active.name) }} — judge: {{ active.judgeModel }}
+                {{ formatProvider(active.name) }}, judge model: {{ active.judgeModel }}
               </span>
             </li>
           } @else {
@@ -329,7 +329,7 @@
     <section class="settings-aside__card" aria-labelledby="settingsAboutHeading">
       <h3 class="settings-aside__heading h6" id="settingsAboutHeading">About</h3>
       <p class="settings-aside__hint text-muted small mb-2">
-        Compare AI answers against a rubric, pick a winner, and draft an improved response.
+        Compare AI answers against a rubric, pick a winner and draft an improved response.
       </p>
       <a routerLink="/about" class="btn btn-outline-primary btn-sm" (click)="dismiss()">
         About AiEval

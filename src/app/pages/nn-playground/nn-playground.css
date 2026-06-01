@@ -50,3 +50,21 @@
 .nn-collapsible summary::-webkit-details-marker {
   display: none;
 }
+
+.nn-faq {
+  margin-bottom: 0.6rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--bs-border-radius);
+  background: var(--aieval-surface);
+}
+
+.nn-faq__question {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.nn-faq__question + p {
+  margin-top: 0.55rem;
+}
