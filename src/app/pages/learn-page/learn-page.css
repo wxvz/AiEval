@@ -1,0 +1,62 @@
+:host {
+  display: block;
+}
+
+.learn-topics {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.learn-topic {
+  display: block;
+  padding: 1.25rem 1.5rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.learn-topic--soon {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.learn-topic__badge {
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
+  color: var(--aieval-primary);
+}
+
+.learn-topic__badge--muted {
+  background: color-mix(in srgb, var(--bs-secondary-color) 15%, transparent);
+  color: var(--bs-secondary-color);
+}
+
+.learn-topic__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.learn-topic__description {
+  margin: 0;
+  color: var(--bs-secondary-color);
+  line-height: 1.55;
+}
+
+.learn-topic__cta {
+  display: inline-block;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--aieval-primary);
+}
+
+.learn-topic:not(.learn-topic--soon):hover .learn-topic__cta {
+  color: var(--aieval-primary-hover);
+}

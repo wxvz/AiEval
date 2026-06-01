@@ -1,0 +1,21 @@
+<span class="nn-term-hint position-relative d-inline">
+  <button
+    type="button"
+    class="nn-term-hint__trigger btn btn-link p-0 align-baseline text-decoration-underline text-decoration-style-dotted"
+    [attr.aria-expanded]="isOpen()"
+    [attr.aria-describedby]="isOpen() ? 'nn-hint-' + resolvedId() : null"
+    (click)="toggle($event)"
+  >
+    {{ entry().label }}
+  </button>
+  @if (isOpen()) {
+    <span
+      [id]="'nn-hint-' + resolvedId()"
+      class="nn-term-hint__popover"
+      role="tooltip"
+      (click)="$event.stopPropagation()"
+    >
+      {{ entry().explanation }}
+    </span>
+  }
+</span>

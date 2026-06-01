@@ -1,0 +1,346 @@
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <p class="mb-3">
+      <a routerLink="/learn" class="learn-back-link">← All topics</a>
+    </p>
+
+    <h1 class="h3 mb-3">Neural networks</h1>
+    <p class="lead mb-3">
+      A neural network is a small program that learns from examples — like studying flash cards. You show it
+      two numbers, tell it the right answer, and it tries to guess. When it is wrong, it makes a small
+      correction and tries again.
+    </p>
+    <p class="text-muted mb-4">
+      Use the controls below to train a tiny network yourself. Press <strong>Train</strong> and watch the
+      predictions get closer to the correct answers. Tap any highlighted word for a plain-language definition.
+    </p>
+    <p class="text-muted small mb-4">
+      Tip: start with the <app-nn-term-hint term="xor" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      puzzle — it is a classic example that usually needs more than one
+      <app-nn-term-hint
+        term="hiddenNeurons"
+        hintId="hiddenNeurons-tip"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      /> to solve.
+    </p>
+
+    @if (sigmoidWarning(); as warning) {
+      <div class="alert alert-warning" role="alert">{{ warning }}</div>
+    }
+    @if (validationMessage(); as message) {
+      <div class="alert alert-danger" role="alert">{{ message }}</div>
+    }
+
+    <div class="card mb-4 nn-playground-card">
+      <div class="card-body row g-3 nn-playground-card-body">
+        <div class="col-md-4">
+          <label class="form-label" for="hiddenSize">
+            <app-nn-term-hint
+              term="hiddenNeurons"
+              hintId="hiddenNeurons-hiddenSize"
+              [activeId]="openTermId()"
+              (activeIdChange)="setOpenTermId($event)"
+            />:
+            {{ hiddenSize() }}
+          </label>
+          <input
+            id="hiddenSize"
+            type="range"
+            min="1"
+            max="8"
+            class="form-range"
+            [ngModel]="hiddenSize()"
+            (ngModelChange)="hiddenSize.set($event); onArchitectureChange()"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="learningRate">
+            <app-nn-term-hint term="learningRate" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />:
+            {{ learningRate() }}
+          </label>
+          <input
+            id="learningRate"
+            type="range"
+            min="0.01"
+            max="1"
+            step="0.01"
+            class="form-range"
+            [ngModel]="learningRate()"
+            (ngModelChange)="learningRate.set($event); onArchitectureChange()"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="dataset">
+            <app-nn-term-hint term="dataset" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          </label>
+          <select
+            id="dataset"
+            class="form-select"
+            [ngModel]="datasetName()"
+            (ngModelChange)="onDatasetChange($event)"
+          >
+            <option value="xor">XOR (needs hidden layer)</option>
+            <option value="and">AND (easier)</option>
+            <option value="custom">Custom (your rows)</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="outputActivation">
+            Output <app-nn-term-hint term="activation" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          </label>
+          <select
+            id="outputActivation"
+            class="form-select"
+            [ngModel]="outputActivation()"
+            (ngModelChange)="onOutputActivationChange($event)"
+          >
+            <option value="sigmoid">Sigmoid (0–1)</option>
+            <option value="linear">Linear (any number)</option>
+          </select>
+        </div>
+        @if (showEntryStyle()) {
+          <div class="col-md-4">
+            <label class="form-label" for="entryStyle">Entry style</label>
+            <select
+              id="entryStyle"
+              class="form-select"
+              [ngModel]="entryStyle()"
+              (ngModelChange)="onEntryStyleChange($event)"
+            >
+              <option value="binary">0/1 dropdowns</option>
+              <option value="free">Free numbers</option>
+            </select>
+          </div>
+        }
+      </div>
+      <div class="card-footer d-flex flex-wrap gap-2 align-items-center">
+        <button type="button" class="btn btn-primary" (click)="stepOnce()" [disabled]="!canTrain()">
+          Train 1 epoch
+        </button>
+        <button type="button" class="btn btn-outline-primary" (click)="train(200)" [disabled]="!canTrain()">
+          Train 200 epochs
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="resetNetwork()">Reset weights</button>
+        <span class="small text-muted">
+          One <app-nn-term-hint term="epoch" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          = one pass through every training row.
+        </span>
+      </div>
+    </div>
+
+    @if (isCustom()) {
+      <h2 class="h5">
+        <app-nn-term-hint term="custom" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /> training rows
+      </h2>
+      <details class="nn-collapsible" open>
+        <summary class="nn-collapsible__summary">Edit training rows</summary>
+
+        <div class="table-responsive mb-2">
+          <table class="table table-sm table-bordered nn-data-table">
+            <thead>
+              <tr>
+                <th>x1</th>
+                <th>x2</th>
+                <th>
+                  <app-nn-term-hint
+                    term="target"
+                    hintId="target-editor"
+                    [activeId]="openTermId()"
+                    (activeIdChange)="setOpenTermId($event)"
+                  />
+                  (y)
+                </th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of customSamples(); track $index) {
+                <tr>
+                  <td>
+                    @if (entryStyle() === 'binary') {
+                      <select
+                        class="form-select form-select-sm"
+                        [ngModel]="row.x1"
+                        (ngModelChange)="updateCustomRow($index, 'x1', $event)"
+                      >
+                        <option [ngValue]="0">0</option>
+                        <option [ngValue]="1">1</option>
+                      </select>
+                    } @else {
+                      <input
+                        type="number"
+                        step="any"
+                        class="form-control form-control-sm"
+                        [ngModel]="row.x1"
+                        (ngModelChange)="updateCustomRow($index, 'x1', $event)"
+                      />
+                    }
+                  </td>
+                  <td>
+                    @if (entryStyle() === 'binary') {
+                      <select
+                        class="form-select form-select-sm"
+                        [ngModel]="row.x2"
+                        (ngModelChange)="updateCustomRow($index, 'x2', $event)"
+                      >
+                        <option [ngValue]="0">0</option>
+                        <option [ngValue]="1">1</option>
+                      </select>
+                    } @else {
+                      <input
+                        type="number"
+                        step="any"
+                        class="form-control form-control-sm"
+                        [ngModel]="row.x2"
+                        (ngModelChange)="updateCustomRow($index, 'x2', $event)"
+                      />
+                    }
+                  </td>
+                  <td>
+                    @if (entryStyle() === 'binary') {
+                      <select
+                        class="form-select form-select-sm"
+                        [ngModel]="row.y"
+                        (ngModelChange)="updateCustomRow($index, 'y', $event)"
+                      >
+                        <option [ngValue]="0">0</option>
+                        <option [ngValue]="1">1</option>
+                      </select>
+                    } @else {
+                      <input
+                        type="number"
+                        step="any"
+                        class="form-control form-control-sm"
+                        [ngModel]="row.y"
+                        (ngModelChange)="updateCustomRow($index, 'y', $event)"
+                      />
+                    }
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger"
+                      (click)="removeCustomRow($index)"
+                      [disabled]="customSamples().length <= 1"
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <button type="button" class="btn btn-sm btn-outline-primary mb-0" (click)="addCustomRow()">
+          Add row
+        </button>
+      </details>
+    }
+
+    <h2 class="h5">Predictions (current weights)</h2>
+    <table class="table table-sm table-bordered">
+      <thead>
+        <tr>
+          <th><app-nn-term-hint term="input" hintId="input-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+          <th><app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+          <th><app-nn-term-hint term="target" hintId="target-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+          <th>{{ usesRegression() ? '|Error|' : 'Correct?' }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of predictions(); track $index) {
+          <tr>
+            <td>[{{ row.input.join(', ') }}]</td>
+            <td>{{ row.output | number: '1.3-3' }}</td>
+            <td>{{ row.target }}</td>
+            <td>
+              @if (usesRegression()) {
+                {{ row.error | number: '1.3-3' }}
+              } @else if (row.correct) {
+                <span class="text-success">✓</span>
+              } @else {
+                <span class="text-danger">✗</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (lossHistory().length > 0) {
+      <p class="small text-muted mb-4">
+        Latest avg <app-nn-term-hint term="loss" hintId="loss-footer" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />:
+        {{ lossHistory().at(-1)! | number: '1.4-4' }} (lower is better)
+      </p>
+    }
+
+    <div class="card mb-4 nn-playground-card">
+      <div class="card-body nn-playground-card-body">
+        <h2 class="h5 card-title">
+          <app-nn-term-hint term="probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /> — try one
+          <app-nn-term-hint term="input" hintId="input-probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+        </h2>
+        <p class="text-muted small">
+          <app-nn-term-hint term="forwardPass" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          with current weights only. Does not train or add a row.
+        </p>
+        <div class="row g-3 align-items-end">
+          <div class="col-auto">
+            <label class="form-label" for="probeX1">x1</label>
+            @if (entryStyle() === 'binary' && isCustom()) {
+              <select
+                id="probeX1"
+                class="form-select form-select-sm nn-probe-input"
+                [ngModel]="probeInput().x1"
+                (ngModelChange)="updateProbeField('x1', $event)"
+              >
+                <option [ngValue]="0">0</option>
+                <option [ngValue]="1">1</option>
+              </select>
+            } @else {
+              <input
+                id="probeX1"
+                type="number"
+                step="any"
+                class="form-control form-control-sm nn-probe-input"
+                [ngModel]="probeInput().x1"
+                (ngModelChange)="updateProbeField('x1', $event)"
+              />
+            }
+          </div>
+          <div class="col-auto">
+            <label class="form-label" for="probeX2">x2</label>
+            @if (entryStyle() === 'binary' && isCustom()) {
+              <select
+                id="probeX2"
+                class="form-select form-select-sm nn-probe-input"
+                [ngModel]="probeInput().x2"
+                (ngModelChange)="updateProbeField('x2', $event)"
+              >
+                <option [ngValue]="0">0</option>
+                <option [ngValue]="1">1</option>
+              </select>
+            } @else {
+              <input
+                id="probeX2"
+                type="number"
+                step="any"
+                class="form-control form-control-sm nn-probe-input"
+                [ngModel]="probeInput().x2"
+                (ngModelChange)="updateProbeField('x2', $event)"
+              />
+            }
+          </div>
+          <div class="col-auto">
+            <span class="form-label d-block">
+              <app-nn-term-hint term="output" hintId="output-probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+            </span>
+            <strong>{{ probeOutput() | number: '1.4-4' }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

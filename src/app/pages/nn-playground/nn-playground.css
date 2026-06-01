@@ -1,0 +1,52 @@
+.learn-back-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.learn-back-link:hover {
+  text-decoration: underline;
+}
+
+.nn-playground-card,
+.nn-playground-card-body {
+  overflow: visible;
+}
+
+.card-footer .btn {
+  min-width: 8rem;
+}
+
+.nn-data-table .form-control-sm,
+.nn-data-table .form-select-sm,
+.nn-probe-input {
+  min-width: 5rem;
+}
+
+.nn-data-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.nn-collapsible {
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
+  overflow: hidden;
+}
+
+.nn-collapsible__summary {
+  cursor: pointer;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  user-select: none;
+}
+
+.nn-collapsible[open] .nn-collapsible__summary {
+  border-bottom: 1px solid var(--aieval-border);
+}
+
+.nn-collapsible summary::-webkit-details-marker {
+  display: none;
+}
