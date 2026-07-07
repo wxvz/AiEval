@@ -9,14 +9,17 @@ Copied from Cursor plan files for phone/offline reference. `.cursor/` is gitigno
 | [lesson-section-qa.plan.md](./lesson-section-qa.plan.md) | Done | Reference for section check UX |
 | [lab-qa-alignment.plan.md](./lab-qa-alignment.plan.md) | Done | Reference for lab shell pattern |
 
-## Remaining content work (not in plan files)
+## Content work status
 
-Stub read lessons still need full JSON bodies:
+✅ **All lesson content complete!**
 
-- `comparing-answers`
-- `rubrics-and-criteria`
-- `prompts-as-instructions`
-- `automation-and-judges`
-- Go deeper track lessons (`transformers-overview`, `production-concerns`, `building-eval-harnesses`)
+All stub JSON files now have full lesson bodies:
+- ✅ `prompts-as-instructions` — conditioning via clear task wording
+- ✅ `comparing-answers` — structured evaluation with shared rubrics
+- ✅ `rubrics-and-criteria` — building scorable criteria with anchors
+- ✅ `automation-and-judges` — when AI scores answers and when to double-check
+- ✅ `transformers-overview` — tokens, attention, next-token prediction
+- ✅ `production-concerns` — cost, latency, monitoring, safety at scale
+- ✅ `building-eval-harnesses` — generate-score-improve feedback loop
 
-Use `.cursor/skills/aieval-learn-hub/SKILL.md` authoring checklist when filling these.
+Each lesson follows the established pattern with 3 sections, check questions, glossary term markup, and progressive teaching from foundation → LLM systems → advanced topics.
