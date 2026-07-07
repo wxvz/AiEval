@@ -1,5 +1,95 @@
 {
-  "sections": [],
-  "recapQuestions": [],
-  "checkQuestions": []
+  "sections": [
+    {
+      "title": "Language models follow instructions",
+      "paragraphs": [
+        "Unlike smaller {{model}}s that memorize patterns from labeled pairs, {{largeLanguageModel}}s have learned so much text that they respond to instructions written in plain language. You condition behavior by describing what you want — no training examples required.",
+        "The {{prompt}} is your interface. Write clear task wording, provide context if needed, and the {{model}} generates a response shaped by what you asked. Change the prompt and the answer changes too.",
+        "This is why prompting is central to LLM work. You do not retrain {{weights}} for every task; you rewrite instructions to steer what the {{model}} already knows.",
+        "In AiEval you will compare {{model}} answers to the same prompt. That comparison only works when the prompt is clear enough that different models understand the goal — another reason prompt quality matters from day one.",
+        "Next: comparing answers. Once you can write a clear prompt, the question becomes: which {{model}} followed it best?"
+      ],
+      "bullets": [
+        "{{prompt}} — the instruction text you send to the {{model}}.",
+        "{{largeLanguageModel}} — a {{model}} trained on enough text to follow new instructions.",
+        "Condition, don't retrain: rewrite the prompt, not the {{weights}}."
+      ],
+      "check": {
+        "prompt": "A colleague wants to classify support tickets as urgent or not. They suggest: \"Let's fine-tune a {{model}} for every new ticket category.\" What is the faster first step?",
+        "answer": "Write a clear prompt describing urgent vs not-urgent, then test on real tickets",
+        "choices": [
+          "Collect 100,000 labeled tickets and train a small classifier from scratch",
+          "Write a clear prompt describing urgent vs not-urgent, then test on real tickets",
+          "Run automation on blank prompts and hope the model infers the task",
+          "Ask every customer to label their own ticket before submitting"
+        ],
+        "explanation": "{{largeLanguageModel}}s can classify from a good {{prompt}} alone — no fine-tuning needed. Test prompt wording first; train only if prompting proves insufficient."
+      }
+    },
+    {
+      "title": "Clear wording, clear results",
+      "paragraphs": [
+        "Ambiguous prompts produce varied answers. If you write \"Summarize this document,\" one {{model}} might give three bullets while another gives ten sentences. Neither is wrong because \"summarize\" did not specify length or format.",
+        "Good prompts constrain the task: what inputs to expect, what output format, what tone, and what to avoid. The more specific your instruction, the less room for misinterpretation.",
+        "Click each example below to see how wording shifts the answer. Notice that vague prompts allow creativity the task may not want.",
+        "When building evaluations you will later judge which answer is better. That judgment is easier when the prompt leaves no question about what \"better\" means."
+      ],
+      "reveals": [
+        {
+          "prompt": "Prompt: \"Write a summary.\" → What happens?",
+          "reveal": "The {{model}} guesses length, style, and focus — different runs may give very different outputs."
+        },
+        {
+          "prompt": "Prompt: \"Summarize in three bullets for a technical audience.\" → What happens?",
+          "reveal": "The {{model}} knows: three items, bullet format, skip lay explanations. Output is predictable."
+        },
+        {
+          "prompt": "Prompt: \"Score this essay.\" → What happens?",
+          "reveal": "The {{model}} invents a scale (1–5? A–F?), guesses criteria, and may not explain reasoning."
+        },
+        {
+          "prompt": "Prompt: \"Score this essay 1–5 on clarity, using the rubric below.\" → What happens?",
+          "reveal": "The {{model}} uses your scale, your criterion, and can reference the rubric for consistency."
+        }
+      ],
+      "check": {
+        "prompt": "You want a {{model}} to extract customer names from support emails. Which prompt is clearest?",
+        "answer": "Extract the customer's full name from the email. Return only the name, no explanation.",
+        "choices": [
+          "Find the name.",
+          "Tell me about the customer.",
+          "Extract the customer's full name from the email. Return only the name, no explanation.",
+          "What is in this email?"
+        ],
+        "explanation": "The third option specifies what to extract (full name), what input (email), and what output format (name only). The other prompts are too vague for reliable automation."
+      }
+    },
+    {
+      "title": "From prompt to evaluation",
+      "paragraphs": [
+        "Once you can write a good prompt, the next question is: which {{model}} or which version answers best? That is where evaluation enters.",
+        "In AiEval you will send the same prompt to multiple {{model}}s, collect their answers, and compare quality using a {{rubric}}. The prompt must be clear enough that all {{model}}s understand the task — otherwise you are comparing apples to oranges.",
+        "Later lessons cover how to break \"better\" into scorable {{criterion}} rows. For now, remember: prompting is not just asking questions; it is defining the task clearly enough to judge the answers fairly.",
+        "Next up: comparing answers — same prompt, different models, measurable quality."
+      ],
+      "bullets": [
+        "Good prompts enable fair comparison across {{model}}s.",
+        "Vague prompts lead to varied answers that are hard to score.",
+        "Evaluation depends on clear task definition — your prompt is that definition."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is a {{prompt}} in the context of a {{largeLanguageModel}}?",
+        "answer": "The instruction text sent to the model",
+        "accept": [
+          "instruction text",
+          "the instruction",
+          "task instructions",
+          "instruction sent to the model",
+          "the text that tells the model what to do"
+        ],
+        "explanation": "The {{prompt}} is the instruction you send. It conditions what the {{model}} generates without retraining {{weights}}."
+      }
+    }
+  ],
+  "recapQuestions": []
 }

@@ -1,5 +1,91 @@
 {
-  "sections": [],
-  "recapQuestions": [],
-  "checkQuestions": []
+  "sections": [
+    {
+      "title": "From vague to scorable",
+      "paragraphs": [
+        "Saying \"this answer is better\" is easy. Explaining *why* in a way another person — or an automated {{judge}} — can reproduce is harder. That is where a {{rubric}} comes in.",
+        "A {{rubric}} breaks quality into rows called {{criterion}}. Each row targets one measurable aspect: accuracy, tone, completeness, safety. Instead of a gut feeling, you score each row on a scale (often 1–5) with anchors that define what each level means.",
+        "The rubric is your shared language. Two reviewers can disagree on \"helpfulness\" until you write: \"Score 5: answers the question fully with context. Score 3: answers but omits key details. Score 1: off-topic or incorrect.\"",
+        "In AiEval you will create evaluations with rubrics. Automation can score answers using these same {{criterion}} definitions — but only if the criteria are clear enough for a {{judge}} to apply consistently.",
+        "Next: how to draft rubric rows that travel well across {{model}}s and reviewers."
+      ],
+      "bullets": [
+        "{{rubric}} — a scoring guide with multiple {{criterion}} rows.",
+        "{{criterion}} — one measurable aspect of quality (accuracy, tone, etc.).",
+        "Anchors: written definitions for each score level (1, 3, 5)."
+      ],
+      "check": {
+        "prompt": "A team scores customer emails as \"good\" or \"bad\" but different reviewers disagree on half the emails. What is the fix?",
+        "answer": "Write a rubric with clear criteria: what makes an email good vs bad?",
+        "choices": [
+          "Train a bigger model and hope it guesses correctly",
+          "Write a rubric with clear criteria: what makes an email good vs bad?",
+          "Average all the scores and call it consensus",
+          "Only let one person score everything"
+        ],
+        "explanation": "Disagreement means the criteria are not defined. A {{rubric}} with explicit {{criterion}} rows and anchors aligns reviewers — and enables automation."
+      }
+    },
+    {
+      "title": "Build rows, one criterion at a time",
+      "paragraphs": [
+        "Start by listing what matters. For a support-answer task: accuracy, politeness, actionable next steps. For code generation: correctness, readability, security. Each aspect becomes a {{criterion}} row.",
+        "Then define anchors. Pick the top and bottom of your scale (5 and 1), and write concrete descriptions. \"Score 5: code runs, passes tests, uses clear variable names. Score 1: syntax errors or fails tests.\" Middle scores (2, 3, 4) fill in between.",
+        "Click each task below to see example {{rubric}} rows. Notice how specific anchors make scoring predictable.",
+        "When drafting your own rubrics, test them: score a few real answers and see if the criteria are clear enough that you do not have to guess."
+      ],
+      "reveals": [
+        {
+          "prompt": "Task: Customer support reply. Criterion: Politeness. What are score anchors?",
+          "reveal": "5: Warm, empathetic, professional. 3: Neutral tone, no rudeness. 1: Dismissive, curt, or blames the customer."
+        },
+        {
+          "prompt": "Task: Essay grading. Criterion: Argument clarity. What are score anchors?",
+          "reveal": "5: Thesis is clear, evidence supports every claim. 3: Thesis stated but some claims lack support. 1: No clear thesis or unsupported assertions."
+        },
+        {
+          "prompt": "Task: Code review. Criterion: Security. What are score anchors?",
+          "reveal": "5: No known vulnerabilities, input validation present. 3: Minor issues, fixable quickly. 1: SQL injection risk or credentials in code."
+        }
+      ],
+      "check": {
+        "prompt": "You want to score {{model}} answers on \"helpfulness.\" Which rubric row is clearest for reviewers to apply?",
+        "answer": "5: Answers question fully with context. 3: Answers but omits details. 1: Off-topic.",
+        "choices": [
+          "Just write \"helpful\" or \"not helpful\" with no scale.",
+          "5: Good. 3: Okay. 1: Bad.",
+          "5: Answers question fully with context. 3: Answers but omits details. 1: Off-topic.",
+          "Ask the model to judge itself and trust the score."
+        ],
+        "explanation": "Anchors with concrete definitions (\"answers fully,\" \"omits details,\" \"off-topic\") let reviewers score consistently. Vague labels like \"good\" or \"okay\" invite disagreement."
+      }
+    },
+    {
+      "title": "Use your rubric to judge answers",
+      "paragraphs": [
+        "Once the {{rubric}} is written, scoring is structured. Read the answer, check each {{criterion}} row, pick the anchor that fits best, record the score. Sum or average the rows to get an overall quality measure.",
+        "In AiEval's Compare page you will see answers scored row by row. If automation handled scoring, each {{criterion}} has a recorded score plus reasoning — you can spot-check whether the {{judge}} applied the rubric faithfully.",
+        "Good rubrics make disagreements debuggable. If two reviewers gave different scores, look at which {{criterion}} row caused the split and refine that anchor. If automation is off, adjust the {{judge}}'s prompt to reference the rubric more explicitly.",
+        "Next lesson: automation and judges — when AI scores answers for you, and when to double-check."
+      ],
+      "bullets": [
+        "Score each {{criterion}} row separately, then combine.",
+        "Good rubrics let reviewers (and automation) score consistently.",
+        "Disagreements point to anchors that need sharpening."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is a {{rubric}} in evaluation?",
+        "answer": "A scoring guide with criteria and anchors",
+        "accept": [
+          "scoring guide",
+          "criteria with anchors",
+          "a guide with criteria",
+          "criteria and score definitions",
+          "a structured scoring guide"
+        ],
+        "explanation": "A {{rubric}} is a structured guide that breaks quality into {{criterion}} rows with explicit anchors for each score level."
+      }
+    }
+  ],
+  "recapQuestions": []
 }

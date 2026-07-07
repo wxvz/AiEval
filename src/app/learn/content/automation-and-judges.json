@@ -1,5 +1,95 @@
 {
-  "sections": [],
-  "recapQuestions": [],
-  "checkQuestions": []
+  "sections": [
+    {
+      "title": "When AI scores answers",
+      "paragraphs": [
+        "Scoring every answer by hand does not scale. If you test five {{model}}s on 100 prompts, that is 500 answers to grade. A human can do ten carefully; automation can do hundreds in minutes.",
+        "A {{judge}} is a {{model}} you use to score other {{model}}s' answers. You send it the prompt, the answer, and the {{rubric}}, and it returns scores per {{criterion}} plus reasoning. If the {{judge}} was given clear anchors, its scores often align with human grading.",
+        "AiEval's \"Run full automation\" button does exactly this: generates answers from contestant {{model}}s, then calls a {{judge}} {{model}} to score them using your {{rubric}}. You review the scores instead of writing them from scratch.",
+        "This is not magic. The {{judge}} can miss nuance, favor certain styles, or apply {{criterion}} anchors inconsistently. That is why you spot-check: open Compare, read the answers, and see if the scores make sense.",
+        "Next: when to trust automation, and when to double-check by hand."
+      ],
+      "bullets": [
+        "{{judge}} — a {{model}} that scores other {{model}}s' answers.",
+        "Automation scales evaluation from 10 to 1000 prompts.",
+        "Spot-check: automation is fast, not infallible."
+      ],
+      "check": {
+        "prompt": "Your team wants to evaluate 500 {{model}} answers. A colleague says: \"Let's automate scoring with a {{judge}} and never read the answers.\" What is the risk?",
+        "answer": "The judge may score inconsistently or miss errors humans would catch",
+        "choices": [
+          "Nothing — automation is always perfect.",
+          "The judge may score inconsistently or miss errors humans would catch",
+          "Automation is slower than reading all 500 by hand",
+          "The judge will refuse to score and crash the system"
+        ],
+        "explanation": "{{judge}} {{model}}s scale evaluation but can misapply rubrics, favor certain wording, or miss subtle errors. Always spot-check a sample to ensure scores are trustworthy."
+      }
+    },
+    {
+      "title": "What judges get right — and wrong",
+      "paragraphs": [
+        "{{judge}} {{model}}s excel at surface-level checks: is the answer on-topic, does it include required elements, is the tone polite? They struggle with deep reasoning: is the medical diagnosis correct given symptoms, does the code logic handle all edge cases?",
+        "Click each scenario below to see where automation helps and where human review is critical. Notice that the {{rubric}} matters: vague criteria confuse judges as much as they confuse human reviewers.",
+        "When designing evaluations, consider which {{criterion}} rows are safe to automate (format, tone, completeness) and which need expert review (factual accuracy in a specialized domain, legal compliance).",
+        "Good practice: run automation first to filter obvious failures, then human-review the top-scoring answers to ensure quality. That hybrid workflow is faster than all-manual and more reliable than all-automated."
+      ],
+      "reveals": [
+        {
+          "prompt": "Criterion: Answer is polite and under 100 words. Can a judge score this reliably?",
+          "reveal": "Yes — tone detection and word count are tasks {{judge}} {{model}}s handle well."
+        },
+        {
+          "prompt": "Criterion: Answer correctly cites the current tax law. Can a judge score this reliably?",
+          "reveal": "Risky — the {{judge}} may not know current law or may hallucinate. Human expert review is safer."
+        },
+        {
+          "prompt": "Criterion: Code compiles and has no syntax errors. Can a judge score this reliably?",
+          "reveal": "Better to run the code through a compiler than trust a {{judge}} to simulate syntax checking."
+        },
+        {
+          "prompt": "Criterion: Answer includes three actionable steps. Can a judge score this reliably?",
+          "reveal": "Yes — counting structural elements is a task {{judge}}s handle consistently."
+        }
+      ],
+      "check": {
+        "prompt": "You built a {{rubric}} for medical advice answers. One {{criterion}} is \"factually correct per latest guidelines.\" Should you trust a {{judge}} to score this alone?",
+        "answer": "No — have a medical expert review high-stakes accuracy claims",
+        "choices": [
+          "Yes — judges are always accurate on specialized facts.",
+          "No — have a medical expert review high-stakes accuracy claims",
+          "Yes — as long as the judge is a big model, it will know medicine.",
+          "No — never use automation for any scoring."
+        ],
+        "explanation": "{{judge}} {{model}}s can hallucinate or apply outdated knowledge. For high-stakes domains (medical, legal, financial), expert human review is essential."
+      }
+    },
+    {
+      "title": "Spot-check and refine",
+      "paragraphs": [
+        "After running automation in AiEval, open the Compare page. Read a few answers, check if the {{criterion}} scores align with what you would give. If the {{judge}} scored politeness as 5 but the answer feels curt, that is a signal to adjust the {{rubric}} anchors or the {{judge}}'s prompt.",
+        "Common fixes: sharpen vague {{criterion}} wording (\"helpful\" → \"answers the question with context\"), add negative examples to anchors (\"Score 1: ignores the question entirely\"), or switch to a different {{judge}} {{model}} that handles your domain better.",
+        "Evaluation is iterative. Your first {{rubric}} will not be perfect, and the first {{judge}} run may surprise you. Refine based on what you see in Compare, re-run automation, and check again.",
+        "When automation aligns with your judgment on a sample, you can trust it to scale. When it does not, treat automation as a draft and apply human review."
+      ],
+      "bullets": [
+        "Spot-check: read a sample of scored answers.",
+        "Refine: adjust {{rubric}} anchors or {{judge}} instructions.",
+        "Iterate: run automation, review, improve, repeat."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is a {{judge}} in LLM evaluation?",
+        "answer": "A model that scores other models' answers",
+        "accept": [
+          "a model that scores answers",
+          "a model used to evaluate answers",
+          "an AI that grades outputs",
+          "a model that judges quality",
+          "a scoring model"
+        ],
+        "explanation": "A {{judge}} is a {{model}} that reads prompts, answers, and rubrics, then assigns scores — automating the review step."
+      }
+    }
+  ],
+  "recapQuestions": []
 }
