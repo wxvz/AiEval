@@ -4,7 +4,7 @@ overview: "Transform `/learn` into a structured AI engineering curriculum shell:
 todos:
   - id: flow-inspector-preflight
     content: Run flow-inspector on learner journey (hub → lesson/lab → progress → next); address critical/warning items in plan before coding
-    status: pending
+    status: completed
   - id: curriculum-data
     content: Add curriculum.ts (metadata only), content types, content/*.json stubs, loadLessonContent helper, curriculum.spec.ts
     status: completed
@@ -25,7 +25,7 @@ todos:
     status: completed
   - id: flow-inspector-post
     content: Re-run flow-inspector after implementation; fix any critical findings before handoff
-    status: pending
+    status: completed
 isProject: false
 ---
 

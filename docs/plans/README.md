@@ -4,7 +4,7 @@ Copied from Cursor plan files for phone/offline reference. `.cursor/` is gitigno
 
 | Plan | Status | Next up |
 |------|--------|---------|
-| [learn-curriculum-hub.plan.md](./learn-curriculum-hub.plan.md) | Mostly done | Flow-inspector preflight + post-implementation (pending todos) |
+| [learn-curriculum-hub.plan.md](./learn-curriculum-hub.plan.md) | ✅ Done | Flow inspection complete — see [flow-inspection-report-postflight.md](../flow-inspection-report-postflight.md) |
 | [semantic-memory-lesson.plan.md](./semantic-memory-lesson.plan.md) | Done | Shipped on this branch |
 | [lesson-section-qa.plan.md](./lesson-section-qa.plan.md) | Done | Reference for section check UX |
 | [lab-qa-alignment.plan.md](./lab-qa-alignment.plan.md) | Done | Reference for lab shell pattern |
