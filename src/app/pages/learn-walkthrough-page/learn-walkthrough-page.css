@@ -1,0 +1,17 @@
+.learn-nav-link {
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.learn-nav-link:hover {
+  text-decoration: underline;
+}
+
+.learn-track-label {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.learn-walkthrough-step {
+  padding: 1rem 1.25rem;
+}

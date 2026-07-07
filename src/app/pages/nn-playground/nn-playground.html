@@ -1,8 +1,12 @@
 <div class="row justify-content-center">
   <div class="col-lg-10">
     <p class="mb-3">
-      <a routerLink="/learn" class="learn-back-link">← All topics</a>
+      <a routerLink="/learn" class="learn-back-link">← Learn</a>
     </p>
+
+    @if (labMeta) {
+      <p class="text-muted small mb-2">{{ trackLabel }} · Lab {{ labMeta.order }} of {{ trackLabCount }}</p>
+    }
 
     <h1 class="h3 mb-3">Neural networks</h1>
     <p class="lead mb-3">
@@ -10,6 +14,16 @@
       two numbers, tell it the right answer and it tries to guess. When it is wrong, it makes a small
       correction and tries again.
     </p>
+    @if (prereqMeta) {
+      <p class="text-muted small mb-3">
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you already saw how wrong guesses
+        become weight nudges.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: this lab trains on every row with no held-out test set. Real projects keep test data
+      separate so you can measure generalization honestly.
+    </div>
     <p class="text-muted mb-4">
       Use the controls below to train a tiny network yourself. Press <strong>Train</strong> and watch the
       predictions get closer to the correct answers. Tap any highlighted word for a plain-language definition.
@@ -25,6 +39,27 @@
       /> to solve.
     </p>
 
+    <figure class="mb-4">
+      <svg class="learn-lab-diagram" viewBox="0 0 420 80" role="img" aria-label="Neural network architecture: inputs, hidden layer, output">
+        <rect x="10" y="20" width="90" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="55" y="45" text-anchor="middle" font-size="12" fill="var(--bs-body-color)">x1, x2</text>
+        <line x1="100" y1="40" x2="150" y2="40" stroke="var(--bs-border-color)" marker-end="url(#nn-arrow)" />
+        <rect x="150" y="20" width="90" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="195" y="45" text-anchor="middle" font-size="12" fill="var(--bs-body-color)">hidden</text>
+        <line x1="240" y1="40" x2="290" y2="40" stroke="var(--bs-border-color)" marker-end="url(#nn-arrow)" />
+        <rect x="290" y="20" width="90" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="335" y="45" text-anchor="middle" font-size="12" fill="var(--bs-body-color)">output</text>
+        <defs>
+          <marker id="nn-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--bs-border-color)" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption class="small text-muted mt-2 mb-0">
+        A tiny feed-forward network: two inputs, one hidden layer, one output.
+      </figcaption>
+    </figure>
+
     @if (sigmoidWarning(); as warning) {
       <div class="alert alert-warning" role="alert">{{ warning }}</div>
     }
@@ -34,6 +69,21 @@
 
     <div class="card mb-4 nn-playground-card">
       <div class="card-body row g-3 nn-playground-card-body">
+        <div class="col-md-4">
+          <label class="form-label" for="hiddenActivation">
+            Hidden <app-nn-term-hint term="activation" hintId="activation-hidden" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          </label>
+          <select
+            id="hiddenActivation"
+            class="form-select"
+            [ngModel]="hiddenActivation()"
+            (ngModelChange)="onHiddenActivationChange($event)"
+          >
+            <option value="sigmoid">Sigmoid</option>
+            <option value="relu">ReLU</option>
+            <option value="tanh">Tanh</option>
+          </select>
+        </div>
         <div class="col-md-4">
           <label class="form-label" for="hiddenSize">
             <app-nn-term-hint
@@ -82,6 +132,7 @@
           >
             <option value="xor">XOR (needs hidden layer)</option>
             <option value="and">AND (easier)</option>
+            <option value="three-class">3-class (softmax demo)</option>
             <option value="custom">Custom (your rows)</option>
           </select>
         </div>
@@ -97,8 +148,16 @@
           >
             <option value="sigmoid">Sigmoid (0–1)</option>
             <option value="linear">Linear (any number)</option>
+            <option value="softmax">Softmax (3 classes)</option>
           </select>
         </div>
+        @if (usesSoftmax()) {
+          <div class="col-12">
+            <p class="text-muted small mb-0">
+              Softmax splits probability across 3 outputs. Use the 3-class dataset or custom rows with class labels 0, 1, or 2.
+            </p>
+          </div>
+        }
         @if (showEntryStyle()) {
           <div class="col-md-4">
             <label class="form-label" for="entryStyle">Entry style</label>
@@ -129,6 +188,96 @@
       </div>
     </div>
 
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">Decision boundary</h2>
+        <svg class="learn-lab-plot" viewBox="0 0 200 200" role="img" aria-label="Network decision regions and training points in 2D input space">
+          <rect x="10" y="10" width="180" height="180" fill="none" stroke="var(--bs-border-color)" />
+          @for (cell of decisionCells(); track cell.key) {
+            <rect
+              [attr.x]="cell.x"
+              [attr.y]="cell.y"
+              [attr.width]="cell.width"
+              [attr.height]="cell.height"
+              [attr.fill]="cell.fill"
+              opacity="0.28"
+            />
+          }
+          @for (point of trainingPlotPoints(); track point.key) {
+            <circle
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              [attr.r]="point.radius"
+              [attr.fill]="point.fill"
+              [attr.stroke]="point.stroke"
+              stroke-width="1.5"
+            />
+          }
+          <text x="100" y="198" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">x1</text>
+          <text x="4" y="100" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 4 100)">x2</text>
+        </svg>
+        <p class="small text-muted mb-0">Shaded regions = network prediction · Dots = training rows</p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Predictions (current weights)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th scope="col"><app-nn-term-hint term="input" hintId="input-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col"><app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col"><app-nn-term-hint term="target" hintId="target-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col">{{ usesRegression() ? '|Error|' : 'Correct?' }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of predictions(); track $index) {
+                <tr>
+                  <td>[{{ row.input.join(', ') }}]</td>
+                  <td>{{ row.outputDisplay }}</td>
+                  <td>{{ row.targetDisplay }}</td>
+                  <td>
+                    @if (usesRegression()) {
+                      {{ row.error | number: '1.3-3' }}
+                    } @else if (row.correct) {
+                      <span class="text-success">✓</span>
+                    } @else {
+                      <span class="text-danger">✗</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (lossHistory().length < 2) {
+          <p class="small text-muted mb-0">Press <strong>Train</strong> to update predictions and track loss.</p>
+        } @else {
+          <svg class="learn-lab-plot learn-lab-plot--wide nn-loss-plot mt-2" viewBox="0 0 200 120" role="img" aria-label="Average loss per training epoch">
+            <rect x="20" y="10" width="160" height="90" fill="none" stroke="var(--bs-border-color)" />
+            <polyline
+              [attr.points]="lossPolyline()"
+              fill="none"
+              stroke="var(--bs-primary)"
+              stroke-width="1.5"
+            />
+            <text x="100" y="115" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">epoch</text>
+            <text x="12" y="55" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 12 55)">loss</text>
+          </svg>
+          <p class="small text-muted mb-0">
+            Latest avg
+            <app-nn-term-hint term="loss" hintId="loss-chart" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />:
+            {{ lossHistory().at(-1)! | number: '1.4-4' }}
+            @if (usesSoftmax()) {
+              (cross-entropy; lower is better)
+            } @else {
+              (lower is better)
+            }
+          </p>
+        }
+      </div>
+    </div>
+
     @if (isCustom()) {
       <h2 class="h5">
         <app-nn-term-hint term="custom" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /> training rows
@@ -149,7 +298,7 @@
                     [activeId]="openTermId()"
                     (activeIdChange)="setOpenTermId($event)"
                   />
-                  (y)
+                  {{ usesSoftmax() ? 'class (0–2)' : '(y)' }}
                 </th>
                 <th></th>
               </tr>
@@ -198,7 +347,17 @@
                     }
                   </td>
                   <td>
-                    @if (entryStyle() === 'binary') {
+                    @if (entryStyle() === 'binary' && usesSoftmax()) {
+                      <select
+                        class="form-select form-select-sm"
+                        [ngModel]="row.y"
+                        (ngModelChange)="updateCustomRow($index, 'y', $event)"
+                      >
+                        <option [ngValue]="0">0</option>
+                        <option [ngValue]="1">1</option>
+                        <option [ngValue]="2">2</option>
+                      </select>
+                    } @else if (entryStyle() === 'binary') {
                       <select
                         class="form-select form-select-sm"
                         [ngModel]="row.y"
@@ -237,43 +396,6 @@
           Add row
         </button>
       </details>
-    }
-
-    <h2 class="h5">Predictions (current weights)</h2>
-    <table class="table table-sm table-bordered">
-      <thead>
-        <tr>
-          <th><app-nn-term-hint term="input" hintId="input-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
-          <th><app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
-          <th><app-nn-term-hint term="target" hintId="target-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
-          <th>{{ usesRegression() ? '|Error|' : 'Correct?' }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (row of predictions(); track $index) {
-          <tr>
-            <td>[{{ row.input.join(', ') }}]</td>
-            <td>{{ row.output | number: '1.3-3' }}</td>
-            <td>{{ row.target }}</td>
-            <td>
-              @if (usesRegression()) {
-                {{ row.error | number: '1.3-3' }}
-              } @else if (row.correct) {
-                <span class="text-success">✓</span>
-              } @else {
-                <span class="text-danger">✗</span>
-              }
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-
-    @if (lossHistory().length > 0) {
-      <p class="small text-muted mb-4">
-        Latest avg <app-nn-term-hint term="loss" hintId="loss-footer" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />:
-        {{ lossHistory().at(-1)! | number: '1.4-4' }} (lower is better)
-      </p>
     }
 
     <div class="card mb-4 nn-playground-card">
@@ -337,7 +459,7 @@
             <span class="form-label d-block">
               <app-nn-term-hint term="output" hintId="output-probe" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
             </span>
-            <strong>{{ probeOutput() | number: '1.4-4' }}</strong>
+            <strong>{{ probeOutputDisplay() }}</strong>
           </div>
         </div>
       </div>
@@ -346,29 +468,52 @@
     <section class="mb-4">
       <h2 class="h5 mb-3">Common questions</h2>
 
-      <details class="nn-faq" open>
-        <summary class="nn-faq__question">Why is AND dataset easier?</summary>
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">Why is AND dataset easier?</summary>
         <p class="mb-0 text-muted">
           AND is easier because one straight boundary can separate the outputs: only [1, 1] maps to 1, while the
           other points map to 0. XOR needs a curved split, which is why it usually needs a hidden layer.
         </p>
       </details>
 
-      <details class="nn-faq">
-        <summary class="nn-faq__question">What is sigmoid?</summary>
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What is sigmoid?</summary>
         <p class="mb-0 text-muted">
           Sigmoid is an activation function that squeezes any input into a value between 0 and 1. It is useful when
           outputs are binary-like or probability-like.
         </p>
       </details>
 
-      <details class="nn-faq">
-        <summary class="nn-faq__question">What is a hidden layer?</summary>
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What is a hidden layer?</summary>
         <p class="mb-0 text-muted">
           A hidden layer is the middle layer between inputs and outputs. It helps the network combine inputs in more
           flexible ways, so it can learn patterns that a single layer cannot.
         </p>
       </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">When should I use softmax?</summary>
+        <p class="mb-0 text-muted">
+          Use softmax when you have several classes and want the network to pick one (probabilities that add up to 100%).
+          This page uses 3 classes. For a single yes/no answer, use sigmoid instead.
+        </p>
+      </details>
     </section>
+
+    <div class="learn-lab-footer mt-4 pt-3 border-top">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="labCompleted()"
+        (click)="markLabComplete()"
+      >
+        @if (labCompleted()) {
+          Lab completed
+        } @else {
+          Mark lab complete
+        }
+      </button>
+    </div>
   </div>
 </div>

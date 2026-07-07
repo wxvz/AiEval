@@ -100,3 +100,56 @@ body {
 .app-shell {
   max-width: 84rem;
 }
+
+/* Learn lab pages */
+.learn-back-link {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.learn-back-link:hover {
+  text-decoration: underline;
+}
+
+.learn-lab-faq {
+  margin-bottom: 0.6rem;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--bs-border-radius);
+  background: var(--aieval-surface);
+}
+
+.learn-lab-faq__question {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+
+.learn-lab-faq__question + p {
+  margin-top: 0.55rem;
+}
+
+.learn-lab-diagram {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-body-bg);
+}
+
+.learn-lab-plot {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  display: block;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-body-bg);
+}
+
+.learn-lab-plot--wide {
+  max-width: 100%;
+}

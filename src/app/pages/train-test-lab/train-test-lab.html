@@ -1,0 +1,196 @@
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <p class="mb-3">
+      @if (parentMeta) {
+        <a [routerLink]="parentMeta.route" class="learn-back-link">← {{ parentMeta.title }}</a>
+      } @else {
+        <a routerLink="/learn" class="learn-back-link">← Learn</a>
+      }
+    </p>
+
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Train vs test</h1>
+    <p class="lead mb-3">
+      Hold one XOR corner out of the
+      <app-learn-term-hint term="trainSet" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      and train only on the rest. The shaded map shows what the network learned — the table compares honest
+      <app-learn-term-hint term="testSet" hintId="testSet-lead" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      scores.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a> — hold data out before
+        you report accuracy.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: this uses a tiny network on four fixed points. Real projects shuffle thousands of rows and
+      keep a larger held-out slice for
+      <app-learn-term-hint term="generalization" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: keep <strong>[1, 1]</strong> as the test point, press <strong>Train 200 epochs</strong>, and watch train
+      accuracy hit 100% while the held-out corner stays wrong.
+    </p>
+
+    <figure class="mb-4">
+      <svg class="learn-lab-diagram" viewBox="0 0 360 70" role="img" aria-label="Train on train set only, evaluate train and test separately">
+        <rect x="5" y="15" width="95" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="52" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Train set</text>
+        <line x1="100" y1="35" x2="125" y2="35" stroke="var(--bs-border-color)" marker-end="url(#split-arrow)" />
+        <rect x="125" y="15" width="80" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="165" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Train</text>
+        <line x1="205" y1="35" x2="230" y2="35" stroke="var(--bs-border-color)" marker-end="url(#split-arrow)" />
+        <rect x="230" y="15" width="60" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="260" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Train acc</text>
+        <rect x="300" y="15" width="55" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" stroke-dasharray="4 2" />
+        <text x="327" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Test acc</text>
+        <defs>
+          <marker id="split-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--bs-border-color)" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption class="small text-muted mt-2 mb-0">
+        Train only on blue rows; score the held-out orange row separately for an honest report.
+      </figcaption>
+    </figure>
+
+    <div class="card mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label" for="testPoint">Held-out test point</label>
+          <select id="testPoint" class="form-select" [ngModel]="testId()" (ngModelChange)="onTestIdChange($event)">
+            @for (option of testOptions; track option.id) {
+              <option [value]="option.id">
+                [{{ option.input.join(', ') }}] → {{ option.target }}
+              </option>
+            }
+          </select>
+        </div>
+        <div class="col-md-6 d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-primary" (click)="train(200)">Train 200 epochs</button>
+          <button type="button" class="btn btn-outline-secondary" (click)="resetNetwork()">Reset weights</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">2D map (XOR)</h2>
+        <svg class="learn-lab-plot" viewBox="0 0 200 200" role="img" aria-label="XOR points and network decision regions">
+          <rect x="10" y="10" width="180" height="180" fill="none" stroke="var(--bs-border-color)" />
+          @for (cell of decisionCells(); track cell.key) {
+            <rect
+              [attr.x]="cell.x"
+              [attr.y]="cell.y"
+              [attr.width]="cell.width"
+              [attr.height]="cell.height"
+              [attr.fill]="cell.fill"
+              opacity="0.28"
+            />
+          }
+          @for (point of plotPoints(); track point.key) {
+            <circle
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              [attr.r]="point.radius"
+              [attr.fill]="point.fill"
+              [attr.stroke]="point.stroke"
+              stroke-width="1.5"
+            />
+          }
+          <text x="100" y="198" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">x1</text>
+          <text x="4" y="100" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 4 100)">x2</text>
+        </svg>
+        <p class="small text-muted mb-0">Blue = train · Orange = test · Shaded regions = network prediction</p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Split results</h2>
+        <p class="small text-muted mb-2">
+          Train accuracy: {{ trainAccuracy().correct }}/{{ trainAccuracy().total }} ·
+          Test accuracy: {{ testAccuracy().correct }}/{{ testAccuracy().total }}
+        </p>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Set</th>
+                <th scope="col">Input</th>
+                <th scope="col">Target</th>
+                <th scope="col">Prediction</th>
+                <th scope="col">Correct?</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (entry of tableRows(); track entry.row.id) {
+                <tr [class.table-warning]="entry.row.role === 'test'">
+                  <td>{{ entry.row.role === 'train' ? 'Train' : 'Test' }}</td>
+                  <td>[{{ entry.row.input.join(', ') }}]</td>
+                  <td>{{ entry.row.target }}</td>
+                  <td>{{ entry.predicted }} ({{ entry.output | number: '1.3-3' }})</td>
+                  <td>
+                    @if (entry.correct) {
+                      <span class="text-success">✓</span>
+                    } @else {
+                      <span class="text-danger">✗</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-muted small mb-4">
+      Next: <a routerLink="/learn/lessons/loss-and-updates">Loss and updates</a> — how wrong guesses become weight
+      nudges, then the <a routerLink="/learn/labs/neural-network">Neural network lab</a>.
+    </p>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">Why can train accuracy be 100% but test accuracy 0%?</summary>
+        <p class="mb-0 text-muted">
+          The network only learned from three corners. It can fit those perfectly while the held-out corner still
+          violates XOR — that is the memorization trap from the read lesson.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What changes if I pick a different test point?</summary>
+        <p class="mb-0 text-muted">
+          The train set changes. Some splits are easier than others, but the lesson stays the same: always report
+          test performance on rows the model never trained on.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">How is this different from the neural network lab?</summary>
+        <p class="mb-0 text-muted">
+          The neural network lab trains on every puzzle row to focus on loss and weights. This lab enforces an honest
+          train/test split first.
+        </p>
+      </details>
+    </section>
+
+    <div class="learn-lab-footer mt-4 pt-3 border-top">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="labCompleted()"
+        (click)="markLabComplete()"
+      >
+        @if (labCompleted()) {
+          Lab completed
+        } @else {
+          Mark lab complete
+        }
+      </button>
+    </div>
+  </div>
+</div>

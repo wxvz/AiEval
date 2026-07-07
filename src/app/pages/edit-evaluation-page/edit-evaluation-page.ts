@@ -16,6 +16,7 @@ import {
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { CriteriaMode } from '../../models';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 
 @Component({
@@ -38,6 +39,7 @@ import { EvaluationService } from '../../services/evaluation.service';
 export class EditEvaluationPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
+  private readonly learnHandoff = inject(LearnHandoffService);
 
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
 
@@ -46,6 +48,10 @@ export class EditEvaluationPage {
 
   protected readonly automating = this.automationPage.automating;
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly showLearnBackLink = computed(() => {
+    this.learnHandoff.highlightedEvaluationId();
+    return this.learnHandoff.highlightedEvaluationId() === this.evaluationId;
+  });
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();

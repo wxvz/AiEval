@@ -6,6 +6,21 @@
   <a routerLink="/evaluations/new" class="btn btn-primary px-4">New Evaluation</a>
 </header>
 
+@if (showLearnBanner()) {
+  <div class="alert alert-info d-flex flex-column flex-sm-row align-items-sm-center gap-2 mb-4 learn-dashboard-banner" role="status">
+    <div class="flex-grow-1">
+      <strong>Learn lab.</strong> {{ learnBannerCopy }}
+      @if (highlightedEvaluationId(); as evalId) {
+        <a class="alert-link ms-1" [routerLink]="['/evaluations', evalId, 'compare']">Compare answers</a>
+      }
+      <a routerLink="/learn/labs/first-evaluation" class="alert-link ms-1">Back to lab</a>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-secondary" (click)="dismissLearnBanner()">
+      Dismiss
+    </button>
+  </div>
+}
+
 @if (loading()) {
   <app-loading-spinner message="Loading evaluations..." />
 } @else if (loadError()) {
@@ -31,6 +46,7 @@
               <div class="col-md-6 col-xl-4">
                 <app-evaluation-card
                   [evaluation]="evaluation"
+                  [highlighted]="highlightedEvaluationId() === evaluation.id"
                   (deleteRequested)="requestDelete($event)"
                 />
               </div>

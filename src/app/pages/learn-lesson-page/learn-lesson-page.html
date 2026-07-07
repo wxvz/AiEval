@@ -1,0 +1,97 @@
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    @if (meta(); as lesson) {
+      <p class="mb-3">
+        <a routerLink="/learn" class="learn-nav-link">← Learn</a>
+      </p>
+
+      @if (track(); as trackMeta) {
+        <p class="learn-track-label text-muted small mb-2">{{ trackMeta.title }}</p>
+      }
+
+      <h1 class="h3 mb-2">{{ lesson.title }}</h1>
+      <p class="text-muted mb-2">{{ lesson.summary }}</p>
+      <p class="text-muted small mb-4">Tap any <span class="learn-term-hint-sample">underlined word</span> for a plain-language definition.</p>
+
+      @if (locked()) {
+        <div class="alert alert-secondary" role="status">Complete earlier lessons in this track first.</div>
+      } @else if (!hasContent()) {
+        <div class="alert alert-light border" role="status">Content coming soon.</div>
+      } @else if (content(); as lessonContent) {
+        @for (section of lessonContent.sections; track $index) {
+          <app-learn-lesson-section
+            [section]="section"
+            [sectionIndex]="$index"
+            [solved]="sectionSolved($index)"
+            [collapsed]="sectionCollapsed($index)"
+            [openTermId]="openTermId()"
+            (openTermIdChange)="setOpenTermId($event)"
+            (solvedChange)="onSectionSolved($index, $event)"
+            (collapsedChange)="onSectionCollapsed($index, $event)"
+          />
+        }
+
+        @if (lessonContent.recapQuestions.length > 0) {
+          <section class="learn-lesson-recap mb-4">
+            <h2 class="h5 mb-3">Recap</h2>
+            <p class="text-muted small mb-3">A few more questions pulling the whole lesson together.</p>
+            @for (question of lessonContent.recapQuestions; track $index) {
+              <app-learn-check-question
+                [question]="question"
+                [hintIdPrefix]="'recap-' + $index"
+                [activeId]="openTermId()"
+                (activeIdChange)="setOpenTermId($event)"
+                [solved]="recapSolved($index)"
+                [readonly]="recapSolved($index)"
+                [showExplanation]="recapSolved($index)"
+                (solvedChange)="onRecapSolved($index, $event)"
+              />
+            }
+          </section>
+        }
+      }
+
+      @if (!locked() && optionalLab(); as lab) {
+        <aside class="learn-optional-lab mb-4" aria-label="Optional lab">
+          <p class="learn-optional-lab__eyebrow text-muted small mb-1">Optional — try it yourself</p>
+          <h2 class="h6 mb-2">{{ lab.title }}</h2>
+          <p class="text-muted small mb-3">{{ lab.summary }}</p>
+          <a class="btn btn-outline-primary btn-sm" [routerLink]="lab.route">
+            @if (optionalLabComplete()) {
+              Open lab again (completed)
+            } @else {
+              Open optional lab →
+            }
+          </a>
+        </aside>
+      }
+
+      <div class="learn-lesson-footer mb-4">
+        @if (!markCompleteEnabled() && hasContent() && !completed() && !locked()) {
+          <p class="text-muted small mb-2">Answer all section checks and recap questions first.</p>
+        }
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="!markCompleteEnabled()"
+            (click)="markComplete()"
+          >
+            @if (completed()) {
+              Completed
+            } @else {
+              Mark complete
+            }
+          </button>
+
+          @if (adjacent().previous; as previous) {
+            <a class="btn btn-outline-secondary btn-sm" [routerLink]="previous.route">← Previous</a>
+          }
+          @if (adjacent().next; as next) {
+            <a class="btn btn-outline-secondary btn-sm" [routerLink]="next.route">Next →</a>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

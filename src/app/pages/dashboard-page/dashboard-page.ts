@@ -6,6 +6,8 @@ import { EmptyState } from '../../components/empty-state/empty-state';
 import { EvaluationCard } from '../../components/evaluation-card/evaluation-card';
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
 import { Evaluation } from '../../models';
+import { loadWalkthroughContent } from '../../learn/learn-content';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EvaluationDayGroup, groupEvaluationsByDay } from '../../utils/group-evaluations-by-day';
 import {
@@ -23,6 +25,7 @@ import {
 })
 export class DashboardPage {
   private readonly evaluationService = inject(EvaluationService);
+  private readonly learnHandoff = inject(LearnHandoffService);
 
   protected readonly loading = this.evaluationService.loading;
   protected readonly loadError = this.evaluationService.loadError;
@@ -30,6 +33,14 @@ export class DashboardPage {
   protected readonly dayGroups = computed(() => groupEvaluationsByDay(this.evaluations()));
   protected readonly dayPages = signal<Record<string, number>>({});
   protected readonly deleteTargetId = signal<string | null>(null);
+  protected readonly highlightedEvaluationId = computed(() => this.learnHandoff.highlightedEvaluationId());
+  protected readonly showLearnBanner = computed(() => {
+    this.learnHandoff.highlightedEvaluationId();
+    return this.learnHandoff.showDashboardBanner();
+  });
+  protected readonly learnBannerCopy =
+    loadWalkthroughContent().handoffCopy?.dashboardBanner ??
+    'Your evaluation from the Learn lab is highlighted below.';
 
   protected evaluationsForPage(group: EvaluationDayGroup): Evaluation[] {
     const pageIndex = this.dayPageIndex(group);
@@ -74,8 +85,15 @@ export class DashboardPage {
         success: 'Evaluation deleted.',
         error: 'Could not delete evaluation.',
       });
+      if (this.highlightedEvaluationId() === id) {
+        this.learnHandoff.clear();
+      }
     }
 
     this.deleteTargetId.set(null);
+  }
+
+  protected dismissLearnBanner(): void {
+    this.learnHandoff.dismissBanner();
   }
 }

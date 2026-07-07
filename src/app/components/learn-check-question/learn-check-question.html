@@ -1,0 +1,84 @@
+<div class="learn-check-question mb-3">
+  <div class="card mb-3">
+    <div class="card-body">
+      <h3 class="h6 text-muted mb-2">Question</h3>
+      <p class="card-text mb-0">
+        <app-learn-lesson-text
+          [text]="question().prompt"
+          [hintIdPrefix]="hintIdPrefix() || inputId"
+          [activeId]="activeId()"
+          (activeIdChange)="activeIdChange.emit($event)"
+        />
+      </p>
+    </div>
+  </div>
+
+  @if (interactive()) {
+    @if (hasChoices()) {
+      <fieldset class="learn-check-question__choices mb-2">
+        <legend class="visually-hidden">Choose an answer</legend>
+        @for (choice of question().choices!; track $index) {
+          <label class="learn-check-question__choice">
+            <input
+              type="radio"
+              [name]="inputId"
+              [value]="choice"
+              [checked]="selectedChoice() === choice"
+              (change)="onChoiceChange(choice)"
+              [attr.aria-invalid]="checked() && isCorrect() === false && selectedChoice() === choice"
+            />
+            <span>{{ choice }}</span>
+          </label>
+        }
+      </fieldset>
+      <button type="button" class="btn btn-primary btn-sm" (click)="check()">Check</button>
+    } @else {
+      <div class="d-flex flex-wrap gap-2 align-items-start mb-2">
+        <label class="visually-hidden" [for]="inputId">Your answer</label>
+        <input
+          [id]="inputId"
+          type="text"
+          class="form-control learn-check-question__input"
+          placeholder="Type your answer"
+          [ngModel]="userInput()"
+          (ngModelChange)="onInputChange($event)"
+          [attr.aria-invalid]="checked() && isCorrect() === false"
+        />
+        <button type="button" class="btn btn-primary btn-sm" (click)="check()">Check</button>
+      </div>
+    }
+  } @else if (hasChoices()) {
+    <p class="learn-check-question__readonly-answer mb-2">
+      <span class="text-muted small">Your answer:</span> {{ selectedChoice() || question().answer }}
+    </p>
+  }
+
+  <div aria-live="polite">
+    @if (checked() && isCorrect() && interactive()) {
+      <div class="alert alert-success py-2 mb-0" role="status">Correct!</div>
+    }
+    @if (checked() && isCorrect() === false && interactive()) {
+      <div class="card mb-0">
+        <div class="card-body">
+          <h3 class="h6 text-muted mb-2">Answer</h3>
+          <p class="card-text mb-0">{{ question().answer }}</p>
+        </div>
+      </div>
+    }
+    @if (showExplanation() && solved() && question().explanation) {
+      <div class="card learn-check-question__explanation mt-2 mb-0">
+        <div class="card-body">
+          <h3 class="h6 text-muted mb-2">Why this answer</h3>
+          <p class="card-text mb-0">
+            <app-learn-lesson-text
+              [text]="question().explanation"
+              [hintIdPrefix]="(hintIdPrefix() || inputId) + '-explanation'"
+              [activeId]="activeId()"
+              (activeIdChange)="activeIdChange.emit($event)"
+            />
+          </p>
+        </div>
+      </div>
+    }
+  </div>
+</div>

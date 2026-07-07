@@ -1,5 +1,8 @@
-<div class="card card-elevated evaluation-card h-100">
+<div class="card card-elevated evaluation-card h-100" [class.evaluation-card--highlighted]="highlighted()">
   <div class="card-body d-flex flex-column">
+    @if (highlighted()) {
+      <span class="evaluation-card__badge evaluation-card__badge--learn mb-2 align-self-start">From Learn lab</span>
+    }
     <h5 class="card-title evaluation-card__title">{{ evaluation().title }}</h5>
     <p class="card-text evaluation-card__prompt text-muted small flex-grow-1">{{ evaluation().prompt }}</p>
     <p class="card-text evaluation-card__meta mb-0">

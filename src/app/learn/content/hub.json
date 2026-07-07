@@ -1,0 +1,9 @@
+{
+  "subtitle": "Start with Foundation, then branch into LLM systems.",
+  "toolsLabel": "AiEval — compare model answers",
+  "tracks": {
+    "foundation": "Core ideas every AI engineer should have.",
+    "llm-systems": "Apply evaluation to real language models.",
+    "go-deeper": "Optional paths when you are ready."
+  }
+}

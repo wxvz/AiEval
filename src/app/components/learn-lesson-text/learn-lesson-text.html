@@ -1,0 +1,1 @@
+<span class="learn-lesson-text">@for (segment of segments(); track $index) {@if (segment.kind === 'text') {<span class="learn-lesson-text__chunk">{{ segment.text }}</span>}@else {<app-learn-term-hint [term]="segment.term" [hintId]="hintId(segment.term, $index)" [activeId]="activeId()" (activeIdChange)="activeIdChange.emit($event)" />}}</span>

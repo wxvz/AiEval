@@ -8,6 +8,7 @@ import { ScoreSummary } from '../../components/score-summary/score-summary';
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, RubricCriterion, Score } from '../../models';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { SettingsService } from '../../services/settings.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
@@ -91,6 +92,7 @@ export class CompareAnswersPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
   private readonly settingsService = inject(SettingsService);
+  private readonly learnHandoff = inject(LearnHandoffService);
 
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
   private readonly answerNotesDrafts = signal<Record<string, string>>({});
@@ -103,6 +105,10 @@ export class CompareAnswersPage {
   protected readonly selectedAnswerIndex = signal(0);
 
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
+  protected readonly showLearnBackLink = computed(() => {
+    this.learnHandoff.highlightedEvaluationId();
+    return this.learnHandoff.highlightedEvaluationId() === this.evaluationId;
+  });
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {
     const current = this.evaluation();

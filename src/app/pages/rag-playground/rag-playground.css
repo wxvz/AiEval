@@ -1,0 +1,20 @@
+.rag-context-preview,
+.rag-prompt-preview {
+  font-size: 0.8125rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-tertiary-bg);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 0;
+}
+
+.rag-prompt-preview {
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.rag-context-progress {
+  height: 0.85rem;
+}

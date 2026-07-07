@@ -1,3 +1,13 @@
+.evaluation-card--highlighted {
+  border: 2px solid var(--aieval-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--aieval-primary) 18%, transparent);
+}
+
+.evaluation-card__badge--learn {
+  background-color: color-mix(in srgb, var(--aieval-primary) 18%, transparent);
+  color: var(--aieval-primary);
+}
+
 .evaluation-card {
   overflow: hidden;
 }

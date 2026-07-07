@@ -1,0 +1,147 @@
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <p class="mb-3">
+      @if (parentMeta) {
+        <a [routerLink]="parentMeta.route" class="learn-back-link">← {{ parentMeta.title }}</a>
+      } @else {
+        <a routerLink="/learn" class="learn-back-link">← Learn</a>
+      }
+    </p>
+
+    <p class="text-muted small mb-2">Optional lab</p>
+    <h1 class="h3 mb-3">Loss and updates</h1>
+    <p class="lead mb-3">
+      Train a tiny network on XOR and watch
+      <app-nn-term-hint term="loss" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      drop as
+      <app-nn-term-hint term="weights" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      nudge toward better
+      <app-nn-term-hint term="output" hintId="output-lead" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+    </p>
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: fixed architecture and XOR rows. The full
+      <a routerLink="/learn/labs/neural-network">Neural network lab</a> adds datasets and controls.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: press <strong>Train 200 epochs</strong> and watch the loss curve fall while the table fills with ✓ marks.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label" for="lossLabRate">
+            <app-nn-term-hint term="learningRate" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />:
+            {{ learningRate() }}
+          </label>
+          <input
+            id="lossLabRate"
+            type="range"
+            class="form-range"
+            min="0.05"
+            max="1"
+            step="0.05"
+            [ngModel]="learningRate()"
+            (ngModelChange)="onLearningRateChange(+$event)"
+          />
+        </div>
+        <div class="col-md-6 d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="train(1)">Train 1 epoch</button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="train(200)">Train 200 epochs</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetNetwork()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">Loss over training</h2>
+        @if (lossHistory().length < 2) {
+          <p class="text-muted">Press <strong>Train</strong> to plot average loss per epoch.</p>
+        } @else {
+          <svg class="learn-lab-plot" viewBox="0 0 200 120" role="img" aria-label="Average loss per training epoch">
+            <rect x="20" y="10" width="160" height="90" fill="none" stroke="var(--bs-border-color)" />
+            <polyline
+              [attr.points]="lossPolyline()"
+              fill="none"
+              stroke="var(--bs-primary)"
+              stroke-width="1.5"
+            />
+            <text x="100" y="115" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">epoch</text>
+            <text x="12" y="55" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 12 55)">loss</text>
+          </svg>
+          <p class="small text-muted mb-0">
+            Latest avg loss: {{ lossHistory().at(-1)! | number: '1.4-4' }} (lower is better)
+          </p>
+        }
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Predictions (current weights)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th scope="col"><app-nn-term-hint term="input" hintId="input-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col"><app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col"><app-nn-term-hint term="target" hintId="target-table" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" /></th>
+                <th scope="col">|Error|</th>
+                <th scope="col">Correct?</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of predictions(); track $index) {
+                <tr>
+                  <td>[{{ row.input.join(', ') }}]</td>
+                  <td>{{ row.output | number: '1.3-3' }}</td>
+                  <td>{{ row.target }}</td>
+                  <td>{{ row.error | number: '1.3-3' }}</td>
+                  <td>
+                    @if (row.correct) {
+                      <span class="text-success">✓</span>
+                    } @else {
+                      <span class="text-danger">✗</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">Why does loss wiggle instead of falling smoothly?</summary>
+        <p class="mb-0 text-muted">
+          Each epoch is one pass through four XOR rows. Small networks and a high learning rate can overshoot —
+          that is normal in the teaching sandbox.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What should I try if loss stays flat?</summary>
+        <p class="mb-0 text-muted">
+          Adjust the learning rate slider and reset. Too small crawls; too large bounces. This is the same knob
+          from the read lesson.
+        </p>
+      </details>
+    </section>
+
+    <div class="learn-lab-footer mt-4 pt-3 border-top">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="labCompleted()"
+        (click)="markLabComplete()"
+      >
+        @if (labCompleted()) {
+          Lab completed
+        } @else {
+          Mark lab complete
+        }
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+{
+  "sections": [
+    {
+      "title": "Memory beyond the prompt",
+      "paragraphs": [
+        "Imagine an open-book exam. You cannot memorize every page of the textbook, but you can bring an indexed notebook and look up what you need when a question arrives. Large language models work the same way at scale: they reason well, but they cannot fit your entire company wiki inside one request.",
+        "Every turn has a fixed {{contextWindow}} — a maximum amount of text the {{model}} can read at once. Paste in too much and you must cut, summarize, or drop facts. That limit is short-term working space, not a permanent filing cabinet.",
+        "{{semanticMemory}} is the durable store outside that window: policy PDFs, support FAQs, rubric docs, API references. At query time you {{retrieval}} the few passages that matter and place them in the prompt. The {{model}} still generates the answer — but from evidence you chose.",
+        "Training {{weights}} teach broad language patterns, not a reliable record of every internal fact. A {{model}} may sound confident about your refund policy while inventing details it never saw. For company-specific truth, external memory beats hoping the weights remembered.",
+        "In AiEval you will compare {{model}} answers about internal documents the {{model}} was never trained on. That only works when you can fetch the right source text first — another reason {{semanticMemory}} matters before you judge quality."
+      ],
+      "bullets": [
+        "{{contextWindow}} — how much fits in one request.",
+        "{{semanticMemory}} — indexed knowledge searched at query time.",
+        "{{retrieval}} — pull relevant passages into the prompt before answering."
+      ],
+      "check": {
+        "prompt": "Your team has a 200-page employee handbook. A colleague wants to paste the entire PDF into every system prompt \"so the {{model}} always knows the rules.\" What is the better approach?",
+        "answer": "Index handbook chunks in a vector store and retrieve relevant passages per question",
+        "choices": [
+          "Paste the full PDF into every system prompt",
+          "Index handbook chunks in a vector store and retrieve relevant passages per question",
+          "Fine-tune the model weekly on the whole handbook",
+          "Ask users to quote page numbers in every message"
+        ],
+        "explanation": "The {{contextWindow}} cannot hold a full handbook on every turn, and bloated prompts waste tokens. Split the doc into {{chunk}}s, store {{embedding}}s, and use {{retrieval}} so only relevant passages enter the prompt."
+      }
+    },
+    {
+      "title": "Search by meaning",
+      "paragraphs": [
+        "Keyword search fails when users paraphrase. A customer asks to \"recover account access\" while your FAQ title says \"password reset.\" Ctrl+F misses the match even though the meaning is the same.",
+        "{{semanticMemory}} pipelines split source documents into {{chunk}}s — short passages small enough to rank and fit in context. Each {{chunk}} becomes an {{embedding}}: numbers that capture meaning, not just spelling.",
+        "At query time the question is embedded too. {{retrieval}} compares the query {{embedding}} to stored {{chunk}} {{embedding}}s and returns the closest matches. Similar meaning lands nearby even when words differ.",
+        "Click each scenario below to see what {{retrieval}} should surface. Notice how the best {{chunk}} is about intent, not exact keyword overlap.",
+        "This is the core idea behind semantic search and RAG: find the right evidence first, then let the {{model}} write an answer grounded in what you retrieved."
+      ],
+      "reveals": [
+        {
+          "prompt": "User asks: \"How do I get back into my account?\" — which store entry should rank highest?",
+          "reveal": "FAQ: \"Reset your password from the sign-in page\" — paraphrased intent matches even without the word \"account.\""
+        },
+        {
+          "prompt": "Evaluator asks: \"What makes a strong rubric row?\" — which doc chunk helps?",
+          "reveal": "Rubric guide: \"Each criterion needs a clear anchor for score 1 vs score 5\" — matches evaluation wording, not the word \"row.\""
+        },
+        {
+          "prompt": "Developer asks: \"How do I list evaluations via API?\" — which chunk fits?",
+          "reveal": "API reference: \"GET /api/evaluations returns all saved evaluations\" — technical paraphrase still maps to the endpoint description."
+        }
+      ],
+      "check": {
+        "prompt": "Support tickets use varied wording: \"locked out,\" \"forgot login,\" \"can't sign in.\" Your FAQ uses \"password reset.\" Which lookup strategy fits best?",
+        "answer": "Semantic search with embeddings",
+        "choices": [
+          "Exact keyword match on \"password reset\" only",
+          "Semantic search with embeddings",
+          "Sort FAQs alphabetically and show the first ten",
+          "Ask the user to rephrase until keywords match"
+        ],
+        "explanation": "{{retrieval}} with {{embedding}}s matches meaning across phrasing. Keyword-only search misses paraphrases that humans treat as the same question."
+      }
+    },
+    {
+      "title": "From memory to hands-on search",
+      "paragraphs": [
+        "Production {{semanticMemory}} rarely stops at pure vector search. Teams combine semantic scores with keyword filters, metadata tags (team, product, date), and re-ranking before anything reaches the {{contextWindow}}.",
+        "Teaching shortcut: the next lab uses **2D** {{embedding}}s so you can see closeness on a map. Real systems use hundreds or thousands of dimensions — the idea is the same, only the geometry is harder to draw.",
+        "In the **Semantic search lab** you will type queries, watch similarity scores, and see which {{chunk}}s rank highest. That is {{retrieval}} without API keys — the same ranking step RAG depends on.",
+        "After that, the **RAG playground** assembles retrieved {{chunk}}s into a prompt and previews a stub answer. You will see how {{semanticMemory}} feeds generation, not replaces it.",
+        "When you run evaluations in AiEval, ask whether the winning answer used the right retrieved evidence — not just fluent prose. Good {{retrieval}} is often the difference between grounded and guessed."
+      ],
+      "bullets": [
+        "Real stacks: hybrid search, metadata filters, re-ranking.",
+        "Next: Semantic search lab — rank {{chunk}}s in 2D.",
+        "Then: RAG playground — context assembly + stub answer."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is {{semanticMemory}} in an LLM app?",
+        "answer": "External memory retrieved by meaning",
+        "accept": [
+          "external memory retrieved by meaning",
+          "stored knowledge fetched by meaning",
+          "knowledge outside the prompt retrieved by meaning",
+          "external knowledge retrieved by meaning",
+          "facts stored outside the model retrieved by meaning"
+        ],
+        "explanation": "{{semanticMemory}} keeps durable facts outside the {{contextWindow}}. {{retrieval}} fetches the right {{chunk}}s by meaning so the {{model}} answers from evidence you control."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Why is pasting a full company wiki into every prompt a weak {{semanticMemory}} strategy?",
+      "answer": "It exceeds the context window and buries the relevant facts",
+      "choices": [
+        "Models cannot read PDFs at all",
+        "It exceeds the context window and buries the relevant facts",
+        "Embeddings are only for images",
+        "Retrieval works only on training data"
+      ],
+      "explanation": "The {{contextWindow}} is finite. Dumping everything wastes space and makes it harder to surface the few {{chunk}}s that matter. Indexed {{retrieval}} keeps prompts focused."
+    },
+    {
+      "prompt": "What are the three main steps from source doc to answer in a typical RAG-style system?",
+      "answer": "Chunk documents, retrieve relevant chunks, generate an answer",
+      "choices": [
+        "Train new weights, deploy, hope",
+        "Chunk documents, retrieve relevant chunks, generate an answer",
+        "Copy Wikipedia, paste prompt, score with a rubric",
+        "Memorize the test set, fine-tune, skip retrieval"
+      ],
+      "explanation": "Split docs into {{chunk}}s, use {{embedding}}s for {{retrieval}}, then let the {{model}} generate using what you fetched. That is {{semanticMemory}} feeding the {{contextWindow}} on demand."
+    }
+  ]
+}

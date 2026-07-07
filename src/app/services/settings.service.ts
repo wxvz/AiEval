@@ -11,6 +11,7 @@ const KEYS = {
   defaultCriteriaMode: `${PREFIX}default-criteria-mode`,
   automationProviderPreference: `${PREFIX}automation-provider-preference`,
   autoDismissAutomationStatus: `${PREFIX}auto-dismiss-automation-status`,
+  learnUnlockAll: `${PREFIX}learn-unlock-all`,
 } as const;
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,7 @@ export class SettingsService {
     this.readProviderPreference(),
   );
   readonly autoDismissAutomationStatus = signal(this.readAutoDismiss());
+  readonly learnUnlockAll = signal(this.readLearnUnlockAll());
 
   private readonly themeService = inject(ThemeService);
 
@@ -49,11 +51,17 @@ export class SettingsService {
     localStorage.setItem(KEYS.autoDismissAutomationStatus, enabled ? 'true' : 'false');
   }
 
+  setLearnUnlockAll(enabled: boolean): void {
+    this.learnUnlockAll.set(enabled);
+    localStorage.setItem(KEYS.learnUnlockAll, enabled ? 'true' : 'false');
+  }
+
   resetAll(): void {
     Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
     this.defaultCriteriaMode.set('default');
     this.automationProviderPreference.set('ask');
     this.autoDismissAutomationStatus.set(false);
+    this.learnUnlockAll.set(false);
     this.themeService.resetTheme();
   }
 
@@ -75,5 +83,9 @@ export class SettingsService {
 
   private readAutoDismiss(): boolean {
     return localStorage.getItem(KEYS.autoDismissAutomationStatus) === 'true';
+  }
+
+  private readLearnUnlockAll(): boolean {
+    return localStorage.getItem(KEYS.learnUnlockAll) === 'true';
   }
 }

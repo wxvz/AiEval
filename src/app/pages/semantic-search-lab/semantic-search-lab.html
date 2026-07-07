@@ -1,0 +1,185 @@
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <p class="mb-3">
+      <a routerLink="/learn" class="learn-back-link">← Learn</a>
+    </p>
+
+    @if (labMeta) {
+      <p class="text-muted small mb-2">{{ trackLabel }} · Lab {{ labMeta.order }} of {{ trackLabCount }}</p>
+    }
+
+    <h1 class="h3 mb-3">Semantic search</h1>
+    <p class="lead mb-3">
+      Like an open-book exam, semantic search finds the passages that best match your question — even when the
+      wording differs. Text becomes vectors in meaning-space; chunks with similar
+      <app-retrieval-term-hint term="embedding" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      land closer together.
+    </p>
+    @if (prereqMeta) {
+      <p class="text-muted small mb-3">
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you saw why facts live
+        outside the prompt and how
+        <app-retrieval-term-hint term="embedding" hintId="embedding-prereq" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+        enable retrieval.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: real
+      <app-retrieval-term-hint term="embedding" hintId="embedding-honesty" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      use hundreds or thousands of dimensions. This lab uses <strong>2D</strong> so you can see closeness on the map.
+    </div>
+    <p class="text-muted mb-4">
+      Type a query or pick a preset, then see
+      <app-retrieval-term-hint term="cosineSimilarity" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      scores and
+      <app-retrieval-term-hint term="topK" hintId="topK-lab" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      results.
+    </p>
+    <p class="text-muted small mb-4">
+      Tip: start with the <strong>evaluation rubric</strong> preset — watch which chunks rank highest and why.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="searchQuery">Query</label>
+          <input
+            id="searchQuery"
+            type="text"
+            class="form-control"
+            [ngModel]="query()"
+            (ngModelChange)="query.set($event)"
+            placeholder="e.g. evaluation rubric"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="topK">
+            <app-retrieval-term-hint term="topK" hintId="topK-control" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          </label>
+          <input
+            id="topK"
+            type="number"
+            class="form-control"
+            min="1"
+            max="8"
+            [ngModel]="topK()"
+            (ngModelChange)="topK.set(+$event || 1)"
+          />
+        </div>
+        <div class="col-12">
+          <p class="small text-muted mb-2">Try a preset:</p>
+          <div class="d-flex flex-wrap gap-2">
+            @for (preset of presetQueries; track preset) {
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="usePreset(preset)">
+                {{ preset }}
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">2D map (simplified)</h2>
+        <svg class="learn-lab-plot" viewBox="0 0 200 200" role="img" aria-label="Corpus and query vectors in 2D">
+          <rect x="10" y="10" width="180" height="180" fill="none" stroke="var(--bs-border-color)" />
+          <text x="100" y="198" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">dim 1</text>
+          <text x="4" y="100" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 4 100)">dim 2</text>
+          @for (point of plotPoints(); track point.id) {
+            <circle
+              [attr.cx]="plotX(point.x)"
+              [attr.cy]="plotY(point.y)"
+              [attr.r]="point.isQuery ? 6 : 4"
+              [attr.fill]="point.isQuery ? 'var(--bs-danger)' : point.isMatch ? 'var(--bs-primary)' : 'var(--bs-secondary)'"
+              [attr.opacity]="point.isQuery || point.isMatch ? 1 : 0.45"
+            />
+          }
+        </svg>
+        <p class="small text-muted mb-0">Red = query · Blue = top matches · Gray = other chunks</p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Ranked chunks</h2>
+        @if (rankings().length === 0) {
+          <p class="text-muted">Enter a query to see ranked results.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Score</th>
+                  <th scope="col">Chunk</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rankings(); track row.chunk.id; let index = $index) {
+                  <tr>
+                    <td>{{ index + 1 }}</td>
+                    <td>{{ row.score | number: '1.2-2' }}</td>
+                    <td>{{ row.chunk.text }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <p class="text-muted small mb-4">
+      Next: <a routerLink="/learn/labs/rag-playground">RAG playground</a> — assemble retrieved chunks into a prompt.
+    </p>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">How is this different from keyword search?</summary>
+        <p class="mb-0 text-muted">
+          Keyword search looks for exact words. Semantic search matches meaning — a query about "scoring criteria"
+          can rank a chunk about rubrics even when the word "rubric" is missing from your query.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What does cosine similarity measure?</summary>
+        <p class="mb-0 text-muted">
+          Cosine similarity measures the angle between two vectors. A score of 1 means they point the same direction
+          (very similar meaning); lower scores mean less overlap in meaning-space.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why use top-k?</summary>
+        <p class="mb-0 text-muted">
+          Models cannot read your entire document library at once. Top-k keeps only the best-matching chunks before
+          passing them to the next step — retrieval narrows the field.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why is my query dot red but far from a blue match?</summary>
+        <p class="mb-0 text-muted">
+          This map squashes meaning into two dimensions for teaching. Real embedding spaces have hundreds of
+          dimensions, so nearby matches can look farther apart here than they would in production.
+        </p>
+      </details>
+    </section>
+
+    <div class="learn-lab-footer mt-4 pt-3 border-top">
+      <button
+        type="button"
+        class="btn btn-primary btn-sm"
+        [disabled]="labCompleted()"
+        (click)="markLabComplete()"
+      >
+        @if (labCompleted()) {
+          Lab completed
+        } @else {
+          Mark lab complete
+        }
+      </button>
+    </div>
+  </div>
+</div>

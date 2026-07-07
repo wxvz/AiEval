@@ -1,0 +1,77 @@
+.learn-track__title {
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.learn-track__description {
+  margin-bottom: 1rem;
+}
+
+.learn-track__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.learn-track__card {
+  display: block;
+  padding: 1rem 1.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.learn-track__card--planned,
+.learn-track__card--locked {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.learn-track__badge {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
+  color: var(--aieval-primary);
+}
+
+.learn-track__badge--muted {
+  background: color-mix(in srgb, var(--bs-secondary-color) 15%, transparent);
+  color: var(--bs-secondary-color);
+}
+
+.learn-track__badge--done {
+  background: color-mix(in srgb, var(--bs-success) 15%, transparent);
+  color: var(--bs-success);
+}
+
+.learn-track__lesson-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.learn-track__lesson-summary {
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.learn-track__cta {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--aieval-primary);
+}
+
+.learn-track__card:not(.learn-track__card--planned):not(.learn-track__card--locked):hover .learn-track__cta {
+  color: var(--aieval-primary-hover);
+}
+
+.learn-track__prereq {
+  margin-top: 0.5rem;
+  color: var(--bs-secondary-color);
+}

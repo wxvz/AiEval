@@ -1,0 +1,13 @@
+.learn-roadmap {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.learn-roadmap__title {
+  font-weight: 600;
+  margin: 0;
+}
+
+.learn-roadmap__bar {
+  height: 0.5rem;
+}
