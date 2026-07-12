@@ -1,15 +1,18 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
+import { DashboardDayRail } from '../../components/dashboard-day-rail/dashboard-day-rail';
 import { EmptyState } from '../../components/empty-state/empty-state';
 import { EvaluationCard } from '../../components/evaluation-card/evaluation-card';
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
+import { PageShell } from '../../components/page-shell/page-shell';
 import { Evaluation } from '../../models';
 import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
-import { EvaluationDayGroup, groupEvaluationsByDay } from '../../utils/group-evaluations-by-day';
+import { EvaluationDayGroup, localDayKey } from '../../utils/group-evaluations-by-day';
+import { groupEvaluationsByMonth } from '../../utils/group-evaluations-by-month';
 import {
   EVALUATIONS_PER_DAY_PAGE,
   clampPageIndex,
@@ -19,7 +22,15 @@ import {
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [RouterLink, EvaluationCard, EmptyState, LoadingSpinner, ConfirmDeleteModal],
+  imports: [
+    RouterLink,
+    DashboardDayRail,
+    EvaluationCard,
+    EmptyState,
+    LoadingSpinner,
+    ConfirmDeleteModal,
+    PageShell,
+  ],
   templateUrl: './dashboard-page.html',
   styleUrl: './dashboard-page.css',
 })
@@ -30,10 +41,25 @@ export class DashboardPage {
   protected readonly loading = this.evaluationService.loading;
   protected readonly loadError = this.evaluationService.loadError;
   protected readonly evaluations = this.evaluationService.evaluations;
-  protected readonly dayGroups = computed(() => groupEvaluationsByDay(this.evaluations()));
+  protected readonly monthGroups = computed(() => groupEvaluationsByMonth(this.evaluations()));
+  protected readonly selectedDayKey = signal<string | null>(null);
+  protected readonly selectedDayGroup = computed<EvaluationDayGroup | null>(() => {
+    const selectedDayKey = this.selectedDayKey();
+
+    for (const month of this.monthGroups()) {
+      const selectedDay = month.days.find((day) => day.dayKey === selectedDayKey);
+      if (selectedDay) {
+        return selectedDay;
+      }
+    }
+
+    return null;
+  });
   protected readonly dayPages = signal<Record<string, number>>({});
   protected readonly deleteTargetId = signal<string | null>(null);
-  protected readonly highlightedEvaluationId = computed(() => this.learnHandoff.highlightedEvaluationId());
+  protected readonly highlightedEvaluationId = computed(() =>
+    this.learnHandoff.highlightedEvaluationId(),
+  );
   protected readonly showLearnBanner = computed(() => {
     this.learnHandoff.highlightedEvaluationId();
     return this.learnHandoff.showDashboardBanner();
@@ -41,6 +67,35 @@ export class DashboardPage {
   protected readonly learnBannerCopy =
     loadWalkthroughContent().handoffCopy?.dashboardBanner ??
     'Your evaluation from the Learn lab is highlighted below.';
+
+  constructor() {
+    effect(() => {
+      const evaluations = this.evaluations();
+      const months = this.monthGroups();
+      const selectedDayKey = this.selectedDayKey();
+      const selectedDayExists = months.some((month) =>
+        month.days.some((day) => day.dayKey === selectedDayKey),
+      );
+
+      if (selectedDayExists) {
+        return;
+      }
+
+      const highlightedId = this.highlightedEvaluationId();
+      const highlightedEvaluation = evaluations.find(
+        (evaluation) => evaluation.id === highlightedId,
+      );
+      const nextDayKey = highlightedEvaluation
+        ? localDayKey(highlightedEvaluation.updatedAt)
+        : (months[0]?.days[0]?.dayKey ?? null);
+
+      this.selectedDayKey.set(nextDayKey);
+    });
+  }
+
+  protected selectDay(dayKey: string): void {
+    this.selectedDayKey.set(dayKey);
+  }
 
   protected evaluationsForPage(group: EvaluationDayGroup): Evaluation[] {
     const pageIndex = this.dayPageIndex(group);
