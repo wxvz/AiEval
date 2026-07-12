@@ -1,0 +1,71 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Generation variance lab</h1>
+    <p class="lead mb-3">
+      Same {{ teachingPrompt }} — different simulated endings when
+      <app-learn-term-hint term="temperature" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      rises. Real APIs behave similarly: lock settings before you compare models.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: canned answer variants and a seeded sampler — not a live LLM. The lesson is variance vs stability, not provider latency.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: run at <strong>temperature 0</strong>, then <strong>0.9</strong>, and compare unique phrasings.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <div class="col-md-8">
+          <label class="form-label" for="genTemp">
+            <app-learn-term-hint term="temperature" hintId="temperature-slider" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+            (0–1)
+          </label>
+          <input
+            id="genTemp"
+            type="range"
+            class="form-range"
+            min="0"
+            max="1"
+            step="0.05"
+            [ngModel]="temperature()"
+            (ngModelChange)="temperature.set(+$event)"
+          />
+          <p class="small text-muted mb-0">Current: {{ temperature() | number: '1.2-2' }}</p>
+        </div>
+        <div class="col-md-4">
+          <button type="button" class="btn btn-primary w-100" (click)="generateRuns()">Generate 5 runs</button>
+        </div>
+      </div>
+    </div>
+
+    @if (runs().length > 0) {
+      <p class="mb-2">
+        <strong>{{ uniqueCount() }}</strong> unique phrasing(s) across 5 runs.
+      </p>
+      <ol class="mb-4">
+        @for (run of runs(); track $index) {
+          <li class="mb-2">{{ run.text }}</li>
+        }
+      </ol>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">Why simulate instead of calling a model?</summary>
+      <p class="mb-0 text-muted">No API keys or rate limits — you still see how sampling settings affect repeatability.</p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>
