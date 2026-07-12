@@ -3,7 +3,10 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 
-import { AUTOMATION_METADATA_STUB } from '../../models';
+import {
+  AUTOMATION_METADATA_STUB_PROMPT,
+  AUTOMATION_METADATA_STUB_TITLE,
+} from '../../../../server/src/automation/constants';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
@@ -45,8 +48,8 @@ describe('CreateEvaluationPage', () => {
   it('onRunFullAutomation creates stub evaluation when form is empty', async () => {
     const created = {
       id: 'eval-new',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -60,8 +63,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -248,8 +251,8 @@ describe('CreateEvaluationPage', () => {
       ...list,
       {
         id: 'eval-live',
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
         criteriaMode: 'default',
         criteria: [],
         answers: [],
@@ -339,8 +342,8 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -358,8 +361,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -386,8 +389,8 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -411,8 +414,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -542,8 +545,8 @@ describe('CreateEvaluationPage', () => {
   it('does not record learn handoff without from=learn', async () => {
     const created = {
       id: 'eval-plain',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
