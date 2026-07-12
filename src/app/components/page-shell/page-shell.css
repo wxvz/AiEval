@@ -1,0 +1,30 @@
+:host {
+  display: block;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+}
+
+.page-shell {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, 46rem) minmax(12rem, 1fr);
+  gap: clamp(1rem, 3vw, 2.5rem);
+  width: 100%;
+  padding-inline: clamp(1rem, 2vw, 2rem);
+}
+
+.page-shell__left,
+.page-shell__main,
+.page-shell__right {
+  min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+  .page-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-shell__left:empty,
+  .page-shell__right:empty {
+    display: none;
+  }
+}

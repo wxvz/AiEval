@@ -1,0 +1,28 @@
+.learn-lab-nav {
+  position: sticky;
+  top: 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.learn-lab-nav__back,
+.learn-lab-nav__links a {
+  color: var(--bs-body-color);
+  text-decoration: none;
+}
+
+.learn-lab-nav__back:hover,
+.learn-lab-nav__links a:hover {
+  color: var(--aieval-primary);
+  text-decoration: underline;
+}
+
+.learn-lab-nav__links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--bs-border-color);
+}
