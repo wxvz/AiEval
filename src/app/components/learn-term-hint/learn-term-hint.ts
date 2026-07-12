@@ -23,10 +23,24 @@ export class LearnTermHint {
   readonly hintId = input<string>();
   readonly activeId = input<string | null>(null);
   readonly activeIdChange = output<string | null>();
+  /** When set, terms are saved to the lesson aside instead of opening inline popovers. */
+  readonly savedTerms = input<LearnGlossaryTerm[] | null>(null);
+  readonly termSelect = output<LearnGlossaryTerm>();
 
   readonly resolvedId = computed(() => this.hintId() ?? this.term());
   readonly entry = computed(() => LEARN_GLOSSARY[this.term()]);
+  readonly isAsideMode = computed(() => this.savedTerms() !== null);
+  readonly isSaved = computed(() => this.savedTerms()?.includes(this.term()) ?? false);
+  readonly isPrimaryOccurrence = input(true);
+  readonly isInteractive = computed(
+    () => !this.isAsideMode() || (!this.isSaved() && this.isPrimaryOccurrence()),
+  );
   readonly isOpen = computed(() => this.activeId() === this.resolvedId());
+
+  selectTerm(event: Event): void {
+    event.stopPropagation();
+    this.termSelect.emit(this.term());
+  }
 
   toggle(event: Event): void {
     event.stopPropagation();
@@ -35,7 +49,7 @@ export class LearnTermHint {
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
-    if (!this.isOpen()) {
+    if (this.isAsideMode() || !this.isOpen()) {
       return;
     }
     if (this.host.nativeElement.contains(event.target as Node)) {
@@ -46,7 +60,7 @@ export class LearnTermHint {
 
   @HostListener('document:keydown.escape')
   onEscape(): void {
-    if (this.isOpen()) {
+    if (!this.isAsideMode() && this.isOpen()) {
       this.activeIdChange.emit(null);
     }
   }

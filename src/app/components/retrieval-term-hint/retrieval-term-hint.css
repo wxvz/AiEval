@@ -3,14 +3,7 @@
 }
 
 .retrieval-term-hint__trigger {
-  font-weight: inherit;
-  color: inherit;
   vertical-align: baseline;
-}
-
-.retrieval-term-hint__trigger:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 2px;
 }
 
 .retrieval-term-hint__popover {
@@ -27,11 +20,6 @@
   font-weight: 400;
   line-height: 1.4;
   text-align: left;
-  color: var(--bs-body-color);
-  background: var(--bs-body-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  box-shadow: var(--bs-box-shadow);
 }
 
 .retrieval-term-hint__popover::after {
@@ -41,5 +29,4 @@
   left: 50%;
   transform: translateX(-50%);
   border: 0.35rem solid transparent;
-  border-top-color: var(--bs-border-color);
 }
