@@ -5,7 +5,7 @@
       [lesson]="lesson"
       [trackLabel]="track()?.title ?? ''"
       [content]="content()"
-      [sectionsSolved]="sessionState()?.sectionsSolved ?? []"
+      [sectionsSolved]="displaySectionsSolved()"
       [locked]="locked()"
       [savedKeyTerms]="savedKeyTerms()"
     />
@@ -73,8 +73,8 @@
     <app-learn-lesson-aside
       shellRight
       [content]="content()"
-      [sectionsSolved]="sessionState()?.sectionsSolved ?? []"
-      [recapSolved]="sessionState()?.recapSolved ?? []"
+      [sectionsSolved]="displaySectionsSolved()"
+      [recapSolved]="displayRecapSolved()"
       [recapCount]="recapCount()"
       [optionalLab]="optionalLab() ?? null"
       [optionalLabComplete]="optionalLabComplete()"

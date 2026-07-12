@@ -163,4 +163,29 @@ describe('LearnLessonPage', () => {
     expect(fixture.nativeElement.textContent).toContain('Train vs test');
     expect(fixture.nativeElement.textContent).not.toContain('Learning from examples');
   });
+
+  it('shows solved checks for completed lessons after session is cleared', () => {
+    localStorage.setItem(
+      'aieval-learn-progress',
+      JSON.stringify(['learning-from-examples']),
+    );
+    setLessonId('learning-from-examples');
+    fixture = TestBed.createComponent(LearnLessonPage);
+    fixture.detectChanges();
+
+    const component = fixture.componentInstance;
+    expect(component.completed()).toBe(true);
+    expect(component.sectionSolved(0)).toBe(true);
+    expect(component.recapSolved(0)).toBe(true);
+    expect(component.displaySectionsSolved().every(Boolean)).toBe(true);
+    expect(component.displayRecapSolved().every(Boolean)).toBe(true);
+
+    const footerButton = fixture.nativeElement.querySelector(
+      '.learn-lesson-footer button.btn-primary',
+    ) as HTMLButtonElement;
+    expect(footerButton.textContent).toContain('Completed');
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'Answer all section checks and recap questions first',
+    );
+  });
 });

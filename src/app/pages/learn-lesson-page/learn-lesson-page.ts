@@ -80,6 +80,9 @@ export class LearnLessonPage {
   readonly sessionState = signal<LearnLessonSessionState | null>(null);
 
   readonly allChecksSolved = computed(() => {
+    if (this.completed()) {
+      return true;
+    }
     this.session.changed();
     const state = this.sessionState();
     const content = this.content();
@@ -112,10 +115,33 @@ export class LearnLessonPage {
 
   readonly recapCount = computed(() => this.content()?.recapQuestions.length ?? 0);
 
+  readonly displaySectionsSolved = computed(() => {
+    const content = this.content();
+    const count = content?.sections.length ?? 0;
+    if (this.completed()) {
+      return Array.from({ length: count }, () => true);
+    }
+    this.session.changed();
+    return this.sessionState()?.sectionsSolved ?? [];
+  });
+
+  readonly displayRecapSolved = computed(() => {
+    const content = this.content();
+    const count = content?.recapQuestions.length ?? 0;
+    if (this.completed()) {
+      return Array.from({ length: count }, () => true);
+    }
+    this.session.changed();
+    return this.sessionState()?.recapSolved ?? [];
+  });
+
   readonly activeSectionIndex = computed(() => {
+    const content = this.content();
+    if (this.completed()) {
+      return Math.max(0, (content?.sections.length ?? 1) - 1);
+    }
     this.session.changed();
     const state = this.sessionState();
-    const content = this.content();
     if (!state || !content || content.sections.length === 0) {
       return 0;
     }
@@ -169,6 +195,9 @@ export class LearnLessonPage {
   }
 
   sectionSolved(index: number): boolean {
+    if (this.completed()) {
+      return true;
+    }
     return this.sessionState()?.sectionsSolved[index] === true;
   }
 
@@ -177,6 +206,9 @@ export class LearnLessonPage {
   }
 
   recapSolved(index: number): boolean {
+    if (this.completed()) {
+      return true;
+    }
     return this.sessionState()?.recapSolved[index] === true;
   }
 

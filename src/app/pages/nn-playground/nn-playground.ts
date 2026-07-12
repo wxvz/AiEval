@@ -199,7 +199,7 @@ export class NnPlaygroundPage {
     if (this.isCustom()) {
       const rows = this.customSamples();
       const xs = rows.map((row) => row.x1);
-      const ys = rows.map((row) => row.y);
+      const ys = rows.map((row) => row.x2);
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
       const minY = Math.min(...ys);
@@ -351,6 +351,12 @@ export class NnPlaygroundPage {
       this.customSamples.set(
         this.usesSoftmax() ? threeClassToCustomRows() : xorToCustomRows(),
       );
+    }
+    if (name === 'three-class') {
+      this.outputActivation.set('softmax');
+    }
+    if ((name === 'xor' || name === 'and') && this.outputActivation() === 'softmax') {
+      this.outputActivation.set('sigmoid');
     }
     this.datasetName.set(name);
     this.onArchitectureChange();
