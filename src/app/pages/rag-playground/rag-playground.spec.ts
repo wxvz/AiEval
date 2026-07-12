@@ -41,7 +41,7 @@ describe('RagPlaygroundPage', () => {
 
   it('shows mark lab complete button', () => {
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector(
-      '.learn-lab-footer button',
+      'app-learn-lab-nav button',
     );
     expect(button?.textContent?.trim()).toBe('Mark lab complete');
     expect(button?.disabled).toBe(false);

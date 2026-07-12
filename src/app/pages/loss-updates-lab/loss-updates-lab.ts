@@ -3,7 +3,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
 import { NnTermHint } from '../../components/nn-term-hint/nn-term-hint';
+import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 import { XOR_DATASET } from '../../utils/nn/datasets';
@@ -19,7 +21,7 @@ interface PredictionRow {
 
 @Component({
   selector: 'app-loss-updates-lab',
-  imports: [FormsModule, DecimalPipe, RouterLink, NnTermHint],
+  imports: [FormsModule, DecimalPipe, RouterLink, NnTermHint, LearnLabNav, PageShell],
   templateUrl: './loss-updates-lab.html',
   styleUrl: './loss-updates-lab.css',
 })

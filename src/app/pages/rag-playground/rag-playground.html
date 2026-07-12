@@ -1,9 +1,5 @@
-<div class="row justify-content-center">
-  <div class="col-lg-10">
-    <p class="mb-3">
-      <a routerLink="/learn" class="learn-back-link">← Learn</a>
-    </p>
-
+<app-page-shell>
+  <main shellMain>
     @if (labMeta) {
       <p class="text-muted small mb-2">{{ trackLabel }} · Lab {{ labMeta.order }} of {{ trackLabCount }}</p>
     }
@@ -199,7 +195,7 @@
 
     <p class="text-muted small mb-4">
       Review: <a routerLink="/learn/labs/semantic-search">Semantic search lab</a> ·
-      Next: <a routerLink="/learn/labs/first-evaluation">First evaluation lab</a> — score real answers in AiEval.
+      Next: <a routerLink="/learn/lessons/faithfulness-and-hallucinations">Faithfulness and hallucinations</a> — score grounding before your first eval.
     </p>
 
     <section class="mb-4">
@@ -238,19 +234,11 @@
       </details>
     </section>
 
-    <div class="learn-lab-footer mt-4 pt-3 border-top">
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        [disabled]="labCompleted()"
-        (click)="markLabComplete()"
-      >
-        @if (labCompleted()) {
-          Lab completed
-        } @else {
-          Mark lab complete
-        }
-      </button>
-    </div>
-  </div>
-</div>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

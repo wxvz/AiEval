@@ -3,7 +3,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
+import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
 import { LearnTermHint } from '../../components/learn-term-hint/learn-term-hint';
+import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 import { NeuralNetwork } from '../../utils/nn/network';
@@ -52,7 +54,7 @@ const PLOT_DOMAIN: PlotDomain = { minX: -0.08, maxX: 1.08, minY: -0.08, maxY: 1.
 
 @Component({
   selector: 'app-train-test-lab',
-  imports: [FormsModule, DecimalPipe, RouterLink, LearnTermHint],
+  imports: [FormsModule, DecimalPipe, RouterLink, LearnTermHint, LearnLabNav, PageShell],
   templateUrl: './train-test-lab.html',
   styleUrl: './train-test-lab.css',
 })

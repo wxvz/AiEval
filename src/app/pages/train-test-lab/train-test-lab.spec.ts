@@ -35,9 +35,15 @@ describe('TrainTestLabPage', () => {
 
   it('shows mark lab complete button', () => {
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector(
-      '.learn-lab-footer button',
+      'app-learn-lab-nav button',
     );
     expect(button?.textContent?.trim()).toBe('Mark lab complete');
     expect(button?.disabled).toBe(false);
+  });
+
+  it('uses parent-aware navigation for the optional lab', () => {
+    const nav: HTMLElement | null = fixture.nativeElement.querySelector('app-learn-lab-nav');
+    expect(nav?.querySelector('a[href="/learn/lessons/train-vs-test"]')).toBeTruthy();
+    expect(nav?.querySelector('a[href="/learn/lessons/loss-and-updates"]')).toBeTruthy();
   });
 });

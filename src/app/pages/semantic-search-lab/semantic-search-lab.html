@@ -1,9 +1,5 @@
-<div class="row justify-content-center">
-  <div class="col-lg-10">
-    <p class="mb-3">
-      <a routerLink="/learn" class="learn-back-link">← Learn</a>
-    </p>
-
+<app-page-shell>
+  <main shellMain>
     @if (labMeta) {
       <p class="text-muted small mb-2">{{ trackLabel }} · Lab {{ labMeta.order }} of {{ trackLabCount }}</p>
     }
@@ -167,19 +163,11 @@
       </details>
     </section>
 
-    <div class="learn-lab-footer mt-4 pt-3 border-top">
-      <button
-        type="button"
-        class="btn btn-primary btn-sm"
-        [disabled]="labCompleted()"
-        (click)="markLabComplete()"
-      >
-        @if (labCompleted()) {
-          Lab completed
-        } @else {
-          Mark lab complete
-        }
-      </button>
-    </div>
-  </div>
-</div>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

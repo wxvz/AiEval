@@ -34,14 +34,16 @@ describe('SemanticSearchLabPage', () => {
 
   it('shows mark lab complete button', () => {
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector(
-      '.learn-lab-footer button',
+      'app-learn-lab-nav button',
     );
     expect(button?.textContent?.trim()).toBe('Mark lab complete');
     expect(button?.disabled).toBe(false);
   });
 
   it('links back to learn hub', () => {
-    const link: HTMLAnchorElement | null = fixture.nativeElement.querySelector('a.learn-back-link');
+    const link: HTMLAnchorElement | null = fixture.nativeElement.querySelector(
+      'app-learn-lab-nav a[href="/learn"]',
+    );
     expect(link?.getAttribute('href')).toBe('/learn');
   });
 });
