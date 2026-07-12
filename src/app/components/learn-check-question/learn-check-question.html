@@ -6,8 +6,9 @@
         <app-learn-lesson-text
           [text]="question().prompt"
           [hintIdPrefix]="hintIdPrefix() || inputId"
-          [activeId]="activeId()"
-          (activeIdChange)="activeIdChange.emit($event)"
+          [savedTerms]="savedTerms()"
+          [primaryHintIds]="primaryHintIds()"
+          (termSelect)="termSelect.emit($event)"
         />
       </p>
     </div>
@@ -73,8 +74,9 @@
             <app-learn-lesson-text
               [text]="question().explanation"
               [hintIdPrefix]="(hintIdPrefix() || inputId) + '-explanation'"
-              [activeId]="activeId()"
-              (activeIdChange)="activeIdChange.emit($event)"
+              [savedTerms]="savedTerms()"
+              [primaryHintIds]="primaryHintIds()"
+              (termSelect)="termSelect.emit($event)"
             />
           </p>
         </div>

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { isCheckAnswerCorrect } from '../../learn/check-answer';
 import type { CheckQuestion } from '../../learn/learn-content';
+import type { LearnGlossaryTerm } from '../../learn/learn-glossary';
 import { LearnLessonText } from '../learn-lesson-text/learn-lesson-text';
 
 @Component({
@@ -17,8 +18,9 @@ export class LearnCheckQuestion {
   readonly inputId = `learn-check-input-${LearnCheckQuestion.idCounter++}`;
   readonly question = input.required<CheckQuestion>();
   readonly hintIdPrefix = input('');
-  readonly activeId = input<string | null>(null);
-  readonly activeIdChange = output<string | null>();
+  readonly savedTerms = input<LearnGlossaryTerm[]>([]);
+  readonly primaryHintIds = input<ReadonlyMap<LearnGlossaryTerm, string>>(new Map());
+  readonly termSelect = output<LearnGlossaryTerm>();
   readonly solved = input(false);
   readonly readonly = input(false);
   readonly showExplanation = input(false);

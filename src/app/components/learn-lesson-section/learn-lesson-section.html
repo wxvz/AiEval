@@ -11,7 +11,7 @@
       <span class="learn-lesson-section__chevron" aria-hidden="true">▸</span>
     </button>
   } @else {
-    @if (view() === 'reopened') {
+    @if (view() === 'solvedExpanded') {
       <button
         type="button"
         class="learn-lesson-section__collapsed learn-lesson-section__collapsed--open card-elevated w-100 text-start mb-3"
@@ -32,8 +32,9 @@
           <app-learn-lesson-text
             [text]="paragraph"
             [hintIdPrefix]="hintPrefix('p' + $index)"
-            [activeId]="openTermId()"
-            (activeIdChange)="setOpenTermId($event)"
+            [savedTerms]="savedTerms()"
+            [primaryHintIds]="primaryHintIds()"
+            (termSelect)="onTermSelect($event)"
           />
         </p>
       }
@@ -44,8 +45,9 @@
               <app-learn-lesson-text
                 [text]="item"
                 [hintIdPrefix]="hintPrefix('b' + $index)"
-                [activeId]="openTermId()"
-                (activeIdChange)="setOpenTermId($event)"
+                [savedTerms]="savedTerms()"
+                [primaryHintIds]="primaryHintIds()"
+                (termSelect)="onTermSelect($event)"
               />
             </li>
           }
@@ -59,16 +61,18 @@
                 <app-learn-lesson-text
                   [text]="item.prompt"
                   [hintIdPrefix]="hintPrefix('r-p' + $index)"
-                  [activeId]="openTermId()"
-                  (activeIdChange)="setOpenTermId($event)"
+                  [savedTerms]="savedTerms()"
+                  [primaryHintIds]="primaryHintIds()"
+                  (termSelect)="onTermSelect($event)"
                 />
               </summary>
               <p class="learn-lesson-reveal__body mb-0">
                 <app-learn-lesson-text
                   [text]="item.reveal"
                   [hintIdPrefix]="hintPrefix('r-b' + $index)"
-                  [activeId]="openTermId()"
-                  (activeIdChange)="setOpenTermId($event)"
+                  [savedTerms]="savedTerms()"
+                  [primaryHintIds]="primaryHintIds()"
+                  (termSelect)="onTermSelect($event)"
                 />
               </p>
             </details>
@@ -80,8 +84,9 @@
         <app-learn-check-question
           [question]="check"
           [hintIdPrefix]="hintPrefix('check')"
-          [activeId]="openTermId()"
-          (activeIdChange)="setOpenTermId($event)"
+          [savedTerms]="savedTerms()"
+          [primaryHintIds]="primaryHintIds()"
+          (termSelect)="onTermSelect($event)"
           [solved]="solved()"
           [readonly]="solved()"
           [showExplanation]="showExplanation()"
