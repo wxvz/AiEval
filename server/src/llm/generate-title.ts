@@ -24,7 +24,7 @@ export async function generateEvaluationTitle(
     { role: 'system' as const, content: TITLE_GENERATE_SYSTEM },
     { role: 'user' as const, content: buildTitleGenerateUser() },
   ];
-  const context: CompleteContext = {
+  const context: CompleteContext & { temperature?: number } = {
     step: 'generating',
     provider: setup.providerName,
     model: setup.judgeModel.model,
