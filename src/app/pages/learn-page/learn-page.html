@@ -1,5 +1,5 @@
-<div class="row justify-content-center">
-  <div class="col-lg-10">
+<app-page-shell>
+  <main shellMain>
     <header class="page-header text-center">
       <h1 class="page-header__title">Learn</h1>
       <p class="page-header__subtitle text-muted mb-0">{{ hubCopy.subtitle }}</p>
@@ -22,5 +22,14 @@
     </section>
 
     <app-learn-track-list trackId="go-deeper" />
-  </div>
-</div>
+  </main>
+
+  <nav shellRight class="learn-hub-nav card-elevated" aria-label="Learn shortcuts">
+    @if (nextLesson(); as next) {
+      <a class="btn btn-primary btn-sm" [routerLink]="next.route">Continue →</a>
+    } @else {
+      <span class="badge text-bg-success">Path complete</span>
+    }
+    <a class="btn btn-outline-secondary btn-sm" routerLink="/">Dashboard</a>
+  </nav>
+</app-page-shell>

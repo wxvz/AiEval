@@ -11,7 +11,7 @@
       ],
       "bullets": [
         "{{loss}} — a single number summarizing how wrong the {{prediction}} is.",
-        "Lower {{loss}} — {{predictions}} closer to {{target}}s on average.",
+        "Lower {{loss}} — {{prediction}}s closer to {{target}}s on average.",
         "Different tasks — different {{loss}} formulas, same purpose."
       ],
       "check": {
@@ -58,7 +58,7 @@
           "Remove the test set",
           "Stop comparing predictions to targets"
         ],
-        "explanation": "The {{learningRate}} sets update size. Too small crawls; too large oscillates. It is a core {{hyperparameter}} you tune before rewriting the whole {{model}}."
+        "explanation": "The {{learningRate}} sets update size. Too small crawls; too large oscillates. It is a core {{hyperparameters}} you tune before rewriting the whole {{model}}."
       }
     },
     {
@@ -67,7 +67,7 @@
         "One pass through every training row is one {{epoch}}. A single {{epoch}} is rarely enough for hard puzzles like XOR — the {{model}} needs many chances to refine {{weights}}.",
         "In the lab you will see a {{loss}} chart over time. A healthy training run usually shows {{loss}} trending down, even if it wiggles step to step.",
         "If {{loss}} hits zero on the training rows, the {{model}} may have memorized them — remember the {{trainSet}} vs {{testSet}} lesson when you interpret results.",
-        "The neural network lab lets you change hidden size, activation, dataset, and {{learningRate}}. Your goal is not magic numbers — it is to connect \"I changed a setting\" to \"{{loss}} and {{predictions}} changed.\"",
+        "The neural network lab lets you change hidden size, activation, dataset, and {{learningRate}}. Your goal is not magic numbers — it is to connect \"I changed a setting\" to \"{{loss}} and {{prediction}}s changed.\"",
         "Try the optional **Loss and updates lab** from this lesson to watch {{loss}} fall as you train. Then open the **Neural network lab** for full controls on XOR and more datasets."
       ],
       "bullets": [
@@ -85,7 +85,7 @@
           "push it down",
           "lower loss"
         ],
-        "explanation": "Training adjusts {{weights}} to push {{loss}} down so {{predictions}} match {{target}}s. That is the entire point of the update loop you are about to run in the lab."
+        "explanation": "Training adjusts {{weights}} to push {{loss}} down so {{prediction}}s match {{target}}s. That is the entire point of the update loop you are about to run in the lab."
       }
     }
   ],

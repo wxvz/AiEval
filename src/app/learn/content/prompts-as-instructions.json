@@ -7,13 +7,19 @@
         "The {{prompt}} is your interface. Write clear task wording, provide context if needed, and the {{model}} generates a response shaped by what you asked. Change the prompt and the answer changes too.",
         "This is why prompting is central to LLM work. You do not retrain {{weights}} for every task; you rewrite instructions to steer what the {{model}} already knows.",
         "In AiEval you will compare {{model}} answers to the same prompt. That comparison only works when the prompt is clear enough that different models understand the goal — another reason prompt quality matters from day one.",
-        "Next: comparing answers. Once you can write a clear prompt, the question becomes: which {{model}} followed it best?"
+        "Next: Controlling generation — lock sampling settings so comparisons measure quality, not randomness."
       ],
       "bullets": [
         "{{prompt}} — the instruction text you send to the {{model}}.",
         "{{largeLanguageModel}} — a {{model}} trained on enough text to follow new instructions.",
         "Condition, don't retrain: rewrite the prompt, not the {{weights}}."
       ],
+      "aside": {
+        "title": "Try in AiEval",
+        "body": "Create an evaluation with one clear {{prompt}} and two {{model}}s to see how wording affects answers.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
       "check": {
         "prompt": "A colleague wants to classify support tickets as urgent or not. They suggest: \"Let's fine-tune a {{model}} for every new ticket category.\" What is the faster first step?",
         "answer": "Write a clear prompt describing urgent vs not-urgent, then test on real tickets",
@@ -70,7 +76,7 @@
         "Once you can write a good prompt, the next question is: which {{model}} or which version answers best? That is where evaluation enters.",
         "In AiEval you will send the same prompt to multiple {{model}}s, collect their answers, and compare quality using a {{rubric}}. The prompt must be clear enough that all {{model}}s understand the task — otherwise you are comparing apples to oranges.",
         "Later lessons cover how to break \"better\" into scorable {{criterion}} rows. For now, remember: prompting is not just asking questions; it is defining the task clearly enough to judge the answers fairly.",
-        "Next up: comparing answers — same prompt, different models, measurable quality."
+        "Next up: Controlling generation — temperature, top-p, and max tokens before you compare models."
       ],
       "bullets": [
         "Good prompts enable fair comparison across {{model}}s.",

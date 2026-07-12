@@ -39,7 +39,7 @@ describe('LearnWalkthroughPage', () => {
   });
 
   it('enables mark lab complete when steps exist', () => {
-    const button: HTMLButtonElement | null = fixture.nativeElement.querySelector('.learn-lab-footer button');
+    const button: HTMLButtonElement | null = fixture.nativeElement.querySelector('app-learn-lab-nav button');
     expect(button?.textContent?.trim()).toBe('Mark lab complete');
     expect(button?.disabled).toBe(false);
   });

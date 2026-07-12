@@ -31,7 +31,7 @@ describe('LearnProgressService', () => {
   });
 
   it('disables mark complete for read lessons without content', () => {
-    expect(service.canMarkComplete({ id: 'loss-and-updates', kind: 'read' } as never)).toBe(
+    expect(service.canMarkComplete({ id: 'lesson-without-body', kind: 'read' } as never)).toBe(
       false,
     );
   });

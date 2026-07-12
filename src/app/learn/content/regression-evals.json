@@ -1,0 +1,118 @@
+{
+  "sections": [
+    {
+      "title": "Baselines are guardrails",
+      "paragraphs": [
+        "Shipping a {{prompt}} tweak feels small — until support tickets spike. A {{regressionEval}} compares today against a saved baseline: same {{goldenSet}}, same {{rubric}}, new {{model}} or wording.",
+        "The baseline is not vanity metrics. It is the last known-good score distribution you are willing to defend. When automation reports a drop on even one {{testCase}}, you pause and read answers.",
+        "AiEval makes baselines practical: duplicate an {{evaluation}}, change one variable, rerun automation, and diff winners in Compare. You are doing controlled experiments, not vibes.",
+        "Regression checks belong after meaningful changes — new provider, {{temperature}} policy, retrieval index update, or judge {{prompt}} edit.",
+        "Next: when to rerun and what counts as a real regression."
+      ],
+      "bullets": [
+        "{{regressionEval}} — rerun {{goldenSet}} after changes.",
+        "Baseline = last trusted score profile.",
+        "Change one variable per experiment when possible."
+      ],
+      "check": {
+        "prompt": "Scores on your {{goldenSet}} drop 0.2 points after a {{prompt}} comma edit. What is the disciplined response?",
+        "answer": "Read failing answers before shipping",
+        "choices": [
+          "Ignore — small numbers never matter",
+          "Read failing answers before shipping",
+          "Delete the golden set",
+          "Raise temperature until scores rise"
+        ],
+        "explanation": "Even small average shifts may hide a broken {{testCase}}. Inspect answers; decide if the change helps or hurts real users."
+      }
+    },
+    {
+      "title": "When to rerun",
+      "paragraphs": [
+        "Rerun after {{model}} roster changes, judge template edits, retrieval corpus updates, or safety filter tweaks. Skip reruns for pure UI copy that never reaches the {{model}}.",
+        "Click each change type to see regression risk. High-risk edits touch generation, scoring, or knowledge — the three legs of your harness.",
+        "Noise happens: provider APIs update silently, rate limits swap fallback {{model}}s, or {{temperature}} defaults drift. Periodic scheduled {{regressionEval}}s catch external drift you did not author.",
+        "Document the baseline run id and settings in team notes so \"what did we compare against?\" has an answer six months later."
+      ],
+      "reveals": [
+        {
+          "prompt": "Swap contestant {{model}} A for newer version A-prime.",
+          "reveal": "High risk — rerun full {{goldenSet}}; capability and safety profile may shift."
+        },
+        {
+          "prompt": "Dashboard button color changes.",
+          "reveal": "Low risk for LLM quality — no {{regressionEval}} needed unless it affects prompts shown to users."
+        },
+        {
+          "prompt": "Add ten new {{chunk}}s to retrieval index.",
+          "reveal": "Medium-high risk — {{faithfulness}} and answer content may change; rerun RAG-sensitive {{testCase}}s."
+        }
+      ],
+      "aside": {
+        "title": "Try in AiEval",
+        "body": "Duplicate an {{evaluation}}, change one {{prompt}} or {{model}}, rerun automation, and note which {{testCase}} flipped winners.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
+      "check": {
+        "prompt": "Two runs of the same {{evaluation}} disagree on the winner. No code changed. What should you check first?",
+        "answer": "Generation settings and provider drift",
+        "choices": [
+          "Delete all rubrics",
+          "Generation settings and provider drift",
+          "Train a neural network from scratch",
+          "Ignore — winners must alternate"
+        ],
+        "explanation": "Unstable {{temperature}}, fallback {{model}} swaps, or silent provider updates cause score noise — fix settings before chasing phantom regressions."
+      }
+    },
+    {
+      "title": "Scale with automation",
+      "paragraphs": [
+        "Manual regression on ten {{testCase}}s is fine early. At fifty prompts across four {{model}}s, you need batch automation — generate, {{judge}}, aggregate — the subject of the next lesson.",
+        "Healthy loop: baseline {{regressionEval}} → change → rerun → spot-check failures → ship or revert. Harness tools exist to make that loop cheap.",
+        "Next up: Automation and judges — when AI scores hundreds of answers and how to spot-check before you trust it."
+      ],
+      "bullets": [
+        "Regression is a habit, not a one-time launch task.",
+        "Inspect failing {{testCase}}s, not only average scores.",
+        "Automation scales {{regressionEval}} across large {{goldenSet}}s."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is a {{regressionEval}}?",
+        "answer": "Rerun golden set after changes",
+        "accept": [
+          "rerun golden set",
+          "baseline comparison after change",
+          "repeat evaluation to catch drops",
+          "regression check on test cases"
+        ],
+        "explanation": "A {{regressionEval}} reuses your {{goldenSet}} to detect quality drops after {{prompt}}, {{model}}, or infrastructure changes."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Why change only one variable between baseline and experiment?",
+      "answer": "Isolate cause of score shifts",
+      "accept": [
+        "isolate cause",
+        "know what changed",
+        "clean experiment",
+        "attribute regressions"
+      ],
+      "explanation": "Changing {{prompt}} and {{model}} together obscures which edit helped or hurt — controlled {{regressionEval}} needs clarity."
+    },
+    {
+      "prompt": "Average score rises but one safety {{testCase}} now fails. Ship?",
+      "answer": "No read the failing case first",
+      "accept": [
+        "no",
+        "do not ship",
+        "inspect failure",
+        "block release"
+      ],
+      "explanation": "Averages hide tail failures — safety {{testCase}} regressions can be release blockers even when means improve."
+    }
+  ]
+}

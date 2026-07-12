@@ -7,7 +7,8 @@
         "Every turn has a fixed {{contextWindow}} — a maximum amount of text the {{model}} can read at once. Paste in too much and you must cut, summarize, or drop facts. That limit is short-term working space, not a permanent filing cabinet.",
         "{{semanticMemory}} is the durable store outside that window: policy PDFs, support FAQs, rubric docs, API references. At query time you {{retrieval}} the few passages that matter and place them in the prompt. The {{model}} still generates the answer — but from evidence you chose.",
         "Training {{weights}} teach broad language patterns, not a reliable record of every internal fact. A {{model}} may sound confident about your refund policy while inventing details it never saw. For company-specific truth, external memory beats hoping the weights remembered.",
-        "In AiEval you will compare {{model}} answers about internal documents the {{model}} was never trained on. That only works when you can fetch the right source text first — another reason {{semanticMemory}} matters before you judge quality."
+        "In AiEval you will compare {{model}} answers about internal documents the {{model}} was never trained on. That only works when you can fetch the right source text first — another reason {{semanticMemory}} matters before you judge quality.",
+        "You already saw how {{judge}} automation needs parseable output; retrieval is the next pipeline leg — fetching evidence before generation."
       ],
       "bullets": [
         "{{contextWindow}} — how much fits in one request.",
@@ -66,6 +67,7 @@
       "paragraphs": [
         "Production {{semanticMemory}} rarely stops at pure vector search. Teams combine semantic scores with keyword filters, metadata tags (team, product, date), and re-ranking before anything reaches the {{contextWindow}}.",
         "Teaching shortcut: the next lab uses **2D** {{embedding}}s so you can see closeness on a map. Real systems use hundreds or thousands of dimensions — the idea is the same, only the geometry is harder to draw.",
+        "Try the optional **Semantic memory practice** lab from the sidebar for a quick ranking drill. The **Semantic search lab** on the track goes deeper with a 2D map.",
         "In the **Semantic search lab** you will type queries, watch similarity scores, and see which {{chunk}}s rank highest. That is {{retrieval}} without API keys — the same ranking step RAG depends on.",
         "After that, the **RAG playground** assembles retrieved {{chunk}}s into a prompt and previews a stub answer. You will see how {{semanticMemory}} feeds generation, not replaces it.",
         "When you run evaluations in AiEval, ask whether the winning answer used the right retrieved evidence — not just fluent prose. Good {{retrieval}} is often the difference between grounded and guessed."

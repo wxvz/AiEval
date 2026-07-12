@@ -51,6 +51,12 @@
           "reveal": "The one that simplifies jargon, adds context, and skips technical minutiae — even if it omits some details."
         }
       ],
+      "aside": {
+        "title": "Try in AiEval",
+        "body": "Run the same {{prompt}} on two {{model}}s and compare which answer fits your criteria better.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
       "check": {
         "prompt": "Your team wants to pick the best {{model}} for generating product descriptions. Before testing, what should you define first?",
         "answer": "What makes a product description good for your use case",

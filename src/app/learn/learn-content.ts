@@ -1,20 +1,32 @@
 import automationAndJudges from './content/automation-and-judges.json';
 import buildingEvalHarnesses from './content/building-eval-harnesses.json';
 import comparingAnswers from './content/comparing-answers.json';
+import controllingGeneration from './content/controlling-generation.json';
+import faithfulnessAndHallucinations from './content/faithfulness-and-hallucinations.json';
 import firstEvaluationLab from './content/first-evaluation-lab.json';
+import goldenTestCases from './content/golden-test-cases.json';
 import hub from './content/hub.json';
 import learningFromExamples from './content/learning-from-examples.json';
 import lossAndUpdates from './content/loss-and-updates.json';
 import productionConcerns from './content/production-concerns.json';
 import promptsAsInstructions from './content/prompts-as-instructions.json';
+import regressionEvals from './content/regression-evals.json';
 import rubricsAndCriteria from './content/rubrics-and-criteria.json';
 import semanticMemory from './content/semantic-memory.json';
+import structuredOutputsForJudges from './content/structured-outputs-for-judges.json';
 import trainVsTest from './content/train-vs-test.json';
 import transformersOverview from './content/transformers-overview.json';
 
 export interface LessonReveal {
   prompt: string;
   reveal: string;
+}
+
+export interface LessonAside {
+  title: string;
+  body: string;
+  route?: string;
+  actionLabel?: string;
 }
 
 export interface LessonSection {
@@ -24,6 +36,7 @@ export interface LessonSection {
   bullets?: string[];
   reveals?: LessonReveal[];
   check?: CheckQuestion;
+  aside?: LessonAside;
 }
 
 export interface CheckQuestion {
@@ -80,9 +93,14 @@ const LESSON_CONTENT: Record<string, LessonContent> = {
   'train-vs-test': trainVsTest,
   'loss-and-updates': lossAndUpdates,
   'prompts-as-instructions': promptsAsInstructions,
+  'controlling-generation': controllingGeneration,
   'comparing-answers': comparingAnswers,
+  'golden-test-cases': goldenTestCases,
   'rubrics-and-criteria': rubricsAndCriteria,
+  'structured-outputs-for-judges': structuredOutputsForJudges,
   'semantic-memory': semanticMemory,
+  'faithfulness-and-hallucinations': faithfulnessAndHallucinations,
+  'regression-evals': regressionEvals,
   'automation-and-judges': automationAndJudges,
   'transformers-overview': transformersOverview,
   'production-concerns': productionConcerns,
@@ -135,6 +153,19 @@ function validateCheckQuestion(
   return null;
 }
 
+function validateAside(aside: LessonAside | undefined, label: string): string | null {
+  if (!aside) {
+    return null;
+  }
+  if (!isNonEmptyString(aside.title)) {
+    return `${label} aside title is empty`;
+  }
+  if (!isNonEmptyString(aside.body)) {
+    return `${label} aside body is empty`;
+  }
+  return null;
+}
+
 export function validateLessonContent(lessonId: string, content: LessonContent): LessonContentValidationIssue[] {
   const issues: LessonContentValidationIssue[] = [];
 
@@ -147,6 +178,10 @@ export function validateLessonContent(lessonId: string, content: LessonContent):
     const checkIssue = validateCheckQuestion(section.check, `Section ${index + 1} check`);
     if (checkIssue) {
       issues.push({ lessonId, message: checkIssue });
+    }
+    const asideIssue = validateAside(section.aside, `Section ${index + 1}`);
+    if (asideIssue) {
+      issues.push({ lessonId, message: asideIssue });
     }
   }
 

@@ -42,7 +42,18 @@ describe('curriculum', () => {
   it('links optional labs to parent read lessons', () => {
     expect(getOptionalLabForLesson('train-vs-test')?.route).toBe('/learn/labs/train-vs-test');
     expect(getOptionalLabForLesson('loss-and-updates')?.route).toBe('/learn/labs/loss-and-updates');
+    expect(getOptionalLabForLesson('semantic-memory')?.route).toBe('/learn/labs/semantic-memory');
+    expect(getOptionalLabForLesson('controlling-generation')?.route).toBe('/learn/labs/controlling-generation');
+    expect(getOptionalLabForLesson('structured-outputs-for-judges')?.route).toBe('/learn/labs/judge-json');
+    expect(getOptionalLabForLesson('faithfulness-and-hallucinations')?.route).toBe('/learn/labs/faithfulness');
     expect(getOptionalLabForLesson('learning-from-examples')).toBeUndefined();
+  });
+
+  it('keeps semantic-memory-lab optional and off the hub track list', () => {
+    const hubIds = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
+    expect(hubIds).not.toContain('semantic-memory-lab');
+    expect(getLesson('semantic-memory-lab')?.optional).toBe(true);
+    expect(getLesson('semantic-memory-lab')?.parentLessonId).toBe('semantic-memory');
   });
 
   it('orders llm reads before semantic-search-lab', () => {
@@ -54,8 +65,11 @@ describe('curriculum', () => {
       .map((lesson) => lesson.id);
     expect(readIds).toEqual([
       'prompts-as-instructions',
+      'controlling-generation',
       'comparing-answers',
+      'golden-test-cases',
       'rubrics-and-criteria',
+      'structured-outputs-for-judges',
       'semantic-memory',
     ]);
   });
@@ -69,11 +83,15 @@ describe('curriculum', () => {
       .map((lesson) => lesson.id);
     expect(llmSlice).toEqual([
       'prompts-as-instructions',
+      'controlling-generation',
       'comparing-answers',
+      'golden-test-cases',
       'rubrics-and-criteria',
+      'structured-outputs-for-judges',
       'semantic-memory',
       'semantic-search-lab',
       'rag-playground-lab',
+      'faithfulness-and-hallucinations',
     ]);
   });
 
@@ -81,7 +99,9 @@ describe('curriculum', () => {
     expect(getLesson('semantic-search-lab')?.route).toBe('/learn/labs/semantic-search');
     expect(getLesson('rag-playground-lab')?.route).toBe('/learn/labs/rag-playground');
     expect(getLesson('semantic-search-lab')?.prerequisites).toEqual(['semantic-memory']);
-    expect(getLesson('first-evaluation-lab')?.prerequisites).toEqual(['rag-playground-lab']);
+    expect(getLesson('first-evaluation-lab')?.prerequisites).toEqual(['faithfulness-and-hallucinations']);
+    expect(getLesson('automation-and-judges')?.prerequisites).toEqual(['regression-evals']);
+    expect(getLesson('comparing-answers')?.prerequisites).toEqual(['controlling-generation']);
   });
 
   it('getNextLesson skips completed lessons in global order', () => {
@@ -129,7 +149,7 @@ describe('curriculum', () => {
     const lesson = getLesson('comparing-answers');
     expect(lesson).toBeTruthy();
     expect(isLessonLocked(lesson!, new Set())).toBe(true);
-    expect(isLessonLocked(lesson!, new Set(['prompts-as-instructions']))).toBe(false);
+    expect(isLessonLocked(lesson!, new Set(['controlling-generation']))).toBe(false);
   });
 
   it('ignores prerequisites when unlock option is set', () => {

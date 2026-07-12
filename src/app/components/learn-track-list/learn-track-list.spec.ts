@@ -25,7 +25,7 @@ describe('LearnTrackList', () => {
     const rows = fixture.componentInstance.lessonRows();
     const comparing = rows.find((row) => row.lesson.id === 'comparing-answers');
     expect(comparing?.route).toBeNull();
-    expect(comparing?.prereqLabel).toBe('Prompts as instructions');
+    expect(comparing?.prereqLabel).toBe('Controlling generation');
   });
 
   it('opens locked read lessons when unlock all is enabled', () => {

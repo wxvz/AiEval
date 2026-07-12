@@ -23,7 +23,7 @@
           "No — supervised learning only works on text.",
           "Yes — the model can invent its own labels during training."
         ],
-        "explanation": "A {{classifier}} needs {{labeledData}}: each photo needs a {{target}} such as product category or defect type. Without labels there is nothing to grade {{predictions}} against, so training cannot start."
+        "explanation": "A {{classifier}} needs {{labeledData}}: each photo needs a {{target}} such as product category or defect type. Without labels there is nothing to grade {{prediction}}s against, so training cannot start."
       }
     },
     {
@@ -83,7 +83,7 @@
           "an input and a target label",
           "input target pair"
         ],
-        "explanation": "Supervised learning is learning from pairs. Without both an {{input}} and a {{target}}, the {{model}} has nothing to practice on and nothing to grade {{predictions}} against."
+        "explanation": "Supervised learning is learning from pairs. Without both an {{input}} and a {{target}}, the {{model}} has nothing to practice on and nothing to grade {{prediction}}s against."
       }
     }
   ],

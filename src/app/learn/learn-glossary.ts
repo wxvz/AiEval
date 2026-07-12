@@ -21,7 +21,24 @@ export type LearnGlossaryTerm =
   | 'contextWindow'
   | 'embedding'
   | 'retrieval'
-  | 'chunk';
+  | 'chunk'
+  | 'prompt'
+  | 'largeLanguageModel'
+  | 'token'
+  | 'attention'
+  | 'rubric'
+  | 'criterion'
+  | 'judge'
+  | 'evaluation'
+  | 'temperature'
+  | 'topP'
+  | 'maxTokens'
+  | 'testCase'
+  | 'goldenSet'
+  | 'structuredOutput'
+  | 'faithfulness'
+  | 'hallucination'
+  | 'regressionEval';
 
 export interface LearnGlossaryEntry {
   label: string;
@@ -143,6 +160,91 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     label: 'chunk',
     explanation:
       'A small slice of source text indexed for search — for example one FAQ entry, one rubric row, or one paragraph from a handbook.',
+  },
+  prompt: {
+    label: 'prompt',
+    explanation:
+      'The instruction text you send to a language model — task wording, context, and output constraints. Change the prompt to steer behavior without retraining.',
+  },
+  largeLanguageModel: {
+    label: 'large language model',
+    explanation:
+      'A model trained on vast text so it can follow new instructions in plain language — often called an LLM. You condition it with prompts instead of retraining from scratch.',
+  },
+  token: {
+    label: 'token',
+    explanation:
+      'A fragment of text the model processes — a whole word, part of a word, or punctuation. Context limits and API costs are measured in tokens, not words.',
+  },
+  attention: {
+    label: 'attention',
+    explanation:
+      'A transformer mechanism that weighs which prior tokens matter most when predicting the next one — so relevant words get more influence than filler.',
+  },
+  rubric: {
+    label: 'rubric',
+    explanation:
+      'A structured scoring guide that breaks quality into criterion rows with anchors for each score level — so reviewers and judges apply the same standard.',
+  },
+  criterion: {
+    label: 'criterion',
+    explanation:
+      'One measurable row in a rubric — for example accuracy, tone, or completeness — scored separately then combined into an overall quality measure.',
+  },
+  judge: {
+    label: 'judge',
+    explanation:
+      'A model (or reviewer) that scores another model’s answers against a rubric. Automation uses a judge to scale evaluation beyond hand-checking every response.',
+  },
+  evaluation: {
+    label: 'evaluation',
+    explanation:
+      'Comparing model outputs on shared prompts and rubrics to measure quality — which model answers best, whether a change helped, or if a release regressed.',
+  },
+  temperature: {
+    label: 'temperature',
+    explanation:
+      'A sampling knob that controls how random the next token choice is. Low temperature (near 0) picks the most likely wording; higher temperature allows more varied phrasing.',
+  },
+  topP: {
+    label: 'top-p',
+    explanation:
+      'Nucleus sampling: the model considers only the smallest set of likely next tokens whose combined probability reaches p. Lower top-p narrows choices; 1.0 allows the full vocabulary.',
+  },
+  maxTokens: {
+    label: 'max tokens',
+    explanation:
+      'A hard cap on how many tokens the model may generate in one response. Stops runaway length and controls cost — but can cut answers off mid-sentence if set too low.',
+  },
+  testCase: {
+    label: 'test case',
+    explanation:
+      'One fixed prompt (plus optional context) you reuse to check model quality — often with known failure modes you want to catch every release.',
+  },
+  goldenSet: {
+    label: 'golden set',
+    explanation:
+      'A curated collection of test cases and baseline expectations you re-run after changes — your regression guardrail for prompts, models, or rubrics.',
+  },
+  structuredOutput: {
+    label: 'structured output',
+    explanation:
+      'Machine-readable response format — usually JSON with fixed fields — so automation can parse scores or data without guessing from free-form prose.',
+  },
+  faithfulness: {
+    label: 'faithfulness',
+    explanation:
+      'Whether an answer stays grounded in the provided source material — citing retrieved chunks or refusing when context is insufficient instead of inventing facts.',
+  },
+  hallucination: {
+    label: 'hallucination',
+    explanation:
+      'When a model states something confident but unsupported — invented citations, wrong numbers, or facts not present in the prompt or retrieved context.',
+  },
+  regressionEval: {
+    label: 'regression eval',
+    explanation:
+      'Re-running the same golden set after a change to see if quality dropped — catching prompt edits, model swaps, or provider updates that broke what used to work.',
   },
 };
 

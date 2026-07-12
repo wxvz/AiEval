@@ -66,13 +66,19 @@
         "Once the {{rubric}} is written, scoring is structured. Read the answer, check each {{criterion}} row, pick the anchor that fits best, record the score. Sum or average the rows to get an overall quality measure.",
         "In AiEval's Compare page you will see answers scored row by row. If automation handled scoring, each {{criterion}} has a recorded score plus reasoning — you can spot-check whether the {{judge}} applied the rubric faithfully.",
         "Good rubrics make disagreements debuggable. If two reviewers gave different scores, look at which {{criterion}} row caused the split and refine that anchor. If automation is off, adjust the {{judge}}'s prompt to reference the rubric more explicitly.",
-        "Next lesson: automation and judges — when AI scores answers for you, and when to double-check."
+        "Next lesson: Structured outputs for judges — JSON scores automation can parse."
       ],
       "bullets": [
         "Score each {{criterion}} row separately, then combine.",
         "Good rubrics let reviewers (and automation) score consistently.",
         "Disagreements point to anchors that need sharpening."
       ],
+      "aside": {
+        "title": "Try in AiEval",
+        "body": "On the create page, switch to custom {{criterion}} and draft rows with clear anchors before you run automation.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
       "check": {
         "prompt": "In one short phrase: what is a {{rubric}} in evaluation?",
         "answer": "A scoring guide with criteria and anchors",

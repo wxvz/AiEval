@@ -4,6 +4,7 @@
       "title": "When AI scores answers",
       "paragraphs": [
         "Scoring every answer by hand does not scale. If you test five {{model}}s on 100 prompts, that is 500 answers to grade. A human can do ten carefully; automation can do hundreds in minutes.",
+        "Regression evals help you know when automation is worth trusting on a golden set — rerun the same prompts after each change before you scale batch judging.",
         "A {{judge}} is a {{model}} you use to score other {{model}}s' answers. You send it the prompt, the answer, and the {{rubric}}, and it returns scores per {{criterion}} plus reasoning. If the {{judge}} was given clear anchors, its scores often align with human grading.",
         "AiEval's \"Run full automation\" button does exactly this: generates answers from contestant {{model}}s, then calls a {{judge}} {{model}} to score them using your {{rubric}}. You review the scores instead of writing them from scratch.",
         "This is not magic. The {{judge}} can miss nuance, favor certain styles, or apply {{criterion}} anchors inconsistently. That is why you spot-check: open Compare, read the answers, and see if the scores make sense.",

@@ -1,13 +1,15 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
 import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 
 @Component({
   selector: 'app-learn-walkthrough-page',
-  imports: [RouterLink],
+  imports: [RouterLink, LearnLabNav, PageShell],
   templateUrl: './learn-walkthrough-page.html',
   styleUrl: './learn-walkthrough-page.css',
 })
