@@ -1,0 +1,31 @@
+<nav class="learn-lab-nav card-elevated" aria-label="Learn navigation">
+  @if (resolvedParent(); as parentLesson) {
+    <a class="learn-lab-nav__back small" [routerLink]="parentLesson.route">← {{ parentLesson.title }}</a>
+  } @else {
+    <a class="learn-lab-nav__back small" routerLink="/learn">← Learn</a>
+  }
+
+  <button
+    type="button"
+    class="btn btn-primary btn-sm w-100"
+    [disabled]="completed() || completionDisabled()"
+    (click)="complete.emit()"
+  >
+    @if (completed()) {
+      Lab completed
+    } @else {
+      Mark lab complete
+    }
+  </button>
+
+  @if (adjacent().previous || adjacent().next) {
+    <div class="learn-lab-nav__links">
+      @if (adjacent().previous; as previous) {
+        <a class="small" [routerLink]="previous.route">← {{ previous.title }}</a>
+      }
+      @if (adjacent().next; as next) {
+        <a class="small" [routerLink]="next.route">{{ next.title }} →</a>
+      }
+    </div>
+  }
+</nav>

@@ -1,0 +1,124 @@
+.learn-lesson-rail {
+  position: sticky;
+  top: 5rem;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 6rem);
+  overflow: hidden;
+}
+
+.learn-lesson-rail__track {
+  margin-top: 1.25rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.learn-lesson-rail__toc-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.3rem 0;
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+.learn-lesson-rail__status {
+  flex-shrink: 0;
+  width: 1rem;
+  font-size: 0.75rem;
+}
+
+.learn-lesson-rail__sections {
+  flex-shrink: 0;
+  margin-bottom: 1.25rem;
+}
+
+.learn-lesson-rail > :not(.learn-lesson-rail__key-terms) {
+  flex-shrink: 0;
+}
+
+.learn-lesson-rail__key-terms > h2 {
+  flex-shrink: 0;
+}
+
+.learn-lesson-rail__key-terms {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--aieval-border);
+  border-left: 3px solid var(--aieval-term-popover-accent);
+  padding-left: 0.75rem;
+  overflow: hidden;
+}
+
+.learn-lesson-rail__key-term-list {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.25rem;
+  scrollbar-gutter: stable;
+}
+
+.learn-lesson-rail__key-term-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.learn-lesson-rail__key-term-toggle:focus-visible {
+  outline: 2px solid var(--aieval-term-popover-accent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.learn-lesson-rail__key-term-label {
+  font-weight: 600;
+  color: var(--aieval-term-fg);
+  font-size: 0.875rem;
+}
+
+.learn-lesson-rail__key-term-chevron {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: var(--bs-secondary-color);
+}
+
+.learn-lesson-rail__key-term-body {
+  margin-top: 0.35rem;
+  padding-left: 0.1rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 991.98px) {
+  .learn-lesson-rail {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .learn-lesson-rail__key-terms {
+    flex: none;
+    overflow: visible;
+  }
+
+  .learn-lesson-rail__key-term-list {
+    flex: none;
+    max-height: min(16rem, 40vh);
+    overflow-y: auto;
+  }
+}
