@@ -1,4 +1,4 @@
-import { Evaluation } from '../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../models';
 
 import { groupEvaluationsByMonth, monthKeyForDay } from './group-evaluations-by-month';
 
@@ -9,6 +9,7 @@ function evaluation(id: string, updatedAt: Date): Evaluation {
     prompt: 'Prompt',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: updatedAt.toISOString(),
     updatedAt: updatedAt.toISOString(),
