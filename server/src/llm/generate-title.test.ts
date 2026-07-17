@@ -27,12 +27,18 @@ import { generateEvaluationTitle, TITLE_GENERATION_TEMPERATURE } from './generat
 import type { ResolvedLlmSetup } from './types.js';
 
 describe('buildTitleGenerateUser', () => {
-  it('includes a rotating domain hint and unique request id', () => {
-    vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValue(0.123456789);
+  it('combines rotating domain, task, and challenge hints with a unique request id', () => {
+    vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(0)
+      .mockReturnValue(0.123456789);
 
     const content = buildTitleGenerateUser();
 
-    expect(content).toContain('science and technology');
+    expect(content).toContain('distributed systems and reliability engineering');
+    expect(content).toContain('a decision memo that must commit to a justified recommendation');
+    expect(content).toContain('conflicting objectives and explicit trade-offs');
     expect(content).toMatch(/Request id: [a-z0-9]+-[a-z0-9]+/i);
   });
 });
@@ -75,7 +81,7 @@ describe('generateEvaluationTitle', () => {
 
     const automationSetup = {
       providerName: 'groq',
-      provider: { name: 'groq' },
+      provider: { name: 'groq', complete: vi.fn() },
       judgeModel: { model: 'judge-model', label: 'Judge' },
       answerModels: [],
     } as ResolvedLlmSetup;
