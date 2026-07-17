@@ -3,6 +3,8 @@ import { Router } from 'express';
 import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
 import { generateEvaluationTitle } from '../llm/generate-title.js';
 import { getEvaluationsCollection } from '../db.js';
+import { estimateEvaluationRun } from '../evaluation-estimate.js';
+import { normalizeEvaluationConfig } from '../evaluation-config.js';
 import {
   normalizeEvaluationRecord,
   parseObjectId,
@@ -23,9 +25,37 @@ export function createEvaluationsRouter(): Router {
     }
   });
 
-  router.post('/generate-title', async (_req, res, next) => {
+  router.post('/estimate', async (req, res, next) => {
     try {
-      const title = await generateEvaluationTitle();
+      const body = req.body as Partial<Evaluation> & { phase?: string };
+      const phase =
+        body.phase === 'generate' ||
+        body.phase === 'score' ||
+        body.phase === 'improved' ||
+        body.phase === 'full'
+          ? body.phase
+          : 'full';
+
+      const estimate = await estimateEvaluationRun(
+        {
+          prompt: body.prompt?.trim() ?? '',
+          criteriaMode: body.criteriaMode ?? 'default',
+          criteria: Array.isArray(body.criteria) ? body.criteria : [],
+          answers: Array.isArray(body.answers) ? body.answers : [],
+          evaluationConfig: normalizeEvaluationConfig(body.evaluationConfig),
+        },
+        phase,
+      );
+
+      res.json(estimate);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/generate-title', async (req, res, next) => {
+    try {
+      const title = await generateEvaluationTitle({}, undefined, normalizeEvaluationConfig(req.body?.evaluationConfig));
       res.json({ title });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate title';
@@ -35,7 +65,7 @@ export function createEvaluationsRouter(): Router {
 
   router.post('/generate-prompt', async (req, res, next) => {
     try {
-      const body = req.body as { title?: string } | undefined;
+      const body = req.body as { title?: string; evaluationConfig?: unknown } | undefined;
       const title = body?.title?.trim() ?? '';
 
       if (title.length < 3) {
@@ -43,7 +73,12 @@ export function createEvaluationsRouter(): Router {
         return;
       }
 
-      const prompt = await generateEvaluationPrompt(title);
+      const prompt = await generateEvaluationPrompt(
+        title,
+        {},
+        undefined,
+        normalizeEvaluationConfig(body?.evaluationConfig),
+      );
       res.json({ prompt });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate prompt';
@@ -87,7 +122,16 @@ export function createEvaluationsRouter(): Router {
         title: body.title.trim(),
         prompt: body.prompt.trim(),
         criteriaMode: body.criteriaMode ?? 'default',
-        criteria: Array.isArray(body.criteria) ? body.criteria : [],
+        criteria: Array.isArray(body.criteria)
+          ? body.criteria.map((criterion) => ({
+              ...criterion,
+              weight:
+                Number.isFinite(criterion.weight) && (criterion.weight ?? 0) > 0
+                  ? criterion.weight
+                  : 1,
+            }))
+          : [],
+        evaluationConfig: normalizeEvaluationConfig(body.evaluationConfig),
         answers: Array.isArray(body.answers) ? body.answers : [],
         ...(body.improvedAnswer !== undefined ? { improvedAnswer: body.improvedAnswer } : {}),
         ...(body.winnerAnswerId !== undefined ? { winnerAnswerId: body.winnerAnswerId } : {}),
@@ -134,10 +178,18 @@ export function createEvaluationsRouter(): Router {
           prompt: body.prompt?.trim() ?? existing.prompt,
           criteriaMode: body.criteriaMode ?? existing.criteriaMode ?? 'default',
           criteria: body.criteria ?? existing.criteria,
+          evaluationConfig: normalizeEvaluationConfig(
+            body.evaluationConfig ?? existing.evaluationConfig,
+          ),
           answers: body.answers ?? existing.answers,
           improvedAnswer: body.improvedAnswer ?? existing.improvedAnswer,
           winnerAnswerId: body.winnerAnswerId ?? existing.winnerAnswerId,
+          manualOverrides: body.manualOverrides ?? existing.manualOverrides,
           ...(existing.automatedAt !== undefined ? { automatedAt: existing.automatedAt } : {}),
+          ...(existing.lastScoringRun !== undefined ? { lastScoringRun: existing.lastScoringRun } : {}),
+          ...(existing.scoringConfigRevision !== undefined
+            ? { scoringConfigRevision: existing.scoringConfigRevision }
+            : {}),
           createdAt: existing.createdAt,
           updatedAt: new Date().toISOString(),
         },
