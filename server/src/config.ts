@@ -51,6 +51,7 @@ export const config = {
   mongoUri: process.env['MONGODB_URI'] ?? '',
   dbName: process.env['MONGODB_DB_NAME'] ?? 'aieval',
   evaluationsCollection: 'evaluations',
+  templatesCollection: 'evaluation_templates',
   ollamaBaseUrl: process.env['OLLAMA_BASE_URL'] ?? 'http://localhost:11434',
   groqApiKey: process.env['GROQ_API_KEY'] ?? '',
   openRouterApiKey: process.env['OPENROUTER_API_KEY'] ?? '',
