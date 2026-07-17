@@ -13,10 +13,16 @@ import {
   CreateCriterionDto,
   CreateEvaluationDto,
   DEFAULT_CRITERIA,
+  DEFAULT_EVALUATION_CONFIG,
   Evaluation,
+  EvaluationConfig,
+  EvaluationRunEstimate,
   initialScoresForCriteria,
+  ManualOverrideRecord,
   RubricCriterion,
+  TaskDifficulty,
   UpdateEvaluationDto,
+  upsertCriterionScore,
 } from '../models';
 import { FeedbackService } from './feedback.service';
 import { messageFromHttpError } from './http-error-message';
@@ -94,8 +100,13 @@ export class EvaluationService {
     return this.update(id, { criteriaMode }, operationFeedback);
   }
 
-  generateTitle(operationFeedback?: OperationFeedback): Promise<string> {
-    return firstValueFrom(this.http.post<{ title: string }>(`${API}/generate-title`, {}))
+  generateTitle(
+    evaluationConfig: EvaluationConfig = DEFAULT_EVALUATION_CONFIG,
+    operationFeedback?: OperationFeedback,
+  ): Promise<string> {
+    return firstValueFrom(
+      this.http.post<{ title: string }>(`${API}/generate-title`, { evaluationConfig }),
+    )
       .then((response) => {
         if (operationFeedback) {
           this.feedback.success(operationFeedback.success);
@@ -112,9 +123,16 @@ export class EvaluationService {
       });
   }
 
-  generatePrompt(title: string, operationFeedback?: OperationFeedback): Promise<string> {
+  generatePrompt(
+    title: string,
+    evaluationConfig: EvaluationConfig = DEFAULT_EVALUATION_CONFIG,
+    operationFeedback?: OperationFeedback,
+  ): Promise<string> {
     return firstValueFrom(
-      this.http.post<{ prompt: string }>(`${API}/generate-prompt`, { title: title.trim() }),
+      this.http.post<{ prompt: string }>(`${API}/generate-prompt`, {
+        title: title.trim(),
+        evaluationConfig,
+      }),
     )
       .then((response) => {
         if (operationFeedback) {
@@ -140,6 +158,7 @@ export class EvaluationService {
         title: dto.title.trim(),
         prompt: dto.prompt.trim(),
         criteriaMode,
+        evaluationConfig: dto.evaluationConfig ?? DEFAULT_EVALUATION_CONFIG,
         ...(dto.criteria ? { criteria: dto.criteria } : {}),
       }),
     )
@@ -234,6 +253,7 @@ export class EvaluationService {
       id: crypto.randomUUID(),
       name: dto.name.trim(),
       maxPoints: dto.maxPoints,
+      weight: dto.weight,
       ...(description ? { description } : {}),
     };
 
@@ -428,7 +448,7 @@ export class EvaluationService {
         });
       };
 
-      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer, abort };
+      this.activeAutomation = { evaluationId, eventSource, runState, clearTimer, abort, runId: undefined };
       this.automatingEvaluationId.set(evaluationId);
       this.automationTokenUsage.set(this.getById(evaluationId)?.tokenUsage ?? null);
 
@@ -458,6 +478,12 @@ export class EvaluationService {
           }
 
           if ('runId' in event && typeof event.runId === 'string' && this.activeAutomation) {
+            const activeRunId = this.activeAutomation.runId;
+
+            if (activeRunId && event.runId !== activeRunId) {
+              return;
+            }
+
             this.activeAutomation.runId = event.runId;
           }
 
@@ -576,9 +602,26 @@ export class EvaluationService {
     });
   }
 
+  estimateRun(
+    evaluation: Evaluation,
+    phase: AutomationPhase = 'full',
+  ): Promise<EvaluationRunEstimate> {
+    return firstValueFrom(
+      this.http.post<EvaluationRunEstimate>(`${API}/estimate`, {
+        prompt: evaluation.prompt,
+        criteriaMode: evaluation.criteriaMode,
+        criteria: evaluation.criteria,
+        answers: evaluation.answers,
+        evaluationConfig: evaluation.evaluationConfig,
+        phase,
+      }),
+    );
+  }
+
   setWinner(
     evaluationId: string,
     answerId: string,
+    reason: string,
     operationFeedback?: OperationFeedback,
   ): Evaluation | undefined {
     const evaluation = this.getById(evaluationId);
@@ -586,6 +629,16 @@ export class EvaluationService {
     if (!evaluation?.answers.some((answer) => answer.id === answerId)) {
       return undefined;
     }
+
+    const priorWinnerId = evaluation.winnerAnswerId;
+    const override: ManualOverrideRecord = {
+      kind: 'winner',
+      answerId,
+      priorValue: priorWinnerId,
+      newValue: answerId,
+      reason,
+      at: new Date().toISOString(),
+    };
 
     return this.update(
       evaluationId,
@@ -595,6 +648,75 @@ export class EvaluationService {
           ...answer,
           isWinner: answer.id === answerId,
         })),
+        manualOverrides: [...(evaluation.manualOverrides ?? []), override],
+      },
+      operationFeedback,
+    );
+  }
+
+  updateScoreWithOverride(
+    evaluationId: string,
+    answerId: string,
+    criterion: RubricCriterion,
+    points: number,
+    reason: string,
+  ): Evaluation | undefined {
+    const evaluation = this.getById(evaluationId);
+    const answer = evaluation?.answers.find((item) => item.id === answerId);
+
+    if (!evaluation || !answer) {
+      return undefined;
+    }
+
+    const priorScore = answer.scores.find((score) => score.criterionId === criterion.id);
+    const override: ManualOverrideRecord = {
+      kind: 'score',
+      answerId,
+      criterionId: criterion.id,
+      priorValue: priorScore ? String(priorScore.points) : undefined,
+      newValue: String(points),
+      reason,
+      at: new Date().toISOString(),
+    };
+
+    return this.update(
+      evaluationId,
+      {
+        answers: evaluation.answers.map((item) =>
+          item.id === answerId
+            ? {
+                ...item,
+                scores: upsertCriterionScore(item.scores, criterion, points),
+              }
+            : item,
+        ),
+        manualOverrides: [...(evaluation.manualOverrides ?? []), override],
+      },
+      { success: 'Score updated.', error: 'Could not update score.' },
+    );
+  }
+
+  updateJudgeStrictness(
+    evaluationId: string,
+    strictness: TaskDifficulty,
+    operationFeedback?: OperationFeedback,
+  ): Evaluation | undefined {
+    const evaluation = this.getById(evaluationId);
+
+    if (!evaluation) {
+      return undefined;
+    }
+
+    return this.update(
+      evaluationId,
+      {
+        evaluationConfig: {
+          ...evaluation.evaluationConfig,
+          judgeProfile: {
+            ...evaluation.evaluationConfig.judgeProfile,
+            strictness,
+          },
+        },
       },
       operationFeedback,
     );
