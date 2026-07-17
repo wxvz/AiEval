@@ -13,6 +13,7 @@ import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from 
 import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
+import { TemplateService } from '../../services/template.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
 
 @Component({
@@ -29,6 +30,7 @@ import { useAutomationPageContext } from '../../utils/automation-page-context';
 })
 export class CreateEvaluationPage {
   private readonly evaluationService = inject(EvaluationService);
+  private readonly templateService = inject(TemplateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly learnHandoff = inject(LearnHandoffService);
@@ -48,6 +50,7 @@ export class CreateEvaluationPage {
     this.learnHandoff.isLearnContext(this.route.snapshot.queryParamMap.get('from')),
   );
   protected readonly learnHint = loadWalkthroughContent().handoffCopy?.createPageHint ?? null;
+  protected readonly templates = this.templateService.templates;
 
   protected readonly automating = this.automationPage.automating;
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
@@ -82,6 +85,8 @@ export class CreateEvaluationPage {
   });
 
   constructor() {
+    void this.templateService.loadFromApi();
+
     effect((onCleanup) => {
       const form = this.evaluationForm();
 
@@ -218,15 +223,19 @@ export class CreateEvaluationPage {
 
     const titlePromise = form.isTitleValid()
       ? Promise.resolve(form.getValue().title.trim())
-      : this.evaluationService.generateTitle();
+      : this.evaluationService.generateTitle(form.getValue().evaluationConfig);
 
     return titlePromise
       .then((title) => {
         form.setTitle(title);
-        return this.evaluationService.generatePrompt(title, {
-          success: 'Prompt generated.',
-          error: 'Could not generate prompt.',
-        });
+        return this.evaluationService.generatePrompt(
+          title,
+          form.getValue().evaluationConfig,
+          {
+            success: 'Prompt generated.',
+            error: 'Could not generate prompt.',
+          },
+        );
       })
       .then((prompt) => {
         form.setPrompt(prompt);
@@ -235,6 +244,32 @@ export class CreateEvaluationPage {
       .finally(() => {
         this.generatingPrompt.set(false);
       });
+  }
+
+  protected applyTemplate(templateId: string): void {
+    const template = this.templateService.templates().find((item) => item.id === templateId);
+    const form = this.evaluationForm();
+
+    if (!template || !form) {
+      return;
+    }
+
+    form.form.patchValue({
+      title: template.title,
+      prompt: template.prompt,
+      taskDifficulty: template.evaluationConfig.taskDifficulty,
+      goal: template.evaluationConfig.goal,
+      audience: template.evaluationConfig.audience,
+      blindJudging: template.evaluationConfig.blindJudging,
+      strictness: template.evaluationConfig.judgeProfile.strictness,
+      format: template.evaluationConfig.responseConstraints.format,
+      maxWords: template.evaluationConfig.responseConstraints.maxWords ?? null,
+      requireCitations: template.evaluationConfig.responseConstraints.requireCitations,
+      requireCode: template.evaluationConfig.responseConstraints.requireCode,
+      requireTests: template.evaluationConfig.responseConstraints.requireTests,
+      expectedAnswer: template.evaluationConfig.expectedAnswer ?? '',
+      judgeModel: template.evaluationConfig.judgeProfile.model ?? '',
+    });
   }
 
   protected getEvaluation(id: string): Evaluation | undefined {
@@ -329,9 +364,26 @@ export class CreateEvaluationPage {
   }
 
   private stubCreateValue(): EvaluationFormValue {
+    const evaluationConfig = this.evaluationForm()?.getValue().evaluationConfig;
+
     return {
       title: AUTOMATION_METADATA_STUB_TITLE,
       prompt: AUTOMATION_METADATA_STUB_PROMPT,
+      evaluationConfig:
+        evaluationConfig ??
+        {
+          taskDifficulty: 'balanced',
+          goal: 'general',
+          audience: 'general',
+          responseConstraints: {
+            format: 'freeform',
+            requireCitations: false,
+            requireCode: false,
+            requireTests: false,
+          },
+          blindJudging: true,
+          judgeProfile: { strictness: 'balanced' },
+        },
     };
   }
 
@@ -347,7 +399,7 @@ export class CreateEvaluationPage {
     const trimmedPrompt = prompt.trim();
 
     if (trimmedTitle.length > 0 && trimmedPrompt.length > 0) {
-      return { title: trimmedTitle, prompt: trimmedPrompt };
+      return { title: trimmedTitle, prompt: trimmedPrompt, evaluationConfig: form.getValue().evaluationConfig };
     }
 
     return this.stubCreateValue();

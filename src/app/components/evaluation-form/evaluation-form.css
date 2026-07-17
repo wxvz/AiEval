@@ -1,0 +1,16 @@
+.evaluation-form--page-shell {
+  display: block;
+}
+
+.evaluation-form--page-shell .evaluation-form__aside {
+  position: sticky;
+  top: 5rem;
+}
+
+.evaluation-form--page-shell .evaluation-form__config {
+  background: var(--aieval-surface);
+  border-color: var(--aieval-border) !important;
+  border-radius: var(--aieval-radius);
+  box-shadow: var(--aieval-shadow);
+  margin-bottom: 0;
+}

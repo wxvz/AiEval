@@ -19,6 +19,9 @@
         <span class="btn btn-outline-primary btn-sm disabled" aria-disabled="true">Compare</span>
         <span class="btn btn-outline-secondary btn-sm disabled" aria-disabled="true">Improved</span>
       } @else {
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="saveAsTemplate()">
+          Save as template
+        </button>
         <a class="btn btn-outline-primary btn-sm" [routerLink]="['/evaluations', evaluationId, 'compare']">Compare</a>
         <a class="btn btn-outline-secondary btn-sm" [routerLink]="['/evaluations', evaluationId, 'improved']">
           Improved
