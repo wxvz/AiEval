@@ -1,0 +1,1326 @@
+[
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "general",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Propose a Centennial Celebration Plan for a Historical Museum: Should a Small Town Honor Its Founding Industrialist, Despite Controversy Over Labor Practices?",
+    "prompt": "The town of Oakdale is planning to celebrate the centennial of its founding, which was largely driven by the industrialist Henry Smith. Smith's factory brought jobs and growth to the area, but his labor practices have been criticized by some as unfair and exploitative. The local historical museum is considering honoring Smith as part of the celebration, but some residents are opposed to the idea. The museum's director, Sarah Johnson, wants to create a plan that will appeal to the town's 10,000 residents, 20% of whom are descendants of Smith's former employees. If the museum decides to honor Smith, it will need to allocate a significant portion of its $100,000 budget for the celebration, which could be around $20,000 to $30,000. The museum also wants to ensure that the celebration is respectful and inclusive of all residents, regardless of their opinions on Smith's legacy. How should the museum plan the centennial celebration, and what events or exhibits could it include to balance the competing interests and perspectives of the community.",
+    "evaluationId": "6a53b643e28f1ba75c5e8931"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "general",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Reviewing Coastal Erosion Defenses: Prioritizing Dunes Restoration or Seawall Construction to Safeguard a Small Beach Town's Infrastructure.",
+    "prompt": "The small beach town of Coveville has a population of around 5,000 residents and relies heavily on tourism to support its local economy. Recently, the town has experienced significant coastal erosion due to storms and rising sea levels, putting its infrastructure at risk. A local committee has proposed two solutions to address this issue: restoring the town's natural dunes or constructing a seawall along the coastline. The committee believes that the erosion is primarily caused by the lack of seaweed along the beach, which they claim used to hold the sand in place. They have a budget of $1 million to spend on the project and are considering which option would be more effective in safeguarding the town's infrastructure. The dunes restoration project is estimated to cost around $700,000, while the seawall construction project is estimated to cost around $900,000. Which option would you recommend and why, considering the town's budget and the need to protect its infrastructure.",
+    "evaluationId": "6a53b645d4b783a01e73cb17"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "general",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "\"Clarify for a Technical Panel: How Do Coastal Erosion Control Measures Impact Local Biodiversity in Mangrove Ecosystems\"",
+    "prompt": "A technical panel is reviewing coastal erosion control measures for a mangrove ecosystem with high conservation value. The panel must balance the need to protect human settlements and infrastructure with the need to preserve the ecosystem's biodiversity. Mangroves provide crucial habitat for numerous species, including several endangered birds and fish, and also help to maintain water quality and prevent erosion. The panel is considering two control measures: the construction of a seawall and the restoration of natural dunes. While the seawall would provide immediate protection for human settlements, it may also disrupt natural sediment transport and alter tidal patterns, potentially harming the mangrove ecosystem. In contrast, restoring natural dunes could help to maintain the ecosystem's natural processes, but may not provide sufficient protection for human settlements in the short term. Assuming a limited budget, recommend a coastal erosion control measure that balances human and environmental needs, and explain the trade-offs and assumptions underlying your recommendation. Be sure to consider the potential impacts on local biodiversity and the ecosystem's overall health.",
+    "evaluationId": "6a53b645d4b783a01e73cb18"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "general",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Evaluating a Proposed Warehouse Expansion: Identifying Flaws in a Plan to Increase Shipping Capacity by 30%",
+    "prompt": "Our company is considering a proposal to expand our main warehouse to increase shipping capacity by 30%. The proposal assumes that our current staff can handle the increased workload without any additional hiring, as they are only working at 70% capacity. The expansion plan includes adding 20,000 square feet of storage space and installing new conveyor belts to streamline the shipping process. The estimated cost of the expansion is $1.5 million, and we expect to break even within two years. However, our shipping volume has been growing steadily over the past year, and we anticipate that this trend will continue. The proposal also mentions that our competitors have similar warehouse capacities, so we should be able to achieve the same efficiency. As the executive in charge of operations, I need to evaluate this proposal and determine if it is feasible and will meet our business needs. What are the potential flaws in this proposal that I should consider before making a decision.",
+    "evaluationId": "6a53b645d4b783a01e73cb19"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "general",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Migrating Monolithic E-Commerce Platform to Microservices: Develop a 6-Month Rollout Plan with Limited Budget and Incomplete Performance Metrics.",
+    "prompt": "A mid-sized e-commerce company is planning to migrate its monolithic platform to a microservices architecture due to scalability issues and high maintenance costs. The company has a limited budget of $200,000 for this migration and wants to complete it within six months. Currently, the platform handles around 10,000 orders per month, with an average order value of $50. However, the company only has incomplete performance metrics, including average response time and user satisfaction ratings, but lacks detailed data on system resource utilization and traffic patterns. The company's development team consists of five members with varying levels of experience in microservices architecture. Considering these constraints, develop a rollout plan that outlines the key milestones, resource allocation, and potential risks, and provide a justification for the recommended approach, including any assumptions made about the existing platform and the expected benefits of the migration. The plan should prioritize the most critical services to migrate first and ensure minimal disruption to the existing business operations.",
+    "evaluationId": "6a53b645d4b783a01e73cb1a"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "general",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "\"Breaking Down Supply Chain Risk: Explaining a 30% Inventory Buffer to a New Manager in Simple Terms Without Sacrificing Key Quantitative Insights\"",
+    "prompt": "As the logistics lead for a small manufacturing firm, you've been tasked with explaining the concept of a 30% inventory buffer to the new operations manager, who has limited experience in supply chain management. The company is considering implementing this buffer to mitigate potential stockouts and overstocking issues, but the manager is concerned about the potential costs and impact on storage space. You need to explain the reasoning behind the 30% buffer in simple terms, including how it relates to lead times, demand variability, and service levels, without revealing sensitive information about the company's suppliers or customer base. The manager has asked for a straightforward example to illustrate the benefits and trade-offs of implementing this buffer, and you should provide a concise calculation to support your explanation. Be sure to address any potential concerns the manager may have about the feasibility of implementing this buffer in the company's current warehouse setup.",
+    "evaluationId": "6a53b7b0e33b464b4352d4f6"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "general",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Evaluating Competing Grant Proposals for Cultural Heritage Sites: Prioritize Preservation of a Historic Theater or a Museum's Community Outreach Program with a $500,000 Public Funding Allocation.",
+    "prompt": "The city council has allocated $500,000 in public funding for cultural heritage preservation, and two grant proposals are under consideration. The first proposal seeks to restore the historic Silver Screen Theater, a beloved landmark that has been closed for five years due to structural damage and outdated facilities. The second proposal aims to expand the Community Connections program at the city museum, which provides free art classes and workshops to underprivileged youth. However, the museum's proposal includes a plan to collect and store personal data from program participants, including contact information and socioeconomic status, in order to track the program's effectiveness and secure future funding. As the council's cultural heritage advisor, you must recommend how to allocate the $500,000, considering both the cultural significance of the theater and the potential benefits of the museum's program, while also ensuring that the chosen project respects the privacy and safety of all individuals involved. The theater's restoration is estimated to require at least $750,000 to be completed, but a $500,000 investment could cover critical repairs and temporarily reopen the venue. The museum's program expansion would require the full $500,000 to be implemented as proposed. How would you allocate the funding, and what conditions or modifications would you suggest to ensure a responsible and effective use of the public funds.",
+    "evaluationId": "6a53b7b0e33b464b4352d4f7"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "general",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Evaluating Intervention Efficacy: Prioritizing Mitigations for a New Employee Training Program with Limited Pre-Post Data and Variable Participant Engagement.",
+    "prompt": "Our company is introducing a new employee training program to enhance job-specific skills and overall performance, with the goal of increasing employee retention and productivity. The program is set to launch in six weeks, and we have a limited budget of $100,000 to allocate for its development and implementation. However, we only have pre-post data from a small pilot group of 20 participants, and their engagement levels varied significantly, making it challenging to assess the program's efficacy. We need to prioritize mitigations to ensure the program's success, considering the limited data and variable participant engagement. Given these constraints, what are the potential flaws in our current approach, and what is a feasible plan to address these issues and maximize the program's impact within the given time and budget limits. Please provide a concise example of how we can allocate our resources effectively to achieve our goals.",
+    "evaluationId": "6a53b7b0e33b464b4352d4f8"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "general",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Explaining the Potential Impact of a New Bus Rapid Transit Line on Local Housing Prices to Concerned Residents with Limited Data",
+    "prompt": "The city is considering adding a new Bus Rapid Transit line that will pass through several residential neighborhoods, and many residents are worried about how this might affect their property values. As a local expert, you have been asked to provide some guidance on this issue, but there is limited data available on the specific impact of Bus Rapid Transit lines on local housing prices in your city. You do know that similar projects in other cities have sometimes led to increased property values due to improved transportation options, but they have also occasionally displaced low-income families and small businesses as wealthier residents and larger companies move into the area. The new line will likely reduce commute times and increase the frequency of public transportation, but it may also lead to more traffic congestion during construction and potentially higher taxes to support the project. The city is also considering offering subsidies to help low-income families stay in their homes, but these subsidies may not be enough to offset the potential increases in housing costs. How might the new Bus Rapid Transit line affect local housing prices, and what are some potential risks or unintended consequences that residents should be aware of. Consider the potential benefits of the project, such as increased property values and improved transportation options, as well as the potential drawbacks, such as displacement of low-income families and increased traffic congestion. What information would you need to better understand the potential impact of the project, and how might residents and city officials work together to mitigate any negative effects.",
+    "evaluationId": "6a53b7b0e33b464b4352d4f9"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "general",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Optimizing Internship Programs: Weighing Immediate Recruitment Gains Against Long-Term Employee Retention and Career Development Outcomes",
+    "prompt": "A small startup is considering launching an internship program to attract new talent and potentially fill future full-time positions. The company has 20 available internship slots and expects that about 10% of interns will be offered a full-time job after completing the program, with an average salary of $60,000 per year. However, the company also wants to ensure that the internship program provides valuable career development opportunities for interns, regardless of whether they are eventually hired. If the company estimates that the cost of running the internship program is $10,000 per intern, and it takes an average of 6 months for a new hire to become fully productive, how can the company optimize its internship program to balance the immediate recruitment gains against the long-term employee retention and career development outcomes, considering that some interns may not be eligible for full-time employment due to visa restrictions or other factors. The company's management team has varying opinions on the importance of career development versus recruitment, so a clear and accessible explanation of the optimization strategy is necessary. Assuming the company wants to maintain a minimum of 80% internship program satisfaction rate among participants, what key factors should be considered when designing the program to achieve this balance.",
+    "evaluationId": "6a53b7b0e33b464b4352d4fa"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "general",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Evaluating Classifier Degradation: Recommend a Data Refining Strategy for a Deployed Credit Risk Model Experiencing 15% Accuracy Decline Over 6 Months.",
+    "prompt": "A leading financial institution has deployed a credit risk model that has been in operation for over a year, with an initial accuracy of 92% in predicting loan defaults. However, over the past 6 months, the model's accuracy has declined by 15%, prompting concerns about its reliability and potential impact on the institution's loan portfolio. The model's developers attribute the decline to changes in borrower behavior caused by a recent economic downturn, which they believe has introduced new patterns in the data that the model was not trained to recognize. The institution's risk management team is considering refining the model's training data to improve its accuracy, but they are unsure about the best approach to take. Assuming that the economic downturn is the sole cause of the decline, recommend a data refining strategy that the institution could use to restore the model's accuracy, including any necessary changes to data collection, feature engineering, or model retraining. The strategy should be feasible to implement within the next 3 months and should prioritize minimizing the risk of overfitting to the new data. The institution has a large dataset of historical loan applications and default outcomes that can be used for retraining, but the data is currently stored in a legacy system that would require significant resources to update.",
+    "evaluationId": "6a53b7b0e33b464b4352d4fb"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "general",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Evaluating Scalability Trade-offs: Compare the Five-Year Operational Costs of Deploying a Cloud-Native Microservices Architecture versus a Monolithic Design for a High-Availability E-Commerce Platform Handling 10 Million Monthly Transactions.",
+    "prompt": "As the CEO of a rapidly growing e-commerce company, you are considering two different architectural approaches for your high-availability platform, which currently handles 5 million monthly transactions and is expected to double in the next two years, reaching 10 million monthly transactions. The platform must ensure 99.99% uptime and support a peak load of 100,000 concurrent users. You need to evaluate the five-year operational costs of deploying a cloud-native microservices architecture versus a monolithic design. Assume that the cloud-native microservices architecture will require 20% more personnel for maintenance and updates, but will reduce the average recovery time from failures by 30%. The monolithic design, on the other hand, will require a 10% higher upfront investment in hardware, but will have a 5% lower energy consumption rate. Consider the cost of hardware, personnel, energy consumption, and potential losses due to downtime when making your comparison. How would you estimate and compare the total five-year operational costs of these two approaches, and what factors would you prioritize when making your decision.",
+    "evaluationId": "6a53b7b0e33b464b4352d4fc"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "coding",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Explaining Replication Factor Trade-offs in Distributed Databases to a Junior Developer: Write Simple Python Code to Calculate Data Overhead for a Given Replication Factor, Ensuring a Factor of 3 Does Not Exceed 300% Storage Overhead.",
+    "prompt": "You are a senior developer tasked with explaining replication factors in distributed databases to a junior developer. The junior developer needs to understand how different replication factors impact storage overhead. Write a simple Python function to calculate the data overhead for a given replication factor, ensuring that a replication factor of 3 does not exceed 300% storage overhead. The function should take the original data size and the replication factor as input and return the total storage size required. For example, if the original data size is 100 GB and the replication factor is 3, the function should return the total storage size, considering the overhead. Provide a clear explanation of the calculation and include a check to handle edge cases, such as a replication factor of 0 or a negative data size. Ensure the code is well-structured and easy to understand for a junior developer. The junior developer should be able to use this function to calculate the storage overhead for different replication factors and data sizes.",
+    "evaluationId": "6a53b7b3e33b464b4352d4fd"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "coding",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "title": "Estimate the Minimum Viable Sample Size for a Coding Ethics Survey to Detect a 20% Increase in Self-Reported Anonymity Preference Among Junior Developers, Assuming a 5% Margin of Error and 95% Confidence Level, and Provide a Python Code Snippet to Calculate This Sample Size.",
+    "prompt": "You are a junior data analyst tasked with planning a coding ethics survey to understand the preferences of junior developers regarding anonymity in their coding communities. The survey aims to detect a 20% increase in self-reported anonymity preference among junior developers. To ensure reliable results, you need to determine the minimum viable sample size for the survey, assuming a 5% margin of error and a 95% confidence level. Considering the time and budget constraints, it is essential to balance the sample size with the accuracy of the results. Provide a Python code snippet to calculate the minimum sample size required for the survey, and explain the reasoning behind your calculation, including any assumptions made. Ensure the code is well-structured and includes comments to facilitate understanding. The survey will be conducted online, and the target population consists of junior developers from various coding backgrounds. The estimated population size is approximately 10,000 junior developers.",
+    "evaluationId": "6a53b7b8e33b464b4352d4fe"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "coding",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "coding",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "coding",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "coding",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "coding",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "coding",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "coding",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "coding",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "coding",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "coding",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": true,
+        "requireTests": true
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "OpenRouter request failed: 402 — Provider returned error"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "reasoning",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "reasoning",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "reasoning",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "reasoning",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "reasoning",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "reasoning",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "reasoning",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "reasoning",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "reasoning",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "reasoning",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "reasoning",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "reasoning",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "grounded",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "grounded",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "grounded",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "grounded",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "grounded",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "fetch failed"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "grounded",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "grounded",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "grounded",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "grounded",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "grounded",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "grounded",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "grounded",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": true,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "safety",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "safety",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "safety",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "safety",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "safety",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "safety",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "safety",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "safety",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "safety",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "safety",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "safety",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "safety",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "creative",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "creative",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "creative",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "easy",
+      "goal": "creative",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "creative",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "creative",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "creative",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "balanced",
+      "goal": "creative",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "creative",
+      "audience": "general",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "creative",
+      "audience": "beginner",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "creative",
+      "audience": "expert",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  },
+  {
+    "evaluationConfig": {
+      "taskDifficulty": "hard",
+      "goal": "creative",
+      "audience": "executive",
+      "responseConstraints": {
+        "format": "freeform",
+        "requireCitations": false,
+        "requireCode": false,
+        "requireTests": false
+      },
+      "blindJudging": true,
+      "judgeProfile": {
+        "strictness": "balanced"
+      }
+    },
+    "error": "not generated yet"
+  }
+]
