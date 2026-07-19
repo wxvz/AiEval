@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCheckAnswerCorrect, normalizeCheckAnswer } from './check-answer';
+import {
+  gradeWordBankAssembly,
+  isCheckAnswerCorrect,
+  normalizeCheckAnswer,
+} from './check-answer';
 import type { CheckQuestion } from './learn-content';
 
 const question: CheckQuestion = {
@@ -33,5 +37,29 @@ describe('isCheckAnswerCorrect', () => {
 
   it('returns false for wrong answer', () => {
     expect(isCheckAnswerCorrect('unsupervised clustering', question)).toBe(false);
+  });
+});
+
+describe('gradeWordBankAssembly', () => {
+  it('marks correct, wrong-place, and absent words', () => {
+    expect(
+      gradeWordBankAssembly(
+        ['score', 'and', 'generation', 'separately', 'retrieval', 'only'],
+        'Score retrieval and generation separately',
+      ),
+    ).toEqual(['correct', 'wrong-place', 'wrong-place', 'wrong-place', 'wrong-place', 'absent']);
+  });
+
+  it('marks every word correct when the assembly matches', () => {
+    expect(
+      gradeWordBankAssembly(
+        ['score', 'retrieval', 'and', 'generation', 'separately'],
+        'Score retrieval and generation separately',
+      ),
+    ).toEqual(['correct', 'correct', 'correct', 'correct', 'correct']);
+  });
+
+  it('consumes duplicate target tokens Wordle-style', () => {
+    expect(gradeWordBankAssembly(['a', 'a'], 'a b')).toEqual(['correct', 'absent']);
   });
 });
