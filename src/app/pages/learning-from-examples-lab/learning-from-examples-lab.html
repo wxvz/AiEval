@@ -1,0 +1,104 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Learning from examples lab</h1>
+    <p class="lead mb-3">
+      Every supervised example pairs an
+      <app-learn-term-hint term="input" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      with a
+      <app-learn-term-hint term="target" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+      Match each input to the target a
+      <app-learn-term-hint term="model" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      should learn.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: four hand-picked pairs. Real datasets hold thousands of rows — the pairing idea is identical.
+    </div>
+    <p class="text-muted small mb-3">Tap an input, then tap the target that belongs to it. Tap a matched target to undo.</p>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <h2 class="h6">Inputs</h2>
+        @for (example of examples; track example.id) {
+          <button
+            type="button"
+            class="lfe-lab__item"
+            [class.lfe-lab__item--selected]="selectedInputId() === example.id"
+            (click)="selectInput(example.id)"
+          >
+            <span>{{ example.inputLabel }}</span>
+            @if (matchedTargetFor(example.id); as matched) {
+              <span
+                class="small d-block mt-1"
+                [class.text-success]="checked() && isMatchCorrect(example.id)"
+                [class.text-danger]="checked() && !isMatchCorrect(example.id)"
+                [class.text-muted]="!checked()"
+                (click)="$event.stopPropagation(); clearMatch(example.id)"
+              >
+                → {{ matched }}
+                @if (checked()) {
+                  {{ isMatchCorrect(example.id) ? '✓' : '✗' }}
+                }
+              </span>
+            }
+          </button>
+        }
+      </div>
+      <div class="col-md-6">
+        <h2 class="h6">Targets</h2>
+        @for (target of targets; track target.id) {
+          <button
+            type="button"
+            class="lfe-lab__item"
+            [disabled]="isTargetUsed(target.id)"
+            (click)="assignTarget(target.id)"
+          >
+            {{ target.targetLabel }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-primary" [disabled]="!allMatched()" (click)="check()">
+        Check matches
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="reset()">Reset</button>
+    </div>
+
+    @if (checked()) {
+      <div
+        class="alert mb-4"
+        [class.alert-success]="correctCount() === examples.length"
+        [class.alert-warning]="correctCount() !== examples.length"
+        role="status"
+      >
+        {{ correctCount() }} of {{ examples.length }} pairs correct.
+        @if (correctCount() !== examples.length) {
+          Tap a wrong match to clear it and try again.
+        }
+      </div>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">Why do the tasks look so different?</summary>
+      <p class="mb-0 text-muted">
+        Routing, vision, sentiment, and XOR all share one shape: show an input, teach a target. That shared shape is what
+        makes supervised learning general.
+      </p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

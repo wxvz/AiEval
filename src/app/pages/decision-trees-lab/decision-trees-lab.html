@@ -1,0 +1,182 @@
+<app-page-shell>
+  <main shellMain>
+    <h1 class="h3 mb-3">Decision trees lab</h1>
+    <p class="lead mb-3">
+      Build a one-question
+      <app-learn-term-hint term="decisionTree" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      for ticket routing: choose a root
+      <app-learn-term-hint term="split" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      then label each
+      <app-learn-term-hint term="leafNode" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+    </p>
+    @if (prereqMeta) {
+      <p class="text-muted small mb-3">
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — practice a readable path on four
+        labeled tickets.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: one split, two leaves, four rows. Real trees grow deeper and need held-out checks for
+      overfitting.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: pick the
+      <app-learn-term-hint term="feature" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      that puts every billing ticket on one side and every access ticket on the other.
+    </p>
+
+    @if (solved()) {
+      <div class="alert alert-success mb-4" role="status">
+        Solved — “Mentions refund?” separates the labels, and both leaves match the table.
+      </div>
+    }
+
+    <h2 class="h6 mb-2">Training rows</h2>
+    <div class="table-responsive mb-4">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th scope="col">Ticket</th>
+            <th scope="col">Mentions refund?</th>
+            <th scope="col">Account locked?</th>
+            <th scope="col">
+              <app-learn-term-hint
+                term="target"
+                hintId="target-table"
+                [activeId]="openTermId()"
+                (activeIdChange)="setOpenTermId($event)"
+              />
+            </th>
+            <th scope="col">Your prediction</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of evaluations(); track entry.row.id) {
+            <tr>
+              <td>{{ entry.row.id }}</td>
+              <td>{{ entry.row.mentionsRefund ? 'yes' : 'no' }}</td>
+              <td>{{ entry.row.accountLocked ? 'yes' : 'no' }}</td>
+              <td>{{ entry.row.label }}</td>
+              <td>
+                @if (entry.prediction) {
+                  <span [class.text-success]="entry.correct" [class.text-danger]="!entry.correct">
+                    {{ entry.prediction }} {{ entry.correct ? '✓' : '✗' }}
+                  </span>
+                } @else {
+                  <span class="text-muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <p class="form-label mb-2">1. Root split feature</p>
+        <div class="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Choose root feature">
+          @for (option of featureOptions; track option.id) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="feature() === option.id"
+              [class.btn-outline-secondary]="feature() !== option.id"
+              (click)="selectFeature(option.id)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+
+        @if (branches(); as parts) {
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <p class="form-label mb-1">2. Leaf when answer is yes ({{ parts.yes.length }} rows)</p>
+              <div class="d-flex flex-wrap gap-2" role="group" aria-label="Yes branch leaf label">
+                @for (label of labelOptions; track label) {
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-primary]="yesLabel() === label"
+                    [class.btn-outline-secondary]="yesLabel() !== label"
+                    (click)="selectYesLabel(label)"
+                  >
+                    {{ label }}
+                  </button>
+                }
+              </div>
+              <p class="small text-muted mt-2 mb-0">
+                Rows:
+                @for (row of parts.yes; track row.id; let last = $last) {
+                  {{ row.id }}@if (!last) {
+                    ,
+                  }
+                } @empty {
+                  none
+                }
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p class="form-label mb-1">3. Leaf when answer is no ({{ parts.no.length }} rows)</p>
+              <div class="d-flex flex-wrap gap-2" role="group" aria-label="No branch leaf label">
+                @for (label of labelOptions; track label) {
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [class.btn-primary]="noLabel() === label"
+                    [class.btn-outline-secondary]="noLabel() !== label"
+                    (click)="selectNoLabel(label)"
+                  >
+                    {{ label }}
+                  </button>
+                }
+              </div>
+              <p class="small text-muted mt-2 mb-0">
+                Rows:
+                @for (row of parts.no; track row.id; let last = $last) {
+                  {{ row.id }}@if (!last) {
+                    ,
+                  }
+                } @empty {
+                  none
+                }
+              </p>
+            </div>
+          </div>
+        }
+
+        <p class="small mb-3">
+          Accuracy on these rows:
+          <strong>{{ (treeAccuracy() * 100) | number: '1.0-0' }}%</strong>
+        </p>
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reset()">Reset tree</button>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">Why is “Account locked?” a weaker first split here?</summary>
+        <p class="mb-0 text-muted">
+          Locked tickets include both billing and access labels, so a single yes/no leaf cannot separate the table.
+          Mentions refund groups every billing row on one side.
+        </p>
+      </details>
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Would a perfect training score be enough to ship?</summary>
+        <p class="mb-0 text-muted">
+          No. Four rows can be memorized. Real trees need validation and test checks so readable rules still
+          generalize.
+        </p>
+      </details>
+    </section>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="prereqMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

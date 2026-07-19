@@ -1,0 +1,184 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+    <h1 class="h3 mb-3">Activation functions</h1>
+    <p class="lead mb-3">
+      Compare how
+      <app-nn-term-hint term="linear" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      <app-nn-term-hint term="sigmoid" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      <app-nn-term-hint term="relu" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      and
+      <app-nn-term-hint term="tanh" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      reshape the same neuron scores after
+      <app-nn-term-hint term="weights" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      and
+      <app-nn-term-hint term="bias" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for
+        <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
+        — switch activations until the curve matches the challenge below.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: one score in, one value out. Real networks stack many units; the
+      <a routerLink="/learn/labs/neural-network">Neural network lab</a>
+      lets you pick a hidden
+      <app-nn-term-hint
+        term="activation"
+        hintId="activation-honesty"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />
+      and train.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: find the activation that outputs <strong>0 for every negative score</strong> and
+      <strong>equals the score when positive</strong>.
+    </p>
+
+    @if (solved()) {
+      <div class="alert alert-success mb-4" role="status">
+        Solved — that shape is ReLU. Negatives stay silent; positives keep their magnitude.
+      </div>
+    }
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <p class="form-label mb-2">Activation</p>
+        <div class="d-flex flex-wrap gap-2" role="group" aria-label="Choose activation">
+          @for (name of activations; track name) {
+            <button
+              type="button"
+              class="btn btn-sm"
+              [class.btn-primary]="selected() === name"
+              [class.btn-outline-secondary]="selected() !== name"
+              (click)="selectActivation(name)"
+            >
+              {{ activationLabel(name) }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">Output vs score</h2>
+        <svg
+          class="learn-lab-plot"
+          viewBox="0 0 200 120"
+          role="img"
+          [attr.aria-label]="'Curve for ' + activationLabel(selected())"
+        >
+          <rect x="20" y="10" width="160" height="90" fill="none" stroke="var(--bs-border-color)" />
+          <line
+            x1="20"
+            y1="55"
+            x2="180"
+            y2="55"
+            stroke="var(--bs-secondary-color)"
+            stroke-dasharray="3 2"
+            stroke-width="1"
+          />
+          <line
+            x1="100"
+            y1="10"
+            x2="100"
+            y2="100"
+            stroke="var(--bs-border-color)"
+            stroke-dasharray="2 2"
+            stroke-width="1"
+          />
+          <polyline
+            [attr.points]="curvePolyline()"
+            fill="none"
+            stroke="var(--bs-primary)"
+            stroke-width="1.5"
+          />
+          <text x="100" y="115" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">
+            z
+          </text>
+          <text
+            x="12"
+            y="55"
+            text-anchor="middle"
+            font-size="9"
+            fill="var(--bs-secondary-color)"
+            transform="rotate(-90 12 55)"
+          >
+            σ(z)
+          </text>
+        </svg>
+        <p class="small text-muted mb-0">
+          Dashed lines mark z = 0 and output = 0. At z = 0 this activation outputs
+          {{ probeOutput() | number: '1.2-2' }}.
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Probes (current activation)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Score (z)</th>
+                <th scope="col">
+                  <app-nn-term-hint
+                    term="output"
+                    hintId="output-table"
+                    [activeId]="openTermId()"
+                    (activeIdChange)="setOpenTermId($event)"
+                  />
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.z) {
+                <tr>
+                  <td>{{ row.z }}</td>
+                  <td>{{ row.output | number: '1.3-3' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">Why not use linear everywhere?</summary>
+        <p class="mb-0 text-muted">
+          Linear keeps the score unchanged. Stacking linear layers is still one linear map, so the network cannot
+          learn curved boundaries. Non-linear activations break that collapse.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">When is sigmoid a good default?</summary>
+        <p class="mb-0 text-muted">
+          At a binary-style output, when you want values in (0, 1). In hidden layers it can flatten large scores and
+          slow learning — ReLU is often preferred there.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What does ReLU “silence” mean?</summary>
+        <p class="mb-0 text-muted">
+          For negative z, ReLU outputs exactly 0, so that unit contributes nothing on that example. Positive scores
+          pass through unchanged.
+        </p>
+      </details>
+    </section>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

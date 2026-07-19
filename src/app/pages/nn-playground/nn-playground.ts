@@ -199,7 +199,8 @@ export class NnPlaygroundPage {
     if (this.isCustom()) {
       const rows = this.customSamples();
       const xs = rows.map((row) => row.x1);
-      const ys = rows.map((row) => row.y);
+      // Vertical axis is feature x2 (same as trainingPlotPoints), not the target y.
+      const ys = rows.map((row) => row.x2);
       const minX = Math.min(...xs);
       const maxX = Math.max(...xs);
       const minY = Math.min(...ys);
@@ -353,6 +354,13 @@ export class NnPlaygroundPage {
       );
     }
     this.datasetName.set(name);
+    if (name === 'three-class') {
+      this.outputActivation.set('softmax');
+    } else if (name === 'xor' || name === 'and') {
+      if (this.outputActivation() === 'softmax') {
+        this.outputActivation.set('sigmoid');
+      }
+    }
     this.onArchitectureChange();
   }
 
