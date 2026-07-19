@@ -15,7 +15,7 @@ import type {
 } from '../types/evaluation.js';
 
 export const GENERATE_SYSTEM =
-  'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
+  'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Do not wrap the reply in chain-of-thought or thinking markup tags; do not emit constraint checklists, self-correction, or verification notes. Output only the final answer. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
 function configurationInstructions(config: EvaluationConfig): string {
   const constraints = config.responseConstraints;

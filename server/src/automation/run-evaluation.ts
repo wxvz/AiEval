@@ -30,7 +30,10 @@ import {
   JUDGE_RANK_SYSTEM,
   parseImprovedAnswer,
 } from '../llm/prompts.js';
-import { stripModelArtifacts } from '../llm/sanitize-model-output.js';
+import {
+  isUnusableAnswerModel,
+  stripModelArtifacts,
+} from '../llm/sanitize-model-output.js';
 import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
 import {
   clearAutomationRun,
@@ -189,6 +192,47 @@ function tokenUsageField(accumulator: TokenAccumulator): {
   return { tokenUsage: accumulator.totals() };
 }
 
+function classifyAnswerRejectReason(error: unknown): string {
+  if (isRateLimitExhausted(error)) {
+    return 'rate_limit';
+  }
+
+  if (!(error instanceof Error)) {
+    return 'failed';
+  }
+
+  const message = error.message.toLowerCase();
+
+  if (message.includes('unusable model')) {
+    return 'unusable_model';
+  }
+
+  if (message.includes('sanitized empty') || message.includes('has empty content')) {
+    return 'empty_content';
+  }
+
+  return 'failed';
+}
+
+function logAnswerRejected(
+  context: {
+    runId?: string;
+    evaluationId?: string;
+    provider?: string;
+    model: string;
+    resolvedModel?: string;
+    step: AutomationStep;
+    slotIndex?: number;
+  },
+  error: unknown,
+): void {
+  logEvent('warn', LogEvents.automationAnswerRejected, {
+    ...context,
+    reason: classifyAnswerRejectReason(error),
+    detail: error instanceof Error ? error.message : String(error),
+  });
+}
+
 function modelFallbackHandlers(
   onProgress: ProgressCallback,
   step: AutomationStep,
@@ -209,6 +253,13 @@ function modelFallbackHandlers(
           pending: pause.pending,
         });
       }
+
+      logEvent('warn', LogEvents.automationModelFallback, {
+        step,
+        fromModel,
+        toModel,
+        ...(index !== undefined ? { slotIndex: index } : {}),
+      });
 
       emit(onProgress, {
         type: 'model_fallback',
@@ -304,13 +355,28 @@ async function generateOneAnswerSlot(
     model: candidate.model,
     step: 'generating',
   });
-  const label = modelIdToLabel(completion.resolvedModel ?? candidate.model);
+  const effectiveModel = completion.resolvedModel ?? candidate.model;
+  const label = modelIdToLabel(effectiveModel);
+
+  // OpenRouter `openrouter/free` can route to guardrail classifiers (e.g. Nemotron
+  // Content Safety) that only emit "User Safety: safe" — reject so fallback runs.
+  if (isUnusableAnswerModel(effectiveModel)) {
+    throw new Error(
+      `Answer ${label} has empty content (unusable model: ${effectiveModel}).`,
+    );
+  }
+
+  const content = stripModelArtifacts(completion.text);
+
+  if (!content) {
+    throw new Error(`Answer ${label} has empty content (sanitized empty).`);
+  }
 
   const answer: Answer = {
     id: crypto.randomUUID(),
     evaluationId,
     label,
-    content: stripModelArtifacts(completion.text),
+    content,
     scores: initialScoresForCriteria(criteria),
   };
 
@@ -388,10 +454,25 @@ async function generateAnswers(
         slots[slotIndex] = answer;
         attempted.add(`${setup.providerName}:${modelRef.model}`);
       } catch (error) {
-        if (!isRateLimitExhausted(error)) {
+        const emptyAfterSanitize =
+          error instanceof Error && /has empty content/i.test(error.message);
+
+        // Leave the slot null so sequential fallback can try another model.
+        if (!isRateLimitExhausted(error) && !emptyAfterSanitize) {
           throw error;
         }
 
+        logAnswerRejected(
+          {
+            runId,
+            evaluationId,
+            provider: setup.providerName,
+            model: modelRef.model,
+            step: 'generating',
+            slotIndex,
+          },
+          error,
+        );
         attempted.add(`${setup.providerName}:${modelRef.model}`);
       }
     });

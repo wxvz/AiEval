@@ -7,6 +7,10 @@ export const LogEvents = {
   automationProviderFallback: 'automation.provider_fallback',
   automationGenerating: 'automation.generating',
   automationAnswerGenerated: 'automation.answer_generated',
+  /** Slot attempt failed (rate limit, empty/unusable content) — not a successful answer. */
+  automationAnswerRejected: 'automation.answer_rejected',
+  /** Switching to another model after a rejected/failed slot attempt. */
+  automationModelFallback: 'automation.model_fallback',
   automationScoring: 'automation.scoring',
   automationScored: 'automation.scored',
   automationWinnerPicked: 'automation.winner_picked',

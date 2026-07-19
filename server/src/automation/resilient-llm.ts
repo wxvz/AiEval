@@ -9,7 +9,31 @@ import { modelIdToLabel, resolveSingleModel, type ModelRole } from '../llm/model
 import { createLlmProvider, isProviderAvailable, PROVIDER_ORDER } from '../llm/provider.js';
 import { isRateLimitError, type CompleteContext } from '../llm/rate-limit.js';
 import type { ChatMessage, LlmCompletion, LlmProvider, ProviderName, ResolvedLlmSetup } from '../llm/types.js';
+import { LogEvents } from '../logging/events.js';
+import { logEvent } from '../logging/logger.js';
 import type { Answer, RubricCriterion } from '../types/evaluation.js';
+
+function classifyFallbackRejectReason(error: unknown): string {
+  if (isRateLimitError(error)) {
+    return 'rate_limit';
+  }
+
+  if (!(error instanceof Error)) {
+    return 'failed';
+  }
+
+  const message = error.message.toLowerCase();
+
+  if (message.includes('unusable model')) {
+    return 'unusable_model';
+  }
+
+  if (message.includes('sanitized empty') || message.includes('has empty content')) {
+    return 'empty_content';
+  }
+
+  return 'failed';
+}
 
 export interface FallbackCandidate {
   providerName: ProviderName;
@@ -47,7 +71,9 @@ export function isFallbackEligible(error: unknown): boolean {
     message.includes('fetch failed') ||
     message.includes('econnreset') ||
     message.includes('etimedout') ||
-    message.includes('socket hang up')
+    message.includes('socket hang up') ||
+    // Thinking-model strip left no scorable text — try the next candidate.
+    message.includes('has empty content')
   );
 }
 
@@ -183,16 +209,21 @@ export async function callSingleModelWithFallback<T>(
   let lastError: unknown;
   let fromModel = candidates[0]?.model ?? '';
   let attemptedFirst = false;
+  let skippedPrior: string | undefined;
 
   for (const candidate of candidates) {
     const key = candidateKey(candidate);
 
     if (skipKeys?.has(key)) {
+      skippedPrior = skippedPrior ?? candidate.model;
       continue;
     }
 
     if (attemptedFirst) {
       handlers.onModelFallback?.(fromModel, candidate.model, slotIndex);
+    } else if (skippedPrior) {
+      // Primary slot already failed earlier — announce the hop to the next candidate.
+      handlers.onModelFallback?.(skippedPrior, candidate.model, slotIndex);
     }
 
     attemptedFirst = true;
@@ -212,6 +243,14 @@ export async function callSingleModelWithFallback<T>(
       if (!isFallbackEligible(error)) {
         throw error;
       }
+
+      logEvent('warn', LogEvents.automationAnswerRejected, {
+        provider: candidate.providerName,
+        model: candidate.model,
+        reason: classifyFallbackRejectReason(error),
+        detail: error instanceof Error ? error.message : String(error),
+        ...(slotIndex !== undefined ? { slotIndex } : {}),
+      });
 
       fromModel = candidate.model;
     }
