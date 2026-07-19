@@ -19,4 +19,17 @@ export class LearnPage {
 
   readonly hubCopy = HUB_COPY;
   readonly nextLesson = computed(() => getNextLesson(this.progress.completedIds()));
+  readonly nextKindLabel = computed(() => {
+    const next = this.nextLesson();
+    if (!next) {
+      return null;
+    }
+    if (next.kind === 'interactive') {
+      return 'Up next · Lab';
+    }
+    if (next.kind === 'tool') {
+      return 'Up next · Walkthrough';
+    }
+    return 'Up next · Lesson';
+  });
 }
