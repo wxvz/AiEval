@@ -87,7 +87,15 @@
           "unsupported details",
           "made up information"
         ],
-        "explanation": "{{hallucination}} is stating specifics absent from the {{prompt}} or retrieved context — a critical failure for knowledge apps."
+        "explanation": "{{hallucination}} is stating specifics absent from the {{prompt}} or retrieved context — a critical failure for knowledge apps.",
+        "wordBank": [
+          "facts",
+          "unsupported",
+          "invented",
+          "grounded",
+          "retrieved",
+          "cited"
+        ]
       }
     }
   ],
@@ -101,7 +109,18 @@
         "compare answer to sources",
         "see if supported"
       ],
-      "explanation": "Without sources, the {{judge}} cannot tell supported facts from fluent invention."
+      "explanation": "Without sources, the {{judge}} cannot tell supported facts from fluent invention.",
+      "wordBank": [
+        "verify",
+        "judge",
+        "claims",
+        "can",
+        "so",
+        "the",
+        "generate",
+        "ignore",
+        "score"
+      ]
     },
     {
       "prompt": "A {{model}} writes beautifully but adds an unsupported statistic. Which {{criterion}} row fires?",
@@ -112,7 +131,15 @@
         "grounded in context",
         "factual grounding"
       ],
-      "explanation": "Polish does not excuse {{hallucination}} — grounding {{criterion}} rows exist to catch exactly this."
+      "explanation": "Polish does not excuse {{hallucination}} — grounding {{criterion}} rows exist to catch exactly this.",
+      "wordBank": [
+        "grounding",
+        "faithfulness",
+        "or",
+        "fluency",
+        "creativity",
+        "speed"
+      ]
     }
   ]
 }

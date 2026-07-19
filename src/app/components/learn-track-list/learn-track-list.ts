@@ -9,7 +9,7 @@ import {
   type LearnLessonMeta,
   type LearnTrackId,
 } from '../../learn/curriculum';
-import { HUB_COPY } from '../../learn/learn-content';
+import { HUB_COPY } from '../../learn/hub-content';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 import { SettingsService } from '../../services/settings.service';
 

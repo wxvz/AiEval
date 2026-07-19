@@ -8,11 +8,14 @@
     <app-learn-roadmap />
 
     <div class="learn-tracks row g-4 mb-4">
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <app-learn-track-list trackId="foundation" />
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <app-learn-track-list trackId="llm-systems" />
+      </div>
+      <div class="col-lg-4">
+        <app-learn-track-list trackId="systems-production" />
       </div>
     </div>
 
@@ -20,8 +23,6 @@
       <h2 class="h6 learn-tools__title">Tools</h2>
       <a class="learn-tools__link" routerLink="/evaluations/new">{{ hubCopy.toolsLabel }} →</a>
     </section>
-
-    <app-learn-track-list trackId="go-deeper" />
   </main>
 
   <nav shellRight class="learn-hub-nav card-elevated" aria-label="Learn shortcuts">

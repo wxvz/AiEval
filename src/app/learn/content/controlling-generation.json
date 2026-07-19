@@ -88,7 +88,17 @@
           "avoid measuring luck",
           "so results are reproducible"
         ],
-        "explanation": "Matched sampling settings ensure score differences reflect {{model}} capability and {{prompt}} following — not dice-roll luck."
+        "explanation": "Matched sampling settings ensure score differences reflect {{model}} capability and {{prompt}} following — not dice-roll luck.",
+        "wordBank": [
+          "randomness",
+          "to",
+          "quality",
+          "separate",
+          "from",
+          "increase",
+          "tokens",
+          "merge"
+        ]
       }
     }
   ],
@@ -96,8 +106,19 @@
     {
       "prompt": "Which knob most directly limits how long an answer can grow?",
       "answer": "max tokens",
-      "accept": ["max tokens", "maxTokens", "maximum tokens"],
-      "explanation": "{{maxTokens}} caps generated length. {{temperature}} and {{topP}} affect word choice, not the hard length ceiling."
+      "accept": [
+        "max tokens",
+        "maxTokens",
+        "maximum tokens"
+      ],
+      "explanation": "{{maxTokens}} caps generated length. {{temperature}} and {{topP}} affect word choice, not the hard length ceiling.",
+      "wordBank": [
+        "tokens",
+        "max",
+        "temperature",
+        "top-p",
+        "penalty"
+      ]
     },
     {
       "prompt": "Your nightly {{regressionEval}} shows a new winner after you only changed {{temperature}}. What should you suspect first?",
@@ -108,7 +129,16 @@
         "temperature change",
         "settings change not quality"
       ],
-      "explanation": "A {{temperature}} change alters sampling — re-run with matched settings before declaring a true quality shift."
+      "explanation": "A {{temperature}} change alters sampling — re-run with matched settings before declaring a true quality shift.",
+      "wordBank": [
+        "model",
+        "randomness",
+        "upgrade",
+        "not",
+        "training",
+        "dataset",
+        "bigger"
+      ]
     }
   ]
 }

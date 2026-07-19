@@ -83,7 +83,17 @@
           "track performance and safety",
           "continuous monitoring"
         ],
-        "explanation": "Production deployments need observability. Logging and monitoring let you catch cost spikes, quality regressions, and safety issues before they escalate."
+        "explanation": "Production deployments need observability. Logging and monitoring let you catch cost spikes, quality regressions, and safety issues before they escalate.",
+        "wordBank": [
+          "outputs",
+          "monitor",
+          "continuously",
+          "logs",
+          "and",
+          "once",
+          "delete",
+          "annually"
+        ]
       }
     }
   ],

@@ -8,8 +8,8 @@ import { EvaluationCard } from '../../components/evaluation-card/evaluation-card
 import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { Evaluation } from '../../models';
-import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EvaluationDayGroup, localDayKey } from '../../utils/group-evaluations-by-day';
 import { groupEvaluationsByMonth } from '../../utils/group-evaluations-by-month';

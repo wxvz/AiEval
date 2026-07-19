@@ -20,6 +20,6 @@ describe('getPrimaryTermHintIds', () => {
 
     const primary = getPrimaryTermHintIds(content!);
     expect(primary.get('classifier')).toBe('s0-check-classifier-1');
-    expect(primary.get('trainSet')).toBe('s2-p4-trainSet-1');
+    expect(primary.get('dataset')).toBe('s2-p4-dataset-1');
   });
 });

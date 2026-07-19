@@ -92,7 +92,17 @@
           "judging answer quality",
           "measuring model performance"
         ],
-        "explanation": "{{evaluation}} is the process of measuring how well {{model}} answers meet your defined quality standards."
+        "explanation": "{{evaluation}} is the process of measuring how well {{model}} answers meet your defined quality standards.",
+        "wordBank": [
+          "quality",
+          "criteria",
+          "measuring",
+          "against",
+          "answer",
+          "guessing",
+          "tokens",
+          "speed"
+        ]
       }
     }
   ],

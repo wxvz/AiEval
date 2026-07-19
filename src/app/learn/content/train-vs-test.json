@@ -99,7 +99,17 @@
         "honest evaluation on held out data",
         "to see how well it generalizes"
       ],
-      "explanation": "The {{testSet}} is your honest estimate of {{generalization}}. It must stay separate from the {{trainSet}} so you measure pattern learning, not {{memorization}}."
+      "explanation": "The {{testSet}} is your honest estimate of {{generalization}}. It must stay separate from the {{trainSet}} so you measure pattern learning, not {{memorization}}.",
+      "wordBank": [
+        "generalization",
+        "unseen",
+        "measuring",
+        "data",
+        "on",
+        "memorization",
+        "training",
+        "speed"
+      ]
     },
     {
       "prompt": "Your team tunes prompt wording every day until 30 benchmark questions score perfectly. What should you do next before claiming production readiness?",

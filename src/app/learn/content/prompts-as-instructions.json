@@ -93,7 +93,18 @@
           "instruction sent to the model",
           "the text that tells the model what to do"
         ],
-        "explanation": "The {{prompt}} is the instruction you send. It conditions what the {{model}} generates without retraining {{weights}}."
+        "explanation": "The {{prompt}} is the instruction you send. It conditions what the {{model}} generates without retraining {{weights}}.",
+        "wordBank": [
+          "text",
+          "the",
+          "instruction",
+          "model",
+          "sent",
+          "to",
+          "the",
+          "random",
+          "weights"
+        ]
       }
     }
   ],

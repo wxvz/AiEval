@@ -4,8 +4,8 @@ import { RouterLink } from '@angular/router';
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
-import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnProgressService } from '../../learn/learn-progress.service';
+import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 
 @Component({
   selector: 'app-learn-walkthrough-page',

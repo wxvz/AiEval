@@ -87,7 +87,17 @@
           "pipeline can read scores",
           "parse criterion points"
         ],
-        "explanation": "{{structuredOutput}} lets the harness map each {{criterion}} to points without human transcription."
+        "explanation": "{{structuredOutput}} lets the harness map each {{criterion}} to points without human transcription.",
+        "wordBank": [
+          "parse",
+          "automation",
+          "scores",
+          "can",
+          "so",
+          "humans",
+          "guess",
+          "prose"
+        ]
       }
     }
   ],
@@ -101,7 +111,16 @@
         "empty criterion rows",
         "scores not applied"
       ],
-      "explanation": "Syntax success is not semantic success — ids must match the rubric the parser expects."
+      "explanation": "Syntax success is not semantic success — ids must match the rubric the parser expects.",
+      "wordBank": [
+        "default",
+        "missing",
+        "scores",
+        "or",
+        "perfect",
+        "extra",
+        "json"
+      ]
     },
     {
       "prompt": "A teammate wraps judge JSON in markdown fences. Is that always fatal?",
@@ -112,7 +131,17 @@
         "often fine",
         "parser may strip fences"
       ],
-      "explanation": "Many pipelines strip code fences before JSON parse — still better to ask the {{judge}} for raw JSON in production."
+      "explanation": "Many pipelines strip code fences before JSON parse — still better to ask the {{judge}} for raw JSON in production.",
+      "wordBank": [
+        "fences",
+        "strip",
+        "no",
+        "cleanly",
+        "if",
+        "yes",
+        "always",
+        "never"
+      ]
     }
   ]
 }

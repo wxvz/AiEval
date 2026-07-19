@@ -30,11 +30,73 @@ describe('validateLessonContent', () => {
     const issues = validateAllLessonContent().filter(
       (issue) =>
         issue.lessonId === 'learning-from-examples' ||
+        issue.lessonId === 'what-is-a-dataset' ||
         issue.lessonId === 'train-vs-test' ||
         issue.lessonId === 'loss-and-updates' ||
-        issue.lessonId === 'semantic-memory',
+        issue.lessonId === 'data-literacy' ||
+        issue.lessonId === 'decision-trees' ||
+        issue.lessonId === 'deep-learning-approaches' ||
+        issue.lessonId === 'semantic-memory' ||
+        issue.lessonId === 'mcp' ||
+        issue.lessonId === 'multimodal-vector-databases',
     );
     expect(issues).toEqual([]);
+  });
+
+  it('loads complete MCP and multimodal vector database lessons', () => {
+    for (const lessonId of ['mcp', 'multimodal-vector-databases']) {
+      const content = loadLessonContent(lessonId);
+      expect(content?.sections).toHaveLength(3);
+      expect(content?.recapQuestions).toHaveLength(2);
+      expect(content?.sections.every((section) => section.paragraphs.length >= 4)).toBe(true);
+    }
+  });
+
+  it('loads complete decision tree and deep learning lessons', () => {
+    for (const lessonId of ['decision-trees', 'deep-learning-approaches']) {
+      const content = loadLessonContent(lessonId);
+      expect(content?.sections).toHaveLength(3);
+      expect(content?.recapQuestions).toHaveLength(2);
+      expect(content?.sections.every((section) => section.paragraphs.length >= 4)).toBe(true);
+    }
+  });
+
+  it('loads complete reinforcement learning and GAN lessons', () => {
+    for (const lessonId of ['reinforcement-learning', 'generative-adversarial-networks']) {
+      const content = loadLessonContent(lessonId);
+      expect(content?.sections).toHaveLength(3);
+      expect(content?.recapQuestions).toHaveLength(2);
+      expect(content?.sections.every((section) => section.paragraphs.length >= 4)).toBe(true);
+      expect(content?.sections.every((section) => section.check?.explanation)).toBe(true);
+    }
+  });
+
+  it('requires choices or a wordBank on every check question', () => {
+    const content = loadLessonContent('what-is-a-dataset') as LessonContent;
+    const broken: LessonContent = {
+      ...content,
+      sections: content.sections.map((section, index) =>
+        index === 2 && section.check
+          ? { ...section, check: { ...section.check, wordBank: undefined, choices: undefined } }
+          : section,
+      ),
+    };
+    const issues = validateLessonContent('what-is-a-dataset', broken);
+    expect(issues.some((issue) => issue.message.includes('needs choices or a wordBank'))).toBe(true);
+  });
+
+  it('flags wordBank that cannot assemble the answer', () => {
+    const content = loadLessonContent('what-is-a-dataset') as LessonContent;
+    const broken: LessonContent = {
+      ...content,
+      sections: content.sections.map((section, index) =>
+        index === 2 && section.check
+          ? { ...section, check: { ...section.check, wordBank: ['unrelated', 'words'] } }
+          : section,
+      ),
+    };
+    const issues = validateLessonContent('what-is-a-dataset', broken);
+    expect(issues.some((issue) => issue.message.includes('missing answer words'))).toBe(true);
   });
 
   it('flags empty aside title or body', () => {

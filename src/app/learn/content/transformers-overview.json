@@ -1,55 +1,82 @@
 {
   "sections": [
     {
-      "title": "Tokens, not words",
+      "title": "From text to model-ready pieces",
       "paragraphs": [
-        "{{largeLanguageModel}}s do not read words the way humans do. Before any text enters the {{model}}, it is split into {{token}}s — fragments that can be whole words, parts of words, or punctuation.",
-        "Tokenization is deterministic: the same text always yields the same {{token}} sequence. Common words like \"the\" are single {{token}}s; rare words or code may split across several. This is why {{contextWindow}} limits are measured in {{token}}s, not words or characters.",
-        "Once tokenized, each {{token}} becomes a vector of numbers — an {{embedding}}. The {{model}} processes these {{embedding}}s through layers of computation to predict what {{token}} comes next.",
-        "Understanding {{token}}s matters because {{prompt}} length, answer length, and cost are all measured in {{token}} counts. A 4,096-{{token}} {{contextWindow}} is roughly 3,000 English words, but that varies by language and domain.",
-        "Next: how transformers use {{attention}} to decide which {{token}}s matter most when predicting the next one."
+        "Imagine a mailroom that cannot route a paragraph as one giant parcel. It first divides the message into labeled pieces, then sends those pieces through the sorting system. A transformer does something similar: it splits text into {{token}}s before the {{model}} can process it.",
+        "A {{token}} may be a whole common word, part of a rare word, a number fragment, code punctuation, or whitespace. Tokenization follows a fixed vocabulary, so 100 words do not reliably equal 100 {{token}}s. Technical text, unusual names, and some languages often use more pieces than plain English prose.",
+        "Each {{token}} ID is mapped to an {{embedding}}, a list of numbers the {{model}} can calculate with. The transformer also needs information about position, because the same pieces in \"model scores answer\" and \"answer scores model\" should not mean the same thing. Layers repeatedly update these representations using surrounding context.",
+        "The {{contextWindow}} is the amount of tokenized material available for one request. It must hold the instructions, examples, retrieved context, user input, and often room for the answer. If an AiEval judge prompt spends most of that budget repeating source material, the rubric or response may be truncated or crowded out.",
+        "Token counts therefore connect architecture to practical decisions: request limits, output caps, latency, and provider cost. Counting words is only an estimate; production code should use provider usage data or the matching tokenizer when the exact budget matters."
       ],
       "bullets": [
-        "{{token}} — a fragment of text the {{model}} processes (word, subword, or character).",
-        "Tokenization: text → {{token}} IDs → {{embedding}} vectors.",
-        "{{contextWindow}} measured in {{token}}s, not words."
+        "Text becomes {{token}} IDs, then numerical {{embedding}}s.",
+        "Position changes meaning, so order must be represented as well as content.",
+        "The {{contextWindow}} budget includes more than the visible user question."
       ],
       "check": {
-        "prompt": "Your prompt is exactly 100 words. A colleague says: \"That is 100 {{token}}s, right?\" What is the accurate reply?",
-        "answer": "Probably more than 100 tokens — words can split into multiple tokens",
+        "prompt": "An AiEval judge request fits under a provider's 8,000-word estimate but is rejected for exceeding its 8,000-{{token}} {{contextWindow}}. Which diagnosis is most useful?",
+        "answer": "Words and tokens are not one-to-one, so measure the actual tokenized request",
         "choices": [
-          "Yes — words and tokens are always one-to-one.",
-          "Probably more than 100 tokens — words can split into multiple tokens",
-          "Probably fewer than 100 tokens — most words combine.",
-          "Impossible to say — tokens are random."
+          "The provider counted randomly, so retry the identical request",
+          "Words and tokens are not one-to-one, so measure the actual tokenized request",
+          "Only generated answers count toward the context window",
+          "Convert every space to a newline because newlines use no tokens"
         ],
-        "explanation": "Rare words, code, and punctuation often split into multiple {{token}}s. A 100-word prompt may be 120–150 {{token}}s depending on vocabulary."
+        "explanation": "A word can become one or several {{token}}s, and punctuation or code can add more. The complete request—not just the user-visible question—uses the {{contextWindow}}, so inspect actual usage and shorten low-value context."
       }
     },
     {
-      "title": "Attention: which tokens matter",
+      "title": "Attention builds context",
       "paragraphs": [
-        "The key idea behind transformers is {{attention}}: when predicting the next {{token}}, the {{model}} weighs which prior {{token}}s are most relevant. If the prompt says \"The capital of France is,\" the {{model}} focuses on \"France\" and \"capital\" more than \"The\" or \"is.\"",
-        "{{attention}} is learned during training. The {{model}}'s {{weights}} encode patterns like \"subjects and verbs agree,\" \"pronouns refer to recent nouns,\" and \"answer formats follow question wording.\" At inference the {{model}} applies these patterns to your specific {{prompt}}.",
-        "This mechanism is why transformers handle long context better than older architectures. Every {{token}} can attend to every other {{token}} in the {{contextWindow}}, so distant references (\"As I said 50 sentences ago...\") stay accessible.",
-        "Click each example below to see what {{attention}} highlights. Notice how the {{model}} prioritizes task-relevant {{token}}s over filler words."
+        "After the mailroom labels each piece, the sorter must decide which earlier pieces help interpret the current one. {{attention}} performs that routing: for each position, it computes how strongly information from other allowed positions should influence the next representation.",
+        "Transformers do this through several attention heads in each layer. One head may connect a pronoun to a name, another may track an output-format instruction, and another may relate a claim to supporting evidence. Their results are combined and transformed again, so context becomes richer over many layers.",
+        "For text generation, a position normally attends only to available earlier {{token}}s, not future text that has not been generated. The learned {{weights}} determine how those comparisons work; the specific {{prompt}} determines which relationships become useful on this request. That is why changing one instruction can shift the continuation.",
+        "Consider an AiEval {{judge}} reading a {{rubric}}, a candidate answer, and source evidence. To produce a score, it needs to connect claims in the answer with the relevant {{criterion}} and evidence. Clear labels and focused context make those relationships easier to use than a long prompt full of repeated boilerplate.",
+        "{{attention}} is not a truth detector or a guaranteed explanation of the {{model}}'s reasoning. A transformer can emphasize relevant text and still make a bad {{prediction}}, miss a detail in a long context, or follow a misleading instruction. You still need test cases and evaluation rather than assuming that available context was used correctly."
       ],
       "reveals": [
         {
-          "prompt": "Prompt: \"Translate 'hello' to Spanish.\" — which tokens get high attention?",
-          "reveal": "\"Translate,\" \"hello,\" and \"Spanish\" — the task verb and key nouns. \"To\" and the quotes are low-weight filler."
+          "prompt": "A judge must score factual accuracy. What relationships need to be available?",
+          "reveal": "Claims in the candidate answer need to connect with the provided evidence and the factual-accuracy {{criterion}}. Merely placing all three in the {{prompt}} does not guarantee a correct score."
         },
         {
-          "prompt": "Prompt: \"Summarize the document. Focus on financial metrics.\" — which tokens matter?",
-          "reveal": "\"Summarize,\" \"financial,\" and \"metrics\" — the instruction and constraint. \"The\" and \"on\" are structural glue."
+          "prompt": "Two answers are identical except one includes a required citation. What relationship matters?",
+          "reveal": "The citation-format instruction must connect with the citation text in the answer. A well-anchored {{rubric}} makes that requirement explicit for the {{judge}}."
         },
         {
-          "prompt": "Prompt: \"Answer yes or no: Is Paris in Germany?\" — which tokens guide the answer?",
-          "reveal": "\"Paris,\" \"Germany,\" and the question structure. The model attends to geography facts learned during training."
+          "prompt": "A long transcript contains ten repeated greetings before the actual request. What is the practical risk?",
+          "reveal": "The greetings consume {{token}} budget and add irrelevant context. The request remains available, but long noisy prompts can make reliable use of the important instruction harder."
         }
       ],
       "check": {
-        "prompt": "In one short phrase: what is {{attention}} in a transformer {{model}}?",
+        "prompt": "An AiEval {{judge}} often misses a short {{rubric}} placed after a huge duplicated transcript. Which change best applies what you learned?",
+        "answer": "Remove duplicated context, label the rubric clearly, and re-evaluate the judge",
+        "choices": [
+          "Add more copies of the transcript so every detail appears repeatedly",
+          "Remove duplicated context, label the rubric clearly, and re-evaluate the judge",
+          "Assume attention always finds the rubric and ignore the failures",
+          "Replace rubric criteria with a vague request to score fairly"
+        ],
+        "explanation": "Focused context and explicit structure make the relationship between the answer and each {{criterion}} easier for the {{model}} to use. Re-running the {{evaluation}} is essential because {{attention}} improves contextual routing but does not guarantee correct judging."
+      }
+    },
+    {
+      "title": "Apply transformers in AiEval",
+      "paragraphs": [
+        "A generative transformer is trained by repeatedly predicting a missing next {{token}} from earlier context. Its guess is compared with the actual next {{target}}, {{loss}} measures the error, and training adjusts the {{weights}}. Across enormous text collections, this simple objective teaches reusable language and task patterns—but not a database of guaranteed facts.",
+        "At runtime, the {{model}} repeats one loop: read the current context, produce probabilities for the next {{token}}, choose one, append it, and continue. Your {{prompt}}, examples, {{temperature}}, and output limit shape that loop. The result can be useful and coherent while still being an unsupported continuation.",
+        "Apply this in AiEval by comparing models on a concrete support task. Keep the user request, evidence, output constraints, and {{rubric}} consistent; then inspect whether each answer follows the instruction, uses the evidence, and stays within the requested format. Variation in wording is expected, so score behavior rather than demanding one exact sentence.",
+        "Architecture-aware debugging gives you better hypotheses. A cut-off JSON answer may point to an output-{{token}} cap; a missed rule may point to crowded context or unclear structure; a confident unsupported claim shows that likely next text is not the same as verified truth. Change one condition, rerun the {{evaluation}}, and use results instead of guessing at hidden internals.",
+        "The optional **Transformers lab** lets you adjust a tiny teaching example and watch attention and next-token preference change. Its hand-set visualization is a shortcut, not a faithful view inside a production {{largeLanguageModel}}. Continue next to **Production concerns**, where this token-by-token process becomes a system problem involving cost, latency, reliability, and safety."
+      ],
+      "bullets": [
+        "Hold task and {{rubric}} constant when comparing {{model}}s.",
+        "Treat token limits and prompt structure as testable failure hypotheses.",
+        "Measure instruction-following and evidence use, not exact wording alone."
+      ],
+      "check": {
+        "prompt": "A {{judge}} gives more influence to \"must cite evidence\" than to a greeting while producing score JSON. In one short phrase, what is {{attention}} doing?",
         "answer": "Weighing which prior tokens are most relevant",
         "accept": [
           "weighing token relevance",
@@ -58,35 +85,44 @@
           "deciding which tokens matter",
           "weighting token importance"
         ],
-        "explanation": "{{attention}} lets the {{model}} prioritize certain {{token}}s over others when predicting the next {{token}}, based on learned patterns."
-      }
-    },
-    {
-      "title": "Next-token prediction at scale",
-      "paragraphs": [
-        "Training a {{largeLanguageModel}} is fundamentally a giant {{supervisedLearning}} task: predict the next {{token}} given all prior {{token}}s. The training data is text from books, web pages, code repos — billions of examples where the {{target}} is simply the next word.",
-        "The {{model}} starts with random {{weights}}, makes terrible {{prediction}}s, measures error ({{loss}}), and updates {{weights}} to do better. Repeat that trillions of times on trillions of {{token}}s, and the {{model}} learns grammar, facts, reasoning patterns, and even some coding ability.",
-        "Once trained, you do not retrain for every new task. You write a {{prompt}} that conditions the {{model}}'s existing knowledge: \"Translate this,\" \"Summarize that,\" \"Score this answer.\" The {{model}} predicts {{token}}s that fit your instruction.",
-        "This is why transformers are called \"foundation models\" — they learn broad patterns once, then adapt to thousands of tasks via prompting or light fine-tuning.",
-        "Next: production concerns — cost, latency, and safety when deploying at scale."
-      ],
-      "bullets": [
-        "Training: predict next {{token}} on billions of examples.",
-        "{{weights}} encode grammar, facts, reasoning from the training corpus.",
-        "Inference: condition via {{prompt}}, generate {{token}}s, no retraining."
-      ],
-      "check": {
-        "prompt": "A {{largeLanguageModel}} was trained to predict next {{token}}s on web text. Can it answer math questions it never saw during training?",
-        "answer": "Yes — if math patterns appeared in the training data, it can generalize to new problems",
-        "choices": [
-          "No — it can only repeat exact training examples.",
-          "Yes — if math patterns appeared in the training data, it can generalize to new problems",
-          "No — you must fine-tune on math problems first.",
-          "Yes — but only if you paste the answer into the prompt."
-        ],
-        "explanation": "Transformers learn patterns (e.g., \"addition works like this\") from diverse examples. They generalize to new instances of those patterns at inference time."
+        "explanation": "{{attention}} routes more influence from context that is useful for the current {{prediction}}. Here the citation constraint is more relevant to scoring and formatting than the greeting, although the final score still needs evaluation.",
+        "wordBank": [
+          "tokens",
+          "prior",
+          "weighing",
+          "relevant",
+          "which",
+          "most",
+          "are",
+          "copying",
+          "future",
+          "equally"
+        ]
       }
     }
   ],
-  "recapQuestions": []
+  "recapQuestions": [
+    {
+      "prompt": "A model comparison includes a long document, two candidate answers, and a rubric. The judge output is repeatedly cut off before valid JSON closes. What should you test first?",
+      "answer": "Shorten low-value input context and reserve enough output tokens",
+      "choices": [
+        "Increase temperature so the closing brace appears by chance",
+        "Shorten low-value input context and reserve enough output tokens",
+        "Duplicate both answers to strengthen attention",
+        "Remove the rubric because judging does not need criteria"
+      ],
+      "explanation": "The request and generated answer compete within practical token limits, while a separate output cap may stop generation early. Reduce irrelevant input, set a sufficient output allowance, and rerun the same {{testCase}} before blaming model quality."
+    },
+    {
+      "prompt": "Why should AiEval score a transformer's answer against evidence and a {{rubric}} instead of trusting fluent wording?",
+      "answer": "Next-token prediction can produce plausible but unsupported text",
+      "choices": [
+        "Next-token prediction can produce plausible but unsupported text",
+        "Attention prevents the model from reading any evidence",
+        "Tokenization removes all factual information from prompts",
+        "A fluent answer is always copied exactly from training data"
+      ],
+      "explanation": "A transformer is optimized to continue context with likely {{token}}s, not to guarantee truth. Evidence-based criteria let an {{evaluation}} distinguish a grounded answer from a convincing {{hallucination}}."
+    }
+  ]
 }

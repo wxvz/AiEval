@@ -88,7 +88,19 @@
           "a model that judges quality",
           "a scoring model"
         ],
-        "explanation": "A {{judge}} is a {{model}} that reads prompts, answers, and rubrics, then assigns scores — automating the review step."
+        "explanation": "A {{judge}} is a {{model}} that reads prompts, answers, and rubrics, then assigns scores — automating the review step.",
+        "wordBank": [
+          "scores",
+          "a",
+          "answers",
+          "model",
+          "other",
+          "that",
+          "models'",
+          "trains",
+          "random",
+          "prompts"
+        ]
       }
     }
   ],

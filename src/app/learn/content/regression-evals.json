@@ -87,7 +87,17 @@
           "repeat evaluation to catch drops",
           "regression check on test cases"
         ],
-        "explanation": "A {{regressionEval}} reuses your {{goldenSet}} to detect quality drops after {{prompt}}, {{model}}, or infrastructure changes."
+        "explanation": "A {{regressionEval}} reuses your {{goldenSet}} to detect quality drops after {{prompt}}, {{model}}, or infrastructure changes.",
+        "wordBank": [
+          "golden",
+          "rerun",
+          "changes",
+          "set",
+          "after",
+          "delete",
+          "before",
+          "weights"
+        ]
       }
     }
   ],
@@ -101,7 +111,17 @@
         "clean experiment",
         "attribute regressions"
       ],
-      "explanation": "Changing {{prompt}} and {{model}} together obscures which edit helped or hurt — controlled {{regressionEval}} needs clarity."
+      "explanation": "Changing {{prompt}} and {{model}} together obscures which edit helped or hurt — controlled {{regressionEval}} needs clarity.",
+      "wordBank": [
+        "cause",
+        "score",
+        "isolate",
+        "shifts",
+        "of",
+        "hide",
+        "random",
+        "boost"
+      ]
     },
     {
       "prompt": "Average score rises but one safety {{testCase}} now fails. Ship?",
@@ -112,7 +132,18 @@
         "inspect failure",
         "block release"
       ],
-      "explanation": "Averages hide tail failures — safety {{testCase}} regressions can be release blockers even when means improve."
+      "explanation": "Averages hide tail failures — safety {{testCase}} regressions can be release blockers even when means improve.",
+      "wordBank": [
+        "failing",
+        "no",
+        "read",
+        "case",
+        "the",
+        "first",
+        "yes",
+        "ship",
+        "ignore"
+      ]
     }
   ]
 }

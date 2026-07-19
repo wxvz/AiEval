@@ -24,19 +24,66 @@ describe('curriculum', () => {
       .slice(0, nnIndex)
       .filter((lesson) => lesson.trackId === 'foundation' && lesson.kind === 'read')
       .map((lesson) => lesson.id);
-    expect(readIds).toEqual(['learning-from-examples', 'train-vs-test', 'loss-and-updates']);
+    expect(readIds).toEqual([
+      'learning-from-examples',
+      'what-is-a-dataset',
+      'train-vs-test',
+      'loss-and-updates',
+      'bias-and-weights',
+      'activation-functions',
+    ]);
+  });
+
+  it('orders the new Foundation lessons after the neural-network lab', () => {
+    const foundationIds = getLiveLessons()
+      .filter((lesson) => lesson.trackId === 'foundation')
+      .map((lesson) => lesson.id);
+    const nnIndex = foundationIds.indexOf('neural-network-lab');
+    expect(foundationIds.slice(nnIndex, nnIndex + 5)).toEqual([
+      'neural-network-lab',
+      'data-literacy',
+      'decision-trees',
+      'decision-trees-lab',
+      'deep-learning-approaches',
+    ]);
+    expect(getLesson('decision-trees')?.prerequisites).toEqual(['data-literacy']);
+    expect(getLesson('decision-trees-lab')?.prerequisites).toEqual(['decision-trees']);
+    expect(getLesson('deep-learning-approaches')?.prerequisites).toEqual(['decision-trees-lab']);
   });
 
   it('keeps optional labs off the hub track list', () => {
     const hubIds = getHubLessonsForTrack('foundation').map((lesson) => lesson.id);
     expect(hubIds).toEqual([
       'learning-from-examples',
+      'what-is-a-dataset',
       'train-vs-test',
       'loss-and-updates',
+      'bias-and-weights',
+      'activation-functions',
       'neural-network-lab',
+      'data-literacy',
+      'decision-trees',
+      'decision-trees-lab',
+      'deep-learning-approaches',
+      'reinforcement-learning',
+      'reinforcement-learning-lab',
+      'generative-adversarial-networks',
     ]);
     expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('train-vs-test-lab');
     expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('loss-and-updates-lab');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('bias-and-weights-lab');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('activation-functions-lab');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('transformers-lab');
+  });
+
+  it('keeps decision-trees and reinforcement-learning labs on the hub (required)', () => {
+    expect(getLesson('decision-trees-lab')?.optional).toBeFalsy();
+    expect(getLesson('reinforcement-learning-lab')?.optional).toBeFalsy();
+    expect(getLesson('decision-trees-lab')?.route).toBe('/learn/labs/decision-trees');
+    expect(getLesson('reinforcement-learning-lab')?.route).toBe('/learn/labs/reinforcement-learning');
+    expect(getLesson('generative-adversarial-networks')?.prerequisites).toEqual([
+      'reinforcement-learning-lab',
+    ]);
   });
 
   it('links optional labs to parent read lessons', () => {
@@ -46,7 +93,22 @@ describe('curriculum', () => {
     expect(getOptionalLabForLesson('controlling-generation')?.route).toBe('/learn/labs/controlling-generation');
     expect(getOptionalLabForLesson('structured-outputs-for-judges')?.route).toBe('/learn/labs/judge-json');
     expect(getOptionalLabForLesson('faithfulness-and-hallucinations')?.route).toBe('/learn/labs/faithfulness');
-    expect(getOptionalLabForLesson('learning-from-examples')).toBeUndefined();
+    expect(getOptionalLabForLesson('learning-from-examples')?.route).toBe('/learn/labs/learning-from-examples');
+    expect(getOptionalLabForLesson('what-is-a-dataset')?.route).toBe('/learn/labs/what-is-a-dataset');
+    expect(getOptionalLabForLesson('activation-functions')?.route).toBe('/learn/labs/activation-functions');
+    expect(getOptionalLabForLesson('comparing-answers')?.route).toBe('/learn/labs/comparing-answers');
+    expect(getOptionalLabForLesson('rubrics-and-criteria')?.route).toBe('/learn/labs/rubrics-and-criteria');
+  });
+
+  it('keeps new optional labs off the hub track lists', () => {
+    const foundationIds = getHubLessonsForTrack('foundation').map((lesson) => lesson.id);
+    const llmIds = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
+    expect(foundationIds).not.toContain('learning-from-examples-lab');
+    expect(foundationIds).not.toContain('what-is-a-dataset-lab');
+    expect(llmIds).not.toContain('comparing-answers-lab');
+    expect(llmIds).not.toContain('rubrics-and-criteria-lab');
+    expect(getLesson('comparing-answers-lab')?.optional).toBe(true);
+    expect(getLesson('rubrics-and-criteria-lab')?.parentLessonId).toBe('rubrics-and-criteria');
   });
 
   it('keeps semantic-memory-lab optional and off the hub track list', () => {
@@ -54,6 +116,18 @@ describe('curriculum', () => {
     expect(hubIds).not.toContain('semantic-memory-lab');
     expect(getLesson('semantic-memory-lab')?.optional).toBe(true);
     expect(getLesson('semantic-memory-lab')?.parentLessonId).toBe('semantic-memory');
+  });
+
+  it('keeps multimodal-vector-databases-lab optional and off the hub track list', () => {
+    const hubIds = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
+    expect(hubIds).not.toContain('multimodal-vector-databases-lab');
+    expect(getLesson('multimodal-vector-databases-lab')?.optional).toBe(true);
+    expect(getLesson('multimodal-vector-databases-lab')?.parentLessonId).toBe(
+      'multimodal-vector-databases',
+    );
+    expect(getOptionalLabForLesson('multimodal-vector-databases')?.route).toBe(
+      '/learn/labs/multimodal-vector-databases',
+    );
   });
 
   it('orders llm reads before semantic-search-lab', () => {
@@ -105,7 +179,7 @@ describe('curriculum', () => {
   });
 
   it('getNextLesson skips completed lessons in global order', () => {
-    const completed = new Set(['learning-from-examples', 'train-vs-test']);
+    const completed = new Set(['learning-from-examples', 'what-is-a-dataset', 'train-vs-test']);
     expect(getNextLesson(completed)?.id).toBe('loss-and-updates');
   });
 
@@ -125,24 +199,37 @@ describe('curriculum', () => {
     expect(getLesson('neural-network-lab')?.route).toBe('/learn/labs/neural-network');
   });
 
-  it('orders go-deeper lessons after automation-and-judges', () => {
+  it('orders the remaining LLM systems lessons before systems-production', () => {
     const live = getLiveLessons();
     const automationIndex = live.findIndex((lesson) => lesson.id === 'automation-and-judges');
-    const goDeeperIds = live
-      .slice(automationIndex + 1)
-      .filter((lesson) => lesson.trackId === 'go-deeper')
-      .map((lesson) => lesson.id);
-    expect(goDeeperIds).toEqual([
+    const afterAutomation = live.slice(automationIndex + 1).map((lesson) => lesson.id);
+    expect(afterAutomation).toEqual([
       'transformers-overview',
+      'tool-calling',
+      'mcp',
+      'multimodal-vector-databases',
       'production-concerns',
       'building-eval-harnesses',
     ]);
   });
 
-  it('chains go-deeper prerequisites from automation-and-judges', () => {
+  it('chains systems-production prerequisites from transformers-overview', () => {
+    expect(getLesson('transformers-overview')?.trackId).toBe('llm-systems');
     expect(getLesson('transformers-overview')?.prerequisites).toEqual(['automation-and-judges']);
+    expect(getLesson('mcp')?.prerequisites).toEqual(['tool-calling']);
+    expect(getLesson('multimodal-vector-databases')?.prerequisites).toEqual(['mcp']);
+    expect(getLesson('production-concerns')?.trackId).toBe('systems-production');
     expect(getLesson('production-concerns')?.prerequisites).toEqual(['transformers-overview']);
     expect(getLesson('building-eval-harnesses')?.prerequisites).toEqual(['production-concerns']);
+  });
+
+  it('places activation-functions between bias-and-weights and the neural network lab', () => {
+    expect(getLesson('bias-and-weights')?.prerequisites).toEqual(['loss-and-updates']);
+    expect(getLesson('activation-functions')?.prerequisites).toEqual(['bias-and-weights']);
+    expect(getLesson('neural-network-lab')?.prerequisites).toEqual(['activation-functions']);
+    expect(getOptionalLabForLesson('bias-and-weights')?.id).toBe('bias-and-weights-lab');
+    expect(getOptionalLabForLesson('activation-functions')?.id).toBe('activation-functions-lab');
+    expect(getOptionalLabForLesson('transformers-overview')?.id).toBe('transformers-lab');
   });
 
   it('locks read lessons until prerequisites are complete', () => {

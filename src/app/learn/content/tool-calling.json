@@ -1,0 +1,129 @@
+{
+  "sections": [
+    {
+      "title": "From a request to a tool call",
+      "paragraphs": [
+        "Imagine ordering at a restaurant where the waiter cannot enter the kitchen. You describe what you want, and the waiter fills out a precise order form for the kitchen system. Tool calling works similarly: the {{largeLanguageModel}} receives a list of available tools and produces a {{toolCall}} that names one tool and supplies its arguments.",
+        "A tool definition usually gives the tool name, a plain-language description, and an argument schema. The model reads that definition alongside the user's {{prompt}}. If it decides a tool is needed, it returns {{structuredOutput}} such as `{\"name\":\"lookup_order\",\"arguments\":{\"order_id\":\"A123\"}}` instead of pretending it already knows the result.",
+        "The application—not the model—validates the arguments, decides whether the action is allowed, runs the external code, and returns the result. The model may then turn that result into a user-facing answer. This separation matters because predicting a tool request is not the same as safely executing one.",
+        "A valid-looking call can still be wrong. The model might choose `cancel_order` when it only needed `lookup_order`, omit a required `order_id`, invent an unsupported field, or emit malformed JSON that the application cannot parse. It can also skip the tool and produce a confident {{hallucination}}.",
+        "Therefore, evaluate the decision and the syntax separately from the final prose. A fluent answer does not rescue a dangerous call, and a correct tool name does not rescue invalid arguments. Tool-using systems need checks at every boundary."
+      ],
+      "bullets": [
+        "Choose the correct tool for the user's intent.",
+        "Produce arguments that match the declared schema.",
+        "Validate and authorize before any external action runs.",
+        "Ground the final answer in the returned tool result."
+      ],
+      "check": {
+        "prompt": "A support model chooses `lookup_order`, but its arguments are `{order: A123}` when the schema requires valid JSON with an `order_id` string. A teammate marks it correct because the tool name is right. What trap did the teammate miss?",
+        "answer": "The tool arguments are invalid",
+        "choices": [
+          "The tool arguments are invalid",
+          "The model should always choose the most powerful tool",
+          "The final answer matters, so tool syntax can be ignored",
+          "Any text containing an order number is valid JSON"
+        ],
+        "explanation": "Correct tool choice is only one part of a successful {{toolCall}}. The application cannot reliably execute malformed arguments or fields that violate the declared schema, so the trace should fail even if the selected tool was appropriate."
+      }
+    },
+    {
+      "title": "Evaluate the trace, not only the answer",
+      "paragraphs": [
+        "A tool-using answer is a trace, not one block of text. The trace includes the user request, the model's tool decision, the argument payload, the tool result or error, and the final response. Looking only at the final sentence hides whether the model reached it safely and reproducibly.",
+        "Build a {{goldenSet}} of representative requests with expected tool behavior. Each test case can record an allowed tool, required argument values, whether no tool should be called, a stubbed tool response, and the important claims the final answer may make. Include near-neighbor cases where the wording is similar but the correct action differs.",
+        "For deterministic properties, prefer code checks: parse the JSON, validate it against the schema, compare tool names, reject extra calls, and verify required identifiers. Then use a {{rubric}} or {{judge}} for qualities that allow variation, such as whether the final answer accurately summarizes the tool result and clearly explains a recoverable error.",
+        "Score useful dimensions separately: correct tool choice, valid arguments, appropriate call count, recovery from tool failure, and final-answer grounding. A single average can hide a severe failure—for example, polished wording might offset a zero on tool choice. Treat unsafe or unauthorized calls as hard failures when the task demands it.",
+        "Run the same {{evaluation}} across models, prompts, and tool descriptions. Preserve the exact tool trace so reviewers can explain score differences. When a provider returns failed tool JSON, record the parse or schema error rather than silently converting it into an ordinary text answer."
+      ],
+      "reveals": [
+        {
+          "prompt": "The user asks for store hours, which are already in the prompt. Should the model call `lookup_order`?",
+          "reveal": "No. A golden trace should expect no tool call because the available information answers the request and the order tool does not match the user's intent."
+        },
+        {
+          "prompt": "The model calls the right tool twice with identical arguments. What should the eval inspect?",
+          "reveal": "Inspect call count as well as tool choice. Duplicate calls can add cost, latency, and side effects even when each individual {{toolCall}} is valid."
+        },
+        {
+          "prompt": "`lookup_order` returns a timeout. What behavior deserves credit?",
+          "reveal": "The model should not invent an order status. The trace should show bounded retry or a clear failure response according to the system policy, and the final answer should remain grounded in the actual tool result."
+        }
+      ],
+      "check": {
+        "prompt": "You are comparing two support models. Both produce the same correct final status, but one called `lookup_order` with the right ID while the other called `search_faq` and happened to guess. Which evaluation design best distinguishes them?",
+        "answer": "Compare each trace with a golden tool choice and argument schema, then score final-answer grounding",
+        "choices": [
+          "Grade only whether the final sentence contains the expected status",
+          "Compare each trace with a golden tool choice and argument schema, then score final-answer grounding",
+          "Prefer whichever model produced the longer explanation",
+          "Ignore tool results and ask a judge which answer sounds confident"
+        ],
+        "explanation": "Golden traces make correct tool selection and required arguments explicit, while schema checks catch malformed calls. A grounding {{criterion}} then verifies that the final answer follows the returned result instead of rewarding a lucky guess."
+      }
+    },
+    {
+      "title": "Design a support-bot evaluation",
+      "paragraphs": [
+        "Suppose a support bot handles two kinds of requests: general policy questions and order-specific status questions. For \"Where is order A123?\" it must call `lookup_order`; for \"What is your return window?\" it should answer from supplied policy context. The dangerous failure is inventing a shipment status without a successful lookup.",
+        "Design the {{goldenSet}} with completed, delayed, missing, and malformed order IDs, plus policy-only questions and ambiguous requests that need clarification. Stub `lookup_order` so every model receives the same deterministic results, including not-found and timeout errors. Record whether each case requires a call, permits no call, or requires clarification before a call.",
+        "Create a {{rubric}} with hard checks for correct tool choice, valid `order_id`, no unauthorized calls, and no invented status. Add softer criteria for explaining errors and keeping the final response useful. A {{judge}} can assess clarity, but code should decide parse validity and exact schema conformance.",
+        "Your release decision should examine the failure distribution, not only an average score. A model that is slightly less polished but never invents status may be safer than one that sounds excellent and skips lookup in five percent of cases. Re-run the {{evaluation}} after changes to the {{prompt}}, model, tool description, or orchestration code.",
+        "Coming soon, **MCP** will show how a shared protocol can expose tools and context to models through consistent interfaces. Then **Production concerns** extends this evaluation into live reliability: permissions, timeouts, retries, latency, cost, logging, and monitoring when real systems execute real calls."
+      ],
+      "bullets": [
+        "Use deterministic stub results so model traces are comparable.",
+        "Fail invented order status even when the prose sounds plausible.",
+        "Separate machine-checkable trace rules from judgment-based response quality.",
+        "Include tool errors and no-tool cases, not only successful lookups."
+      ],
+      "check": {
+        "prompt": "A support bot is asked for the status of order A123, but no successful lookup result exists. Complete the release rule in one short phrase.",
+        "answer": "Call the tool, do not invent",
+        "accept": [
+          "use lookup order, never guess",
+          "lookup the order, do not guess",
+          "require lookup, no invented status",
+          "no status without a lookup",
+          "call lookup order before answering"
+        ],
+        "wordBank": [
+          "call",
+          "the",
+          "tool",
+          "do",
+          "not",
+          "invent",
+          "guess",
+          "status",
+          "silently"
+        ],
+        "explanation": "Order status must come from a successful `lookup_order` result, not from likely-sounding text. If the tool cannot run, the bot should report that limitation or follow an approved recovery path rather than create a {{hallucination}}."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which artifact gives the strongest regression signal for a tool-using model?",
+      "answer": "A golden set with expected tool choices, arguments, results, and final-answer requirements",
+      "choices": [
+        "A list of final answers with no record of how they were produced",
+        "A golden set with expected tool choices, arguments, results, and final-answer requirements",
+        "One successful demo using a real production account",
+        "A judge prompt that scores confidence without reading tool results"
+      ],
+      "explanation": "A complete golden trace lets an {{evaluation}} test selection, syntax, execution outcome, and grounded response behavior. It catches regressions that final-answer comparison alone would miss."
+    },
+    {
+      "prompt": "A model emits malformed JSON for `lookup_order`, then writes a plausible delivery date. How should the evaluation classify the run?",
+      "answer": "Fail the tool trace and the unsupported final answer",
+      "choices": [
+        "Pass because the model intended to use the right tool",
+        "Pass if the delivery date sounds realistic",
+        "Fail only the writing style",
+        "Fail the tool trace and the unsupported final answer"
+      ],
+      "explanation": "Malformed {{structuredOutput}} means the intended {{toolCall}} could not be safely executed. Without a successful result, the delivery date is unsupported, so both the trace and final-answer grounding fail."
+    }
+  ]
+}

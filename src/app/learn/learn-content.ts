@@ -1,21 +1,31 @@
+import { normalizeCheckAnswer } from './check-answer';
+import activationFunctions from './content/activation-functions.json';
 import automationAndJudges from './content/automation-and-judges.json';
+import biasAndWeights from './content/bias-and-weights.json';
 import buildingEvalHarnesses from './content/building-eval-harnesses.json';
 import comparingAnswers from './content/comparing-answers.json';
 import controllingGeneration from './content/controlling-generation.json';
+import dataLiteracy from './content/data-literacy.json';
+import decisionTrees from './content/decision-trees.json';
+import deepLearningApproaches from './content/deep-learning-approaches.json';
 import faithfulnessAndHallucinations from './content/faithfulness-and-hallucinations.json';
-import firstEvaluationLab from './content/first-evaluation-lab.json';
+import generativeAdversarialNetworks from './content/generative-adversarial-networks.json';
 import goldenTestCases from './content/golden-test-cases.json';
-import hub from './content/hub.json';
 import learningFromExamples from './content/learning-from-examples.json';
 import lossAndUpdates from './content/loss-and-updates.json';
+import mcp from './content/mcp.json';
+import multimodalVectorDatabases from './content/multimodal-vector-databases.json';
 import productionConcerns from './content/production-concerns.json';
 import promptsAsInstructions from './content/prompts-as-instructions.json';
+import reinforcementLearning from './content/reinforcement-learning.json';
 import regressionEvals from './content/regression-evals.json';
 import rubricsAndCriteria from './content/rubrics-and-criteria.json';
 import semanticMemory from './content/semantic-memory.json';
 import structuredOutputsForJudges from './content/structured-outputs-for-judges.json';
+import toolCalling from './content/tool-calling.json';
 import trainVsTest from './content/train-vs-test.json';
 import transformersOverview from './content/transformers-overview.json';
+import whatIsADataset from './content/what-is-a-dataset.json';
 
 export interface LessonReveal {
   prompt: string;
@@ -44,6 +54,8 @@ export interface CheckQuestion {
   answer: string;
   accept?: string[];
   choices?: string[];
+  /** Word chips the learner taps to assemble the answer (used when no choices). */
+  wordBank?: string[];
   explanation: string;
 }
 
@@ -60,9 +72,21 @@ export interface LessonContentValidationIssue {
 
 const FULL_RECAP_LESSON_IDS = new Set([
   'learning-from-examples',
+  'what-is-a-dataset',
   'train-vs-test',
   'loss-and-updates',
+  'bias-and-weights',
+  'activation-functions',
+  'data-literacy',
+  'decision-trees',
+  'deep-learning-approaches',
   'semantic-memory',
+  'transformers-overview',
+  'tool-calling',
+  'mcp',
+  'multimodal-vector-databases',
+  'reinforcement-learning',
+  'generative-adversarial-networks',
 ]);
 
 export interface WalkthroughStep {
@@ -90,8 +114,14 @@ export interface HubCopy {
 
 const LESSON_CONTENT: Record<string, LessonContent> = {
   'learning-from-examples': learningFromExamples,
+  'what-is-a-dataset': whatIsADataset,
   'train-vs-test': trainVsTest,
   'loss-and-updates': lossAndUpdates,
+  'bias-and-weights': biasAndWeights,
+  'activation-functions': activationFunctions,
+  'data-literacy': dataLiteracy,
+  'decision-trees': decisionTrees,
+  'deep-learning-approaches': deepLearningApproaches,
   'prompts-as-instructions': promptsAsInstructions,
   'controlling-generation': controllingGeneration,
   'comparing-answers': comparingAnswers,
@@ -103,11 +133,14 @@ const LESSON_CONTENT: Record<string, LessonContent> = {
   'regression-evals': regressionEvals,
   'automation-and-judges': automationAndJudges,
   'transformers-overview': transformersOverview,
+  'tool-calling': toolCalling,
+  mcp,
+  'multimodal-vector-databases': multimodalVectorDatabases,
+  'reinforcement-learning': reinforcementLearning,
+  'generative-adversarial-networks': generativeAdversarialNetworks,
   'production-concerns': productionConcerns,
   'building-eval-harnesses': buildingEvalHarnesses,
 };
-
-export const HUB_COPY = hub as HubCopy;
 
 export function getContentLessonIds(): Set<string> {
   return new Set(Object.keys(LESSON_CONTENT));
@@ -117,17 +150,9 @@ export function loadLessonContent(lessonId: string): LessonContent | null {
   return LESSON_CONTENT[lessonId] ?? null;
 }
 
-export function loadWalkthroughContent(): WalkthroughContent {
-  return firstEvaluationLab as WalkthroughContent;
-}
-
 export function lessonHasBody(lessonId: string): boolean {
   const content = loadLessonContent(lessonId);
   return (content?.sections.length ?? 0) > 0;
-}
-
-export function walkthroughHasSteps(): boolean {
-  return loadWalkthroughContent().steps.length > 0;
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -149,6 +174,22 @@ function validateCheckQuestion(
   }
   if (!isNonEmptyString(question.explanation)) {
     return `${label} explanation is empty`;
+  }
+  const hasChoices = (question.choices?.length ?? 0) > 0;
+  const hasWordBank = (question.wordBank?.length ?? 0) > 0;
+  if (!hasChoices && !hasWordBank) {
+    return `${label} needs choices or a wordBank`;
+  }
+  if (hasWordBank) {
+    const bankTokens = new Set(
+      question.wordBank!.flatMap((word) => normalizeCheckAnswer(word).split(' ')),
+    );
+    const missing = normalizeCheckAnswer(question.answer)
+      .split(' ')
+      .filter((token) => token && !bankTokens.has(token));
+    if (missing.length > 0) {
+      return `${label} wordBank is missing answer words: ${missing.join(', ')}`;
+    }
   }
   return null;
 }

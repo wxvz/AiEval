@@ -66,7 +66,7 @@
         "Good examples include customer reviews with star ratings, code snippets labeled pass or fail, medical images with diagnoses, and prompt–answer pairs edited by humans for quality.",
         "Weak examples include a folder of images with no tags, text with no agreed label, or the same prompt answered differently by every reviewer with no rubric.",
         "In AiEval you will later compare model answers to the same prompt. That only works when you can define what \"better\" means — another form of {{target}}.",
-        "Next up: {{trainSet}} vs {{testSet}} — why we hold some examples back instead of training on everything at once."
+        "Next up: **What is a dataset?** — how labeled rows form a {{dataset}}, and why the lab offers puzzles like AND and XOR."
       ],
       "bullets": [
         "Counts: inputs with human-agreed {{target}}s.",
@@ -83,7 +83,17 @@
           "an input and a target label",
           "input target pair"
         ],
-        "explanation": "Supervised learning is learning from pairs. Without both an {{input}} and a {{target}}, the {{model}} has nothing to practice on and nothing to grade {{prediction}}s against."
+        "explanation": "Supervised learning is learning from pairs. Without both an {{input}} and a {{target}}, the {{model}} has nothing to practice on and nothing to grade {{prediction}}s against.",
+        "wordBank": [
+          "target",
+          "an",
+          "input",
+          "a",
+          "and",
+          "weight",
+          "loss",
+          "epoch"
+        ]
       }
     }
   ],

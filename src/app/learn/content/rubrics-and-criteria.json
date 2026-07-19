@@ -89,7 +89,19 @@
           "criteria and score definitions",
           "a structured scoring guide"
         ],
-        "explanation": "A {{rubric}} is a structured guide that breaks quality into {{criterion}} rows with explicit anchors for each score level."
+        "explanation": "A {{rubric}} is a structured guide that breaks quality into {{criterion}} rows with explicit anchors for each score level.",
+        "wordBank": [
+          "criteria",
+          "guide",
+          "a",
+          "anchors",
+          "scoring",
+          "with",
+          "and",
+          "random",
+          "prompt",
+          "vibes"
+        ]
       }
     }
   ],

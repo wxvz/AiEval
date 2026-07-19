@@ -1,0 +1,130 @@
+{
+  "sections": [
+    {
+      "title": "Turn rows into a path of questions",
+      "paragraphs": [
+        "Imagine a troubleshooting card that asks one yes-or-no question at a time: \"Does the device power on?\" then \"Is the status light red?\" Each answer sends you down a different branch until the card recommends an action. A {{decisionTree}} learns a similar path from labeled rows.",
+        "Each question tests a {{feature}}, an input field available when the prediction is made. A support-routing tree might ask whether the message mentions a refund, whether the customer has a paid plan, or whether the account is locked. The question and its cutoff form a {{split}}.",
+        "Training searches for splits that make the resulting groups more consistent in their {{target}} labels. If refund requests are mostly billing tickets, separating them can reduce confusion in the next branch. The tree repeats this process on each group rather than applying one rule to every row.",
+        "A path ends at a {{leafNode}}, which stores the prediction for rows that reach it. One leaf might predict \"billing\" with 42 supporting rows and another \"account access\" with 18. Reading the path reveals which feature tests produced that result.",
+        "Readable does not mean automatically correct. A tree can learn a leaked field, a proxy for a protected trait, or a coincidence found in a small {{dataset}}. The questions expose the learned logic so a reviewer can challenge it; they do not certify that the logic is fair or generalizable."
+      ],
+      "bullets": [
+        "A {{feature}} supplies an input value the tree may test.",
+        "A {{split}} sends rows into different branches.",
+        "A {{leafNode}} contains the branch's final prediction.",
+        "Every tested feature must be available at real prediction time."
+      ],
+      "check": {
+        "prompt": "A ticket-priority tree's first question is \"Was this ticket escalated by a manager?\" Escalation happens only after the priority prediction. What trap did the tree learn?",
+        "answer": "It split on future information unavailable at prediction time",
+        "choices": [
+          "It split on future information unavailable at prediction time",
+          "It used too few colors in its diagram",
+          "Every decision tree must begin with a customer name",
+          "Readable models cannot suffer from leakage"
+        ],
+        "explanation": "The escalation field reveals something that happens after the model must decide priority. That leaked {{feature}} can create a convincing branch and strong test score while failing in the real workflow."
+      }
+    },
+    {
+      "title": "Grow enough rule, then stop",
+      "paragraphs": [
+        "A tree can keep splitting until nearly every training row has its own path. That creates extremely specific rules such as \"paid customer, 17-word message, submitted on Tuesday.\" The tree may perfectly classify remembered rows while failing on new cases—classic {{overfitting}}.",
+        "Tree depth limits how many questions a path may ask. Other controls require enough rows before a split or enough rows in each leaf. These constraints trade some training accuracy for simpler rules that have a better chance of {{generalization}}.",
+        "Pruning takes the opposite route: grow a larger tree, then remove branches whose extra detail does not improve validation performance enough. Whether you limit growth or prune later, choose settings with a {{validationSet}} and preserve the {{testSet}} for the final estimate.",
+        "Class balance matters too. If only 2% of tickets are urgent, a tree predicting \"not urgent\" everywhere reaches 98% accuracy. Inspect recall for urgent cases, mistakes by important slice, and the number of examples supporting each leaf instead of trusting one average.",
+        "Suppose AiEval labels answer failures as factual, instruction-following, style, or safe refusal. A shallow tree can reveal that missing citations and unsupported numbers often route to factual failure. Use that rule as a hypothesis to audit against held-out cases, not as proof that every uncited answer is wrong."
+      ],
+      "reveals": [
+        {
+          "prompt": "Training accuracy rises after adding six more levels, but validation accuracy falls.",
+          "reveal": "The extra branches are likely fitting training details that do not transfer. Compare a shallower or pruned tree on the same protected validation data."
+        },
+        {
+          "prompt": "One leaf predicts a release-blocking safety failure from only two rows.",
+          "reveal": "Inspect the rows and gather more evidence. A readable rule supported by two examples is still unstable and should not become an automatic release gate."
+        },
+        {
+          "prompt": "Overall accuracy is high, but nearly every rare urgent ticket is missed.",
+          "reveal": "The average hides the important class. Report urgent-case recall and adjust data, class weighting, thresholds, or the release policy."
+        }
+      ],
+      "check": {
+        "prompt": "A deep ticket tree scores 100% on training data and 71% on validation data. A pruned tree scores 91% on training and 84% on validation. Which is the stronger release candidate?",
+        "answer": "The pruned tree because it performs better on held-out validation data",
+        "choices": [
+          "The deep tree because training accuracy is the only useful score",
+          "The pruned tree because it performs better on held-out validation data",
+          "Both are equal because all trees use readable rules",
+          "The deep tree because more branches always improve generalization"
+        ],
+        "explanation": "The gap between perfect training performance and weaker validation performance signals {{overfitting}}. The pruned tree gives up memorized detail and performs better on held-out examples, making it the stronger candidate before the final test."
+      },
+      "aside": {
+        "title": "Turn model failures into features",
+        "body": "Export or review an {{evaluation}} and define a few auditable features—citation present, refusal present, answer length, or unsupported number. Ask whether a shallow tree would expose a useful failure pattern.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "Create an evaluation"
+      }
+    },
+    {
+      "title": "Choose transparency when the data fits",
+      "paragraphs": [
+        "Decision trees are strongest when rows already contain meaningful fields and a sequence of threshold or category questions can separate the targets. They handle mixed numerical and categorical inputs, capture interactions, and produce paths that people can inspect.",
+        "A single tree can be unstable: a small data change may replace one early split and reshape many branches. Ensembles such as random forests or boosted trees combine many trees for stronger predictions, but their combined reasoning is less readable than one compact tree.",
+        "Trees are usually a poor first tool for raw images, audio waveforms, or long free-form text. Engineers can hand-build features, but deep learning often learns useful representations directly from those structured signals. The right comparison depends on data, sample size, latency, error cost, and the need to explain decisions.",
+        "In an AiEval workflow, compare models on the same held-out cases and report more than the winning average. For a tree, inspect paths, leaf support, and subgroup errors. For a black-box model, use the same task-level metrics and add failure slices so greater complexity must earn its operational cost.",
+        "Next, the **Decision trees lab** lets you choose a root {{split}} and leaf labels on a tiny ticket table. After that, **Deep learning approaches** introduces CNNs, RNNs, and transformers as different ways to organize learned connections. Decision trees teach the selection principle first: match the model's structure to the structure of the input and verify the choice on held-out evidence."
+      ],
+      "bullets": [
+        "Prefer a compact tree when structured features and explainable rules fit the task.",
+        "Expect a single tree to change when the data changes slightly.",
+        "Compare candidate model families on identical held-out cases.",
+        "Choose complexity only when it improves the metrics and failure slices that matter."
+      ],
+      "check": {
+        "prompt": "Complete the core tree prediction process in one short phrase.",
+        "answer": "Follow feature splits to a leaf",
+        "accept": [
+          "follow splits to a leaf",
+          "trace feature questions to a leaf",
+          "take branches until a prediction",
+          "follow rules to the prediction"
+        ],
+        "wordBank": ["Follow", "feature", "splits", "to", "a", "leaf", "average", "every", "row"],
+        "explanation": "A tree evaluates one learned feature question after another. The resulting branch path ends at a {{leafNode}} that supplies the prediction and can be inspected as a readable rule."
+      },
+      "aside": {
+        "title": "Practice the split",
+        "body": "Open the Decision trees lab and pick a root {{feature}} that separates billing from access tickets.",
+        "route": "/learn/labs/decision-trees",
+        "actionLabel": "Open decision trees lab"
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which evidence best supports choosing a smaller pruned tree over a deep tree?",
+      "answer": "It performs better on held-out data and its important leaves have adequate support",
+      "choices": [
+        "It performs better on held-out data and its important leaves have adequate support",
+        "It memorizes every training row with more branches",
+        "Its diagram uses fewer pixels",
+        "It includes a field created after the prediction"
+      ],
+      "explanation": "Held-out performance tests {{generalization}}, while leaf support shows whether important rules rest on enough examples. Simplicity is useful when it removes brittle branches without sacrificing the errors that matter."
+    },
+    {
+      "prompt": "A compact tree uses valid structured features and matches a black-box model on every important test slice. Why might the tree be preferable?",
+      "answer": "Its prediction paths are easier to inspect and operate",
+      "choices": [
+        "Its prediction paths are easier to inspect and operate",
+        "A tree is guaranteed to be unbiased",
+        "Black-box models cannot make predictions",
+        "Training performance makes test slices irrelevant"
+      ],
+      "explanation": "When task performance is comparable, readable paths can simplify review, debugging, policy checks, and deployment. The tree still needs data and fairness audits; transparency makes those checks possible rather than unnecessary."
+    }
+  ]
+}

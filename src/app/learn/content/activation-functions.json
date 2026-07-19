@@ -1,0 +1,136 @@
+{
+  "sections": [
+    {
+      "title": "The dimmer switch after the mix",
+      "paragraphs": [
+        "Think of a light with a dimmer. The mixing desk from Bias and weights already combined every microphone into one score; the dimmer decides how that score becomes a final brightness you can use.",
+        "That dimmer is the {{activation}}. After a neuron computes weighted inputs plus {{bias}}, the activation turns the raw score into the value that flows to the next step — often a number between fixed bounds, or zeroed when the score is unhelpful.",
+        "Without an activation, stacking neurons is still one big linear formula. Two linear stages in a row can be rewritten as a single linear stage, so the network cannot bend decision boundaries into curves.",
+        "Common activations each reshape scores differently. {{sigmoid}} squeezes into (0, 1), {{tanh}} into (−1, 1), and {{relu}} keeps positive scores and clamps negatives to zero.",
+        "In AiEval you will later train tiny networks that let you change the hidden-layer activation. This lesson is the vocabulary for that control: you are choosing how each neuron reshapes its score, not only how it mixes evidence."
+      ],
+      "bullets": [
+        "Score first (weights and bias), then {{activation}}.",
+        "Non-linear activations let stacked layers learn curves.",
+        "{{sigmoid}}, {{tanh}}, and {{relu}} are the shapes you will meet first."
+      ],
+      "check": {
+        "prompt": "A teammate says two linear layers without activations can learn any curved boundary. What is the trap?",
+        "answer": "Stacked linear layers still act like one linear map",
+        "choices": [
+          "Stacked linear layers still act like one linear map",
+          "Linear layers cannot store weights",
+          "Activations only matter for the test set",
+          "Bias must be removed before stacking layers"
+        ],
+        "explanation": "Each linear layer is a weighted sum plus bias. Composing linear maps yields another linear map, so the model cannot invent curved boundaries until a non-linear {{activation}} breaks that pattern."
+      }
+    },
+    {
+      "title": "Pick a shape for the job",
+      "paragraphs": [
+        "Imagine a binary spam {{classifier}} that should output something like a probability. {{sigmoid}} is a natural fit for that final unit because it stays between 0 and 1, matching a yes/no confidence story.",
+        "{{relu}} is popular in hidden layers because it is simple and keeps strong positive evidence growing instead of flattening it near 1. Negative scores become zero, which can make the unit quiet on that example.",
+        "{{tanh}} is like a centered sibling of sigmoid: outputs sit between −1 and 1, so positive and negative directions stay symmetric around zero. Some older architectures preferred it in middle layers for that reason.",
+        "A linear path (no squash) is still useful as a teaching contrast and for some output heads, but it does not add the bend that makes deep stacks expressive. If every unit stayed linear, depth would not buy new shapes.",
+        "When you compare models in AiEval, activation choice is a {{hyperparameters}} decision like learning rate: change one setting, keep the {{dataset}} and {{rubric}} fixed, and watch whether {{loss}} and errors move in the direction you care about."
+      ],
+      "reveals": [
+        {
+          "prompt": "You need a final score that behaves like a probability between 0 and 1. Which activation family fits?",
+          "reveal": "{{sigmoid}} (or a related squash into (0, 1)). ReLU can grow past 1, so it is a poorer probability story at the output."
+        },
+        {
+          "prompt": "Hidden units keep getting stuck near 0 or 1 with sigmoid. What often helps?",
+          "reveal": "Try {{relu}} in the hidden layer. It avoids the flat tails that make tiny gradients and can let positive evidence keep growing."
+        },
+        {
+          "prompt": "Is the activation a learned weight?",
+          "reveal": "No. You choose the function shape; training still updates {{weights}} and {{bias}}. The activation is a fixed transform applied after the score."
+        }
+      ],
+      "check": {
+        "prompt": "You are choosing a hidden-layer activation for a small XOR network. Negative scores should become silent (zero), and large positive scores should not flatten near 1. Which option fits best?",
+        "answer": "ReLU",
+        "choices": [
+          "ReLU",
+          "Sigmoid",
+          "Linear only",
+          "Remove the bias"
+        ],
+        "explanation": "{{relu}} zeros negatives and passes positives through unchanged, so strong evidence can keep growing. {{sigmoid}} flattens large magnitudes toward 0 or 1, which is often worse for deep hidden stacks."
+      }
+    },
+    {
+      "title": "Bridge into the neural network lab",
+      "paragraphs": [
+        "You already know how a neuron mixes evidence with {{weights}} and {{bias}}. Activation functions decide what that mix becomes before the next neuron sees it.",
+        "The Activation functions lab lets you compare linear, {{sigmoid}}, {{relu}}, and {{tanh}} on the same probe scores so the curves stop being abstract names.",
+        "Then the Neural network lab puts those pieces together: multiple units, a chosen hidden activation, a dataset like XOR, and training that updates weights while you watch {{loss}} fall.",
+        "Expect teaching shortcuts. The labs use tiny networks and simple activations, not every production trick (batch norm, GELU, carefully tuned initializers). The goal is intuition you can reuse when reading real architecture diagrams.",
+        "If an AiEval run later lets you swap model settings or compare prompts, keep the same habit: change one knob, measure on held-out cases, and do not treat a prettier training curve as proof by itself."
+      ],
+      "bullets": [
+        "Optional lab: compare activation curves on fixed scores.",
+        "Next hub step: Neural network lab — train with a chosen activation.",
+        "Shortcut honesty: toy sizes, not production stacks."
+      ],
+      "check": {
+        "prompt": "In a short phrase, what should you do after choosing an activation for a tiny network?",
+        "answer": "Train and measure on held-out data",
+        "accept": [
+          "train then check held-out data",
+          "measure on a test set",
+          "evaluate held-out examples",
+          "test generalization after training"
+        ],
+        "wordBank": [
+          "Train",
+          "and",
+          "measure",
+          "on",
+          "held-out",
+          "data",
+          "only",
+          "guess"
+        ],
+        "explanation": "Activation choice is a setting, not a guarantee. Train, then check {{generalization}} on data the model did not use while you were deciding — the same discipline as any other hyperparameter change."
+      },
+      "aside": {
+        "title": "Practice the curves",
+        "body": "Open the Activation functions lab and switch among {{sigmoid}}, {{relu}}, and {{tanh}} on the same scores before you train a full network.",
+        "route": "/learn/labs/activation-functions",
+        "actionLabel": "Open activation lab"
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which statement best captures why activations matter between layers?",
+      "answer": "They add non-linearity so stacked layers are not one linear map",
+      "choices": [
+        "They add non-linearity so stacked layers are not one linear map",
+        "They replace the need for a train and test split",
+        "They store the dataset labels inside each neuron",
+        "They set the learning rate automatically"
+      ],
+      "explanation": "Without a non-linear {{activation}}, composing layers collapses to a single linear transform. Activations are what let depth create curved boundaries."
+    },
+    {
+      "prompt": "In a short phrase, which activation zeros negatives and passes positives through?",
+      "answer": "ReLU",
+      "accept": [
+        "rectified linear unit",
+        "the relu function",
+        "relu activation"
+      ],
+      "wordBank": [
+        "ReLU",
+        "Sigmoid",
+        "Tanh",
+        "Linear"
+      ],
+      "explanation": "{{relu}} returns 0 when the score is negative and returns the score itself when positive. That simple hinge is why it is a default choice in many hidden layers."
+    }
+  ]
+}

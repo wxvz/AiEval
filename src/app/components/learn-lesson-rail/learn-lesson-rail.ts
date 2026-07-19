@@ -20,14 +20,26 @@ export class LearnLessonRail {
   readonly savedKeyTerms = input<LearnGlossaryTerm[]>([]);
 
   private readonly expandedKeyTerms = signal<ReadonlySet<LearnGlossaryTerm>>(new Set());
+  /** Tracks prior saved terms so newly clicked ones open expanded without reopening user-collapsed ones. */
+  private previousSavedTerms = new Set<LearnGlossaryTerm>();
 
   constructor() {
     effect(() => {
-      const saved = new Set(this.savedKeyTerms());
+      const saved = this.savedKeyTerms();
+      const savedSet = new Set(saved);
+      const newlySaved = saved.filter((term) => !this.previousSavedTerms.has(term));
+
       this.expandedKeyTerms.update((expanded) => {
-        const next = new Set([...expanded].filter((term) => saved.has(term)));
-        return next.size === expanded.size ? expanded : next;
+        const next = new Set([...expanded].filter((term) => savedSet.has(term)));
+        for (const term of newlySaved) {
+          next.add(term);
+        }
+        const unchanged =
+          next.size === expanded.size && [...next].every((term) => expanded.has(term));
+        return unchanged ? expanded : next;
       });
+
+      this.previousSavedTerms = savedSet;
     });
   }
 

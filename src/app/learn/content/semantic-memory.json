@@ -87,7 +87,17 @@
           "external knowledge retrieved by meaning",
           "facts stored outside the model retrieved by meaning"
         ],
-        "explanation": "{{semanticMemory}} keeps durable facts outside the {{contextWindow}}. {{retrieval}} fetches the right {{chunk}}s by meaning so the {{model}} answers from evidence you control."
+        "explanation": "{{semanticMemory}} keeps durable facts outside the {{contextWindow}}. {{retrieval}} fetches the right {{chunk}}s by meaning so the {{model}} answers from evidence you control.",
+        "wordBank": [
+          "memory",
+          "retrieved",
+          "external",
+          "meaning",
+          "by",
+          "internal",
+          "keywords",
+          "weights"
+        ]
       }
     }
   ],

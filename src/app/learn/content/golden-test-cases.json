@@ -87,7 +87,17 @@
           "regression test suite",
           "baseline evaluation prompts"
         ],
-        "explanation": "A {{goldenSet}} is the curated {{testCase}} deck you rerun to detect quality drops — the backbone of {{regressionEval}}."
+        "explanation": "A {{goldenSet}} is the curated {{testCase}} deck you rerun to detect quality drops — the backbone of {{regressionEval}}.",
+        "wordBank": [
+          "test",
+          "regression",
+          "reusable",
+          "cases",
+          "for",
+          "random",
+          "one-off",
+          "prompts"
+        ]
       }
     }
   ],
@@ -101,7 +111,17 @@
         "realistic edge cases",
         "find regressions"
       ],
-      "explanation": "Happy-path-only suites green-light releases that fail on the prompts users actually send."
+      "explanation": "Happy-path-only suites green-light releases that fail on the prompts users actually send.",
+      "wordBank": [
+        "failure",
+        "catch",
+        "real",
+        "they",
+        "modes",
+        "hide",
+        "invent",
+        "speed"
+      ]
     },
     {
       "prompt": "A {{testCase}} passes but uses vague wording. What happens when you automate scoring?",
@@ -112,7 +132,18 @@
         "hard to score",
         "rubric ambiguity"
       ],
-      "explanation": "Vague {{testCase}}s fight clear {{criterion}} anchors — tighten prompts before scaling {{judge}} automation."
+      "explanation": "Vague {{testCase}}s fight clear {{criterion}} anchors — tighten prompts before scaling {{judge}} automation.",
+      "wordBank": [
+        "disagree",
+        "better",
+        "judges",
+        "what",
+        "means",
+        "on",
+        "agree",
+        "tokens",
+        "faster"
+      ]
     }
   ]
 }

@@ -85,7 +85,14 @@
           "push it down",
           "lower loss"
         ],
-        "explanation": "Training adjusts {{weights}} to push {{loss}} down so {{prediction}}s match {{target}}s. That is the entire point of the update loop you are about to run in the lab."
+        "explanation": "Training adjusts {{weights}} to push {{loss}} down so {{prediction}}s match {{target}}s. That is the entire point of the update loop you are about to run in the lab.",
+        "wordBank": [
+          "it",
+          "reduce",
+          "increase",
+          "ignore",
+          "maximize"
+        ]
       }
     }
   ],

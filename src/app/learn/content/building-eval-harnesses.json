@@ -88,7 +88,17 @@
           "evaluation workflow",
           "automated evaluation"
         ],
-        "explanation": "A harness automates the repetitive steps: calling {{model}}s, scoring answers, storing results, and comparing over time."
+        "explanation": "A harness automates the repetitive steps: calling {{model}}s, scoring answers, storing results, and comparing over time.",
+        "wordBank": [
+          "track",
+          "generate,",
+          "evaluations",
+          "score,",
+          "and",
+          "delete",
+          "weights",
+          "deploy"
+        ]
       }
     }
   ],

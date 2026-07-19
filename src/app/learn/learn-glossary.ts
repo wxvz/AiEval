@@ -5,11 +5,17 @@ export type LearnGlossaryTerm =
   | 'prediction'
   | 'model'
   | 'labeledData'
+  | 'dataset'
   | 'trainSet'
   | 'testSet'
   | 'validationSet'
   | 'generalization'
   | 'weights'
+  | 'bias'
+  | 'activation'
+  | 'sigmoid'
+  | 'relu'
+  | 'tanh'
   | 'memorization'
   | 'classifier'
   | 'hyperparameters'
@@ -17,6 +23,16 @@ export type LearnGlossaryTerm =
   | 'learningRate'
   | 'epoch'
   | 'gradient'
+  | 'reinforcementLearning'
+  | 'agent'
+  | 'environment'
+  | 'reward'
+  | 'policy'
+  | 'generativeAdversarialNetwork'
+  | 'generator'
+  | 'discriminator'
+  | 'adversarialTraining'
+  | 'modeCollapse'
   | 'semanticMemory'
   | 'contextWindow'
   | 'embedding'
@@ -38,7 +54,25 @@ export type LearnGlossaryTerm =
   | 'structuredOutput'
   | 'faithfulness'
   | 'hallucination'
-  | 'regressionEval';
+  | 'regressionEval'
+  | 'toolCall'
+  | 'modelContextProtocol'
+  | 'host'
+  | 'client'
+  | 'server'
+  | 'multimodalEmbedding'
+  | 'vectorDatabase'
+  | 'metadata'
+  | 'decisionTree'
+  | 'feature'
+  | 'split'
+  | 'leafNode'
+  | 'overfitting'
+  | 'deepLearning'
+  | 'inductiveBias'
+  | 'convolutionalNeuralNetwork'
+  | 'recurrentNeuralNetwork'
+  | 'transformer';
 
 export interface LearnGlossaryEntry {
   label: string;
@@ -76,6 +110,11 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     explanation:
       'Examples where humans (or trusted rules) have already marked the right answer. Without labels you cannot train a supervised model.',
   },
+  dataset: {
+    label: 'dataset',
+    explanation:
+      'The collection of input–target pairs the model trains on. Each row teaches what output should appear for a given input.',
+  },
   trainSet: {
     label: 'train set',
     explanation:
@@ -100,6 +139,31 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     label: 'weights',
     explanation:
       'Internal numbers the model adjusts during training. Better weights usually mean predictions closer to targets.',
+  },
+  bias: {
+    label: 'bias',
+    explanation:
+      'A learned offset added after weighted inputs are combined. It shifts the model’s baseline tendency without belonging to any one input.',
+  },
+  activation: {
+    label: 'activation',
+    explanation:
+      'A function applied after a neuron’s weighted sum and bias. Non-linear activations let stacked layers learn curves instead of one linear map.',
+  },
+  sigmoid: {
+    label: 'sigmoid',
+    explanation:
+      'An activation that squeezes any score into (0, 1). Often used when the output should look like a probability.',
+  },
+  relu: {
+    label: 'ReLU',
+    explanation:
+      'Rectified linear unit: returns 0 for negative scores and the score itself for positive values. A common choice in hidden layers.',
+  },
+  tanh: {
+    label: 'tanh',
+    explanation:
+      'Hyperbolic tangent activation that squeezes scores into (−1, 1), centered at zero.',
   },
   memorization: {
     label: 'memorization',
@@ -135,6 +199,56 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     label: 'gradient',
     explanation:
       'The direction and amount each weight should move to reduce loss on the current example. Training follows this signal to improve.',
+  },
+  reinforcementLearning: {
+    label: 'reinforcement learning',
+    explanation:
+      'Learning by interacting with an environment: an agent tries actions, receives rewards or penalties, and improves its strategy from those consequences.',
+  },
+  agent: {
+    label: 'agent',
+    explanation:
+      'The decision-maker in reinforcement learning. It observes the current situation and chooses an action according to its policy.',
+  },
+  environment: {
+    label: 'environment',
+    explanation:
+      'The world an agent interacts with. It responds to an action with a new situation and a reward signal.',
+  },
+  reward: {
+    label: 'reward',
+    explanation:
+      'A numeric feedback signal after an action. Reinforcement learning tries to increase long-term reward, so the signal must represent the behavior you actually want.',
+  },
+  policy: {
+    label: 'policy',
+    explanation:
+      'An agent’s strategy for choosing an action from the current state. Training changes the policy to favor actions with better expected consequences.',
+  },
+  generativeAdversarialNetwork: {
+    label: 'generative adversarial network (GAN)',
+    explanation:
+      'A pair of models trained in competition: a generator creates synthetic samples while a discriminator learns to distinguish them from real data.',
+  },
+  generator: {
+    label: 'generator',
+    explanation:
+      'The GAN model that turns random input into synthetic samples and learns to make them resemble the training data.',
+  },
+  discriminator: {
+    label: 'discriminator',
+    explanation:
+      'The GAN model that predicts whether a sample came from real training data or from the generator.',
+  },
+  adversarialTraining: {
+    label: 'adversarial training',
+    explanation:
+      'Training models with competing objectives so each model creates a harder learning signal for the other.',
+  },
+  modeCollapse: {
+    label: 'mode collapse',
+    explanation:
+      'A GAN failure where the generator produces a narrow set of similar outputs instead of covering the variety in the real data.',
   },
   semanticMemory: {
     label: 'semantic memory',
@@ -245,6 +359,96 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     label: 'regression eval',
     explanation:
       'Re-running the same golden set after a change to see if quality dropped — catching prompt edits, model swaps, or provider updates that broke what used to work.',
+  },
+  toolCall: {
+    label: 'tool call',
+    explanation:
+      'A model-produced request to run a named external function with structured arguments. The application validates and executes the request, then can return the result to the model.',
+  },
+  modelContextProtocol: {
+    label: 'Model Context Protocol (MCP)',
+    explanation:
+      'An open protocol for connecting AI applications to external tools, resources, and reusable prompts through consistent client–server messages.',
+  },
+  host: {
+    label: 'MCP host',
+    explanation:
+      'The application that runs the model experience, creates MCP client connections, and enforces user-facing policy and permissions.',
+  },
+  client: {
+    label: 'MCP client',
+    explanation:
+      'The component inside an MCP host that maintains one connection to one server and exchanges protocol messages with it.',
+  },
+  server: {
+    label: 'MCP server',
+    explanation:
+      'A local or remote program that advertises MCP capabilities such as tools, resources, or prompt templates backed by another system.',
+  },
+  multimodalEmbedding: {
+    label: 'multimodal embedding',
+    explanation:
+      'A numerical representation designed so related content from different media—such as text and images—can be compared in a compatible vector space.',
+  },
+  vectorDatabase: {
+    label: 'vector database',
+    explanation:
+      'A system that stores embeddings and retrieves nearby vectors, usually alongside source identifiers and metadata used for filtering.',
+  },
+  metadata: {
+    label: 'metadata',
+    explanation:
+      'Structured facts stored beside content—such as modality, tenant, timestamp, or model version—that support filtering, access control, and debugging.',
+  },
+  decisionTree: {
+    label: 'decision tree',
+    explanation:
+      'A model that predicts by following learned feature questions down branches until it reaches a leaf with an answer.',
+  },
+  feature: {
+    label: 'feature',
+    explanation:
+      'One input field a model can use to make a prediction—for example message length, account type, or whether a citation is present.',
+  },
+  split: {
+    label: 'split',
+    explanation:
+      'A decision-tree question that divides rows into branches using a feature value, category, or numerical cutoff.',
+  },
+  leafNode: {
+    label: 'leaf node',
+    explanation:
+      'The end of a decision-tree path, where the model stores the prediction for rows that followed that path.',
+  },
+  overfitting: {
+    label: 'overfitting',
+    explanation:
+      'Learning training details so specifically that performance looks strong on seen examples but weakens on new held-out data.',
+  },
+  deepLearning: {
+    label: 'deep learning',
+    explanation:
+      'Training neural networks with multiple layers so they can build progressively richer representations from data.',
+  },
+  inductiveBias: {
+    label: 'inductive bias',
+    explanation:
+      'A structural assumption that makes some patterns easier for a model to learn, such as locality in images or order in sequences.',
+  },
+  convolutionalNeuralNetwork: {
+    label: 'convolutional neural network (CNN)',
+    explanation:
+      'A network that reuses small learned filters across nearby positions, making local repeated patterns easier to detect.',
+  },
+  recurrentNeuralNetwork: {
+    label: 'recurrent neural network (RNN)',
+    explanation:
+      'A network that processes a sequence step by step while carrying learned state from earlier steps.',
+  },
+  transformer: {
+    label: 'transformer',
+    explanation:
+      'A neural-network architecture that uses attention to connect relevant positions and supports parallel processing during training.',
   },
 };
 

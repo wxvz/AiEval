@@ -81,7 +81,10 @@ describe('LearnLessonPage', () => {
   });
 
   it('shows optional lab link in sidebar on train-vs-test lesson', () => {
-    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-from-examples']));
+    localStorage.setItem(
+      'aieval-learn-progress',
+      JSON.stringify(['learning-from-examples', 'what-is-a-dataset']),
+    );
     setLessonId('train-vs-test');
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
@@ -147,6 +150,10 @@ describe('LearnLessonPage', () => {
     const rail = fixture.nativeElement.querySelector('.learn-lesson-rail__key-terms');
     expect(rail).toBeTruthy();
     expect(rail.textContent).toContain('Key terms');
+    expect(rail.querySelector('.learn-lesson-rail__key-term-body')).toBeTruthy();
+    expect(
+      rail.querySelector('.learn-lesson-rail__key-term-toggle')?.getAttribute('aria-expanded'),
+    ).toBe('true');
 
     const savedMentions = fixture.nativeElement.querySelectorAll('.learn-term-hint__saved');
     expect(savedMentions.length).toBeGreaterThan(0);
