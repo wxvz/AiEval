@@ -21,21 +21,23 @@ const PRESETS: Record<ProviderName, ProviderPreset> = {
     },
   },
   groq: {
+    // Scout + Qwen3-32B shut down 2026-07-17; Llama 3.x judge path deprecates 2026-08-16.
+    // Replacements per https://console.groq.com/docs/deprecations
     balanced: {
       answer: [
         'llama-3.1-8b-instant',
-        'meta-llama/llama-4-scout-17b-16e-instruct',
-        'qwen/qwen3-32b',
+        'qwen/qwen3.6-27b',
+        'openai/gpt-oss-20b',
       ],
-      judge: 'llama-3.3-70b-versatile',
+      judge: 'openai/gpt-oss-120b',
     },
     fast: {
       answer: [
         'llama-3.1-8b-instant',
-        'meta-llama/llama-4-scout-17b-16e-instruct',
-        'qwen/qwen3-32b',
+        'qwen/qwen3.6-27b',
+        'openai/gpt-oss-20b',
       ],
-      judge: 'llama-3.3-70b-versatile',
+      judge: 'openai/gpt-oss-120b',
     },
   },
   openrouter: {
