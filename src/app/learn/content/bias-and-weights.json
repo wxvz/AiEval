@@ -3,11 +3,11 @@
     {
       "title": "A mixing desk for evidence",
       "paragraphs": [
-        "Picture a sound engineer mixing a band. Each microphone has a fader that can make that source louder, quieter, or effectively pull it in the opposite direction; a master control can shift the whole mix before any musician plays.",
-        "A neuron works in a similar way. Each {{input}} is a signal, each of the neuron’s {{weights}} is a fader, and the {{bias}} is the baseline shift: the neuron multiplies every input by its weight, adds those results, then adds the bias.",
-        "The size and sign of a weight both matter. A large positive weight makes a larger input push the combined score upward, a negative weight makes it push downward, and a weight near zero makes that input contribute little.",
+        "Picture a sound engineer mixing a band. Each microphone has a fader that can make that source louder, quieter or effectively pull it in the opposite direction; a master control can shift the whole mix before any musician plays.",
+        "A neuron works in a similar way. Each {{input}} is a signal, each of the neuron’s {{weights}} is a fader and the {{bias}} is the baseline shift: the neuron multiplies every input by its weight, adds those results, then adds the bias.",
+        "The size and sign of a weight both matter. A large positive weight makes a larger input push the combined score upward, a negative weight makes it push downward and a weight near zero makes that input contribute little.",
         "The bias is not attached to one input. It shifts every case by the same amount, so a positive bias makes a positive decision easier to reach while a negative bias demands stronger positive evidence.",
-        "Do not treat one impressive weight as a guaranteed outcome. The final {{prediction}} depends on the input values, all the other weighted signals, the bias, and the rule that turns the combined score into an output."
+        "Do not treat one impressive weight as a guaranteed outcome. The final {{prediction}} depends on the input values, all the other weighted signals, the bias and the rule that turns the combined score into an output."
       ],
       "bullets": [
         "{{weights}} control how strongly and in which direction individual signals count.",
@@ -29,15 +29,15 @@
     {
       "title": "Move the boundary deliberately",
       "paragraphs": [
-        "Suppose a support team labels responses as safe to send or needing review. A tiny {{model}} uses inputs such as factual-support score, policy-risk score, and whether the answer includes an unsupported claim; those labels become the {{target}} values it learns to predict.",
+        "Suppose a support team labels responses as safe to send or needing review. A tiny {{model}} uses inputs such as factual-support score, policy-risk score and whether the answer includes an unsupported claim; those labels become the {{target}} values it learns to predict.",
         "If unsupported claims should strongly trigger review, that input needs influence in the review direction. If strong factual support should make review less likely, its weight should point the other way; training discovers useful values by changing weights to reduce {{loss}}.",
         "Now imagine every response is sent to review, including clearly safe ones. The individual weights may rank risky answers correctly, yet the bias can place the boundary too low, giving the model an over-cautious starting tendency.",
         "Changing a weight and changing the bias solve different problems. Adjust a weight when one kind of evidence matters too much or too little; adjust the bias when decisions are broadly too eager or too reluctant across many combinations of evidence.",
-        "In AiEval, you might compare two prompts on the same labeled cases and {{rubric}}. The evaluator’s explicit rubric weights are not literally a neuron’s learned weights, but the comparison teaches the same discipline: hold cases and criteria steady, change one decision rule, and inspect which errors move."
+        "In AiEval, you might compare two prompts on the same labeled cases and {{rubric}}. The evaluator’s explicit rubric weights are not literally a neuron’s learned weights but the comparison teaches the same discipline: hold cases and criteria steady, change one decision rule and inspect which errors move."
       ],
       "reveals": [
         {
-          "prompt": "Risky and safe answers are ordered correctly, but almost all are sent to review. What pattern should you investigate?",
+          "prompt": "Risky and safe answers are ordered correctly but almost all are sent to review. What pattern should you investigate?",
           "reveal": "Investigate the shared decision boundary, including the {{bias}}. A broad shift may fix the review rate without changing which evidence ranks answers as riskier."
         },
         {
@@ -50,7 +50,7 @@
         }
       ],
       "check": {
-        "prompt": "A review classifier catches risky answers, but it also sends nearly every clearly safe answer to review. The ranking of cases looks sensible. What is the best first adjustment to test?",
+        "prompt": "A review classifier catches risky answers but it also sends nearly every clearly safe answer to review. The ranking of cases looks sensible. What is the best first adjustment to test?",
         "answer": "Shift the bias toward requiring more review evidence",
         "choices": [
           "Shift the bias toward requiring more review evidence",
@@ -64,11 +64,12 @@
     {
       "title": "Apply the trade-off to spam",
       "paragraphs": [
-        "Your team deploys a spam {{classifier}} with three inputs: suspicious-link count, urgent-language score, and a trusted-sender flag. Links and urgent language have positive weights toward spam, the trusted-sender flag has a negative weight, and the bias sets the starting score before those signals arrive.",
+        "Your team deploys a spam {{classifier}} with three inputs: suspicious-link count, urgent-language score and a trusted-sender flag. Links and urgent language have positive weights toward spam, the trusted-sender flag has a negative weight and the bias sets the starting score before those signals arrive.",
         "On the {{testSet}}, the classifier catches most spam but blocks too many legitimate password-reset emails. Those messages contain links and urgent wording, so increasing either positive weight would worsen the false alarms; blindly lowering every weight could instead let obvious phishing through.",
         "Use the earlier distinction to make a controlled decision. If false alarms occur across many kinds of legitimate mail, lower the baseline tendency toward spam by shifting the bias; if they cluster around urgent wording, reduce that input’s weight and keep the strong link evidence intact.",
-        "Then compare errors, not just one average score. Count legitimate mail blocked and spam missed, choose the trade-off that matches the product’s risk, and verify the change on held-out labels rather than tuning repeatedly against the final test cases.",
-        "The Bias and weights lab lets you move one neuron’s boundary by hand. Next, Activation functions explain the squash after the score (sigmoid, ReLU, tanh), and the Neural network lab shows how many neurons and weights learn together. These are teaching simplifications: a production spam system needs richer data, carefully chosen thresholds, and ongoing checks for new attack patterns."
+        "Then compare errors, not just one average score. Count legitimate mail blocked and spam missed, choose the trade-off that matches the product’s risk and verify the change on held-out labels rather than tuning repeatedly against the final test cases.",
+        "The Bias and weights lab lets you move one neuron’s boundary by hand. Next, Activation functions explain the squash after the score (sigmoid, ReLU, tanh). The Neural network lab then shows how many neurons and weights learn together.",
+        "These are teaching simplifications: a production spam system needs richer data, carefully chosen thresholds and ongoing checks for new attack patterns."
       ],
       "bullets": [
         "Broad error across many inputs: test a change to the {{bias}}.",

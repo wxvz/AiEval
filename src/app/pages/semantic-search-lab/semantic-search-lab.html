@@ -6,14 +6,14 @@
 
     <h1 class="h3 mb-3">Semantic search</h1>
     <p class="lead mb-3">
-      Like an open-book exam, semantic search finds the passages that best match your question — even when the
+      Like an open-book exam, semantic search finds the passages that best match your question, even when the
       wording differs. Text becomes vectors in meaning-space; chunks with similar
       <app-retrieval-term-hint term="embedding" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       land closer together.
     </p>
     @if (prereqMeta) {
       <p class="text-muted small mb-3">
-        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you saw why facts live
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>: you saw why facts live
         outside the prompt and how
         <app-retrieval-term-hint term="embedding" hintId="embedding-prereq" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
         enable retrieval.
@@ -32,7 +32,7 @@
       results.
     </p>
     <p class="text-muted small mb-4">
-      Tip: start with the <strong>evaluation rubric</strong> preset — watch which chunks rank highest and why.
+      Tip: start with the <strong>evaluation rubric</strong> preset. Watch which chunks rank highest and why.
     </p>
 
     <div class="card mb-4">
@@ -124,7 +124,7 @@
     </div>
 
     <p class="text-muted small mb-4">
-      Next: <a routerLink="/learn/labs/rag-playground">RAG playground</a> — assemble retrieved chunks into a prompt.
+      Next: <a routerLink="/learn/labs/rag-playground">RAG playground</a>: assemble retrieved chunks into a prompt.
     </p>
 
     <section class="mb-4">
@@ -133,7 +133,7 @@
       <details class="learn-lab-faq" open>
         <summary class="learn-lab-faq__question">How is this different from keyword search?</summary>
         <p class="mb-0 text-muted">
-          Keyword search looks for exact words. Semantic search matches meaning — a query about "scoring criteria"
+          Keyword search looks for exact words. Semantic search matches meaning: a query about "scoring criteria"
           can rank a chunk about rubrics even when the word "rubric" is missing from your query.
         </p>
       </details>
@@ -150,7 +150,7 @@
         <summary class="learn-lab-faq__question">Why use top-k?</summary>
         <p class="mb-0 text-muted">
           Models cannot read your entire document library at once. Top-k keeps only the best-matching chunks before
-          passing them to the next step — retrieval narrows the field.
+          passing them to the next step. Retrieval narrows the field.
         </p>
       </details>
 

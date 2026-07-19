@@ -18,7 +18,7 @@
     <div class="alert alert-light border mb-3" role="note">
       Teaching shortcut: canned answers and one reference verdict. In AiEval a
       <app-learn-term-hint term="judge" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
-      scores real model outputs — and reasonable judges can disagree.
+      scores real model outputs and reasonable judges can disagree.
     </div>
 
     <h2 class="h6">Prompt</h2>
@@ -69,7 +69,7 @@
         </div>
         @if (checked()) {
           <p class="small mt-1 mb-0" [class.text-success]="agreesWithReference(criterion.id)" [class.text-warning]="!agreesWithReference(criterion.id)">
-            Reference: Answer {{ criterion.reference.toUpperCase() }} — {{ criterion.rationale }}
+            Reference: Answer {{ criterion.reference.toUpperCase() }}. {{ criterion.rationale }}
           </p>
         }
       </div>
@@ -85,7 +85,7 @@
     @if (checked()) {
       <div class="alert alert-info mb-4" role="status">
         You agreed with the reference on {{ agreementCount() }} of {{ criteria.length }} criteria.
-        Disagreement is not failure — it is a reason to sharpen the criterion wording.
+        Disagreement is not failure; it is a reason to sharpen the criterion wording.
       </div>
     }
 
@@ -93,7 +93,7 @@
       <summary class="learn-lab-faq__question">What if I genuinely prefer Answer B somewhere?</summary>
       <p class="mb-0 text-muted">
         Then your criterion needs sharper wording. "Tone" that rewards vague reassurance is measuring different things for
-        different judges — exactly why rubrics with anchors come next.
+        different judges, which is exactly why rubrics with anchors come next.
       </p>
     </details>
   </main>

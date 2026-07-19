@@ -35,10 +35,10 @@ describe('ActivationFunctionsLabPage', () => {
   });
 
   it('shows success banner when ReLU is selected', () => {
-    expect(fixture.nativeElement.textContent).not.toContain('Solved — that shape is ReLU');
+    expect(fixture.nativeElement.textContent).not.toContain('Solved: that shape is ReLU');
     page.selectActivation('relu');
     fixture.detectChanges();
     expect(page.solved()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Solved — that shape is ReLU');
+    expect(fixture.nativeElement.textContent).toContain('Solved: that shape is ReLU');
   });
 });

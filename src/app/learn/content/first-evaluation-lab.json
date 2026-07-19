@@ -1,18 +1,18 @@
 {
   "handoffCopy": {
-    "createPageHint": "You are creating an evaluation as part of the First evaluation lab. Run full automation or create manually — your evaluation will be highlighted on the dashboard when you return.",
-    "dashboardBanner": "Your evaluation from the First evaluation lab is highlighted below. Open Compare to see scored answers, or return to the lab when you are done."
+    "createPageHint": "You are creating an evaluation as part of the First evaluation lab. Run full automation or create manually. Your evaluation will be highlighted on the dashboard when you return.",
+    "dashboardBanner": "Your evaluation from the First evaluation lab is highlighted below. Open Compare to see scored answers or return to the lab when you are done."
   },
   "steps": [
     {
       "title": "Open the create page",
-      "body": "Start by opening AiEval's create page. You can leave title and prompt empty and use Run full automation, or fill them in yourself.",
+      "body": "Start by opening AiEval's create page. You can leave title and prompt empty and use Run full automation or fill them in yourself.",
       "actionLabel": "Create evaluation",
       "actionRoute": "/evaluations/new?from=learn"
     },
     {
       "title": "Run full automation",
-      "body": "On the create page, click Run full automation. AiEval will generate answers, score them against the default rubric, and draft an improved response. This may take a few minutes.",
+      "body": "On the create page, click Run full automation. AiEval will generate answers, score them against the default rubric and draft an improved response. This may take a few minutes.",
       "actionLabel": "Go to create page",
       "actionRoute": "/evaluations/new?from=learn"
     },

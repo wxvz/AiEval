@@ -24,25 +24,25 @@ const ANSWER_A =
   'in the error banner.';
 
 const ANSWER_B =
-  'Sorry about that! Exports can fail for lots of reasons — server hiccups, big files, network issues. ' +
+  'Sorry about that! Exports can fail for lots of reasons: server hiccups, big files, network issues. ' +
   'Usually trying again later works. Our system is normally very reliable, so this is probably temporary.';
 
 const CRITERIA: ComparisonCriterion[] = [
   {
     id: 'accuracy',
-    label: 'Accuracy — does it state the actual cause?',
+    label: 'Accuracy: does it state the actual cause?',
     reference: 'a',
     rationale: 'Answer A names the real cause (50 MB limit). Answer B guesses at several causes without commitment.',
   },
   {
     id: 'actionability',
-    label: 'Actionability — can the customer act on it?',
+    label: 'Actionability: can the customer act on it?',
     reference: 'a',
     rationale: 'Answer A gives concrete steps (split by date range, retry, contact support with the export ID). Answer B only says "try again later".',
   },
   {
     id: 'tone',
-    label: 'Tone — is it professional and reassuring?',
+    label: 'Tone: is it professional and reassuring?',
     reference: 'a',
     rationale: 'Both are polite, but B leans on vague reassurance ("normally very reliable") that can erode trust when the export just failed. A stays factual and calm.',
   },

@@ -14,7 +14,7 @@
     </p>
     @if (prereqMeta) {
       <p class="text-muted small mb-3">
-        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you already ranked chunks by
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>: you already ranked chunks by
         <app-retrieval-term-hint term="cosineSimilarity" hintId="cosine-prereq" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
       </p>
     }
@@ -195,7 +195,7 @@
 
     <p class="text-muted small mb-4">
       Review: <a routerLink="/learn/labs/semantic-search">Semantic search lab</a> ·
-      Next: <a routerLink="/learn/lessons/faithfulness-and-hallucinations">Faithfulness and hallucinations</a> — score grounding before your first eval.
+      Next: <a routerLink="/learn/lessons/faithfulness-and-hallucinations">Faithfulness and hallucinations</a>: score grounding before your first eval.
     </p>
 
     <section class="mb-4">
@@ -204,7 +204,7 @@
       <details class="learn-lab-faq" open>
         <summary class="learn-lab-faq__question">What if retrieval returns the wrong chunks?</summary>
         <p class="mb-0 text-muted">
-          Garbage in, garbage out — a wrong context leads to a wrong answer. Test retrieval quality with real
+          Garbage in, garbage out: a wrong context leads to a wrong answer. Test retrieval quality with real
           prompts in the First evaluation lab or AiEval.
         </p>
       </details>
@@ -212,7 +212,7 @@
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">Why a character budget?</summary>
         <p class="mb-0 text-muted">
-          Models have a fixed context window. You must rank, trim, or summarize chunks so the prompt fits — the
+          Models have a fixed context window. You must rank, trim or summarize chunks so the prompt fits; the
           slider simulates that limit.
         </p>
       </details>
@@ -229,7 +229,7 @@
         <summary class="learn-lab-faq__question">How do I know if my RAG setup is good?</summary>
         <p class="mb-0 text-muted">
           Run evaluations in AiEval with questions your users actually ask. Compare answers with and without
-          retrieval, and inspect whether the winning answer used the right chunks.
+          retrieval and inspect whether the winning answer used the right chunks.
         </p>
       </details>
     </section>

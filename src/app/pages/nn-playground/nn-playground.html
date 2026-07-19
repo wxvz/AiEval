@@ -12,7 +12,7 @@
     </p>
     @if (prereqMeta) {
       <p class="text-muted small mb-3">
-        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you already saw how sigmoid, ReLU,
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>: you already saw how sigmoid, ReLU,
         and tanh reshape a neuron’s score before the next layer.
       </p>
     }
@@ -150,7 +150,7 @@
         @if (usesSoftmax()) {
           <div class="col-12">
             <p class="text-muted small mb-0">
-              Softmax splits probability across 3 outputs. Use the 3-class dataset or custom rows with class labels 0, 1, or 2.
+              Softmax splits probability across 3 outputs. Use the 3-class dataset or custom rows with class labels 0, 1 or 2.
             </p>
           </div>
         }

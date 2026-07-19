@@ -5,14 +5,14 @@
       "paragraphs": [
         "Think of a {{dataset}} as a whole deck of flash cards, not a single card. One card is an example: an {{input}} on the front and a {{target}} on the back. The deck is every card you are willing to teach from.",
         "In {{supervisedLearning}}, that deck is what the {{model}} studies. Each row pairs something you show the {{model}} with the answer you want it to learn. Without a full set of pairs, there is nothing to practice on.",
-        "A {{dataset}} can be tiny or huge. The four XOR {{input}} pairs — (0,0), (0,1), (1,0), and (1,1) — form a {{dataset}}. Ten thousand labeled emails form a {{dataset}}. The shape stays the same: rows of {{labeledData}}.",
+        "A {{dataset}} can be tiny or huge. The four XOR {{input}} pairs ((0,0), (0,1), (1,0) and (1,1)) form a {{dataset}}. Ten thousand labeled emails form a {{dataset}}. The shape stays the same: rows of {{labeledData}}.",
         "People sometimes say \"data\" when they mean raw files with no answers. That pile is not yet a supervised {{dataset}}. You still need agreed {{target}}s before training can start.",
-        "When the Neural network lab asks you to pick a {{dataset}}, it is offering different decks of cards — same idea as flash cards, different puzzles on each card."
+        "When the Neural network lab asks you to pick a {{dataset}}, it is offering different decks of cards. The idea stays the same as flash cards; only the puzzle on each card changes."
       ],
       "bullets": [
-        "{{dataset}} — the full collection of training rows.",
-        "Each row — one {{input}} paired with one {{target}}.",
-        "Raw files alone — not a supervised {{dataset}} until labeled."
+        "{{dataset}}: the full collection of training rows.",
+        "Each row: one {{input}} paired with one {{target}}.",
+        "Raw files alone: not a supervised {{dataset}} until labeled."
       ],
       "check": {
         "prompt": "A teammate dumps 20,000 untagged support tickets into a folder and calls it \"our training {{dataset}}.\" What is missing?",
@@ -23,11 +23,11 @@
           "More tickets with no labels",
           "A second copy of the same folder"
         ],
-        "explanation": "A supervised {{dataset}} needs {{labeledData}}. Tickets without {{target}}s are only {{input}}s — the {{model}} has nothing to grade {{prediction}}s against."
+        "explanation": "A supervised {{dataset}} needs {{labeledData}}. Tickets without {{target}}s are only {{input}}s. The {{model}} has nothing to grade {{prediction}}s against."
       },
       "aside": {
         "title": "See datasets in the lab",
-        "body": "The Neural network lab lets you switch between built-in puzzles and your own rows — each choice is a different {{dataset}}.",
+        "body": "The Neural network lab lets you switch between built-in puzzles and your own rows. Each choice is a different {{dataset}}.",
         "route": "/learn/labs/neural-network",
         "actionLabel": "Open neural network lab"
       }
@@ -35,32 +35,33 @@
     {
       "title": "Same shape, different puzzles",
       "paragraphs": [
-        "Every built-in {{dataset}} in the lab uses the same row shape: two numbers as the {{input}}, and a {{target}} the {{model}} should predict. Plot those two numbers as a point on a graph and the four pairs (0,0), (0,1), (1,0), and (1,1) sit at the corners of a square — so people call each pair a corner.",
+        "Every built-in {{dataset}} in the lab uses the same row shape: two numbers as the {{input}} and a {{target}} the {{model}} should predict.",
+        "Plot those two numbers as a point on a graph and the four pairs (0,0), (0,1), (1,0) and (1,1) sit at the corners of a square. That is why people call each pair a corner.",
         "AND is the easy deck. Only the corner (1,1) maps to {{target}} 1; the other three corners map to 0. A simple straight boundary can separate the answers.",
-        "XOR is the classic hard deck. Corners where the inputs differ — (0,1) and (1,0) — map to 1; matching corners (0,0) and (1,1) map to 0. No single straight line separates them, so a tiny network usually needs a hidden layer.",
+        "XOR is the classic hard deck. Corners where the inputs differ ((0,1) and (1,0)) map to 1; matching corners (0,0) and (1,1) map to 0. No single straight line separates them, so a tiny network usually needs a hidden layer.",
         "The 3-class deck teaches a different kind of {{target}}: pick one class among three instead of a yes/no style answer. Softmax output fits that multi-class setup.",
-        "Click each puzzle below. Notice the {{input}} corners look similar while the {{target}} pattern — and the teaching point — changes."
+        "Click each puzzle below. The {{input}} corners look similar while the {{target}} pattern (and the teaching point) changes."
       ],
       "reveals": [
         {
-          "prompt": "AND dataset — when is the target 1?",
+          "prompt": "AND dataset: when is the target 1?",
           "reveal": "Only at corner (1,1), when both inputs are 1. One straight boundary can separate the answers, so AND is easier to learn than XOR."
         },
         {
-          "prompt": "XOR dataset — when is the target 1?",
+          "prompt": "XOR dataset: when is the target 1?",
           "reveal": "At corners (0,1) and (1,0), when the two inputs differ. Matching corners (0,0) and (1,1) are 0. This pattern usually needs a hidden layer."
         },
         {
-          "prompt": "3-class dataset — what is the target?",
-          "reveal": "A class label among three options (0, 1, or 2). Softmax splits probability across three outputs instead of a single yes/no score."
+          "prompt": "3-class dataset: what is the target?",
+          "reveal": "A class label among three options (0, 1 or 2). Softmax splits probability across three outputs instead of a single yes/no score."
         }
       ],
       "check": {
         "prompt": "You want learners to see why a hidden layer matters. Which lab {{dataset}} makes that point clearest?",
-        "answer": "XOR — input pairs that need a non-linear split",
+        "answer": "XOR: input pairs that need a non-linear split",
         "choices": [
-          "AND — only [1, 1] is positive",
-          "XOR — input pairs that need a non-linear split",
+          "AND: only [1, 1] is positive",
+          "XOR: input pairs that need a non-linear split",
           "Any unlabeled folder of images",
           "A single training row with no target"
         ],
@@ -71,19 +72,19 @@
       "title": "Custom rows and what comes next",
       "paragraphs": [
         "Custom mode lets you invent your own {{dataset}}: type {{input}} numbers and {{target}}s, then train on those rows. You are building the flash-card deck yourself.",
-        "Keep the same discipline as any supervised set. Every row needs a clear {{target}}. Mix-ups — wrong labels, missing answers, or inconsistent rules — teach the {{model}} the wrong lesson.",
-        "Teaching shortcut in the Neural network lab: it often trains on every row you provide. That is fine for learning how training feels, but real projects do not stop there.",
-        "Next lesson — **Train vs test** — explains why we hold some rows out of the {{dataset}} as a {{testSet}} so we can measure {{generalization}} honestly.",
-        "After that, the **Neural network lab** is where you pick AND, XOR, 3-class, or custom and watch a tiny {{model}} learn from the deck you chose."
+        "Keep the same discipline as any supervised set. Every row needs a clear {{target}}. Mix-ups (wrong labels, missing answers or inconsistent rules) teach the {{model}} the wrong lesson.",
+        "Teaching shortcut in the Neural network lab: it often trains on every row you provide. That is fine for learning how training feels but real projects do not stop there.",
+        "Next lesson: **Train vs test**. It explains why we hold some rows out of the {{dataset}} as a {{testSet}} so we can measure {{generalization}} honestly.",
+        "After that, the **Neural network lab** is where you pick AND, XOR, 3-class or custom and watch a tiny {{model}} learn from the deck you chose."
       ],
       "bullets": [
-        "Custom rows — your own {{input}} / {{target}} pairs.",
-        "Honest labels — bad {{target}}s train the wrong pattern.",
-        "Next — split the {{dataset}} into {{trainSet}} and {{testSet}}."
+        "Custom rows: your own {{input}} / {{target}} pairs.",
+        "Honest labels: bad {{target}}s train the wrong pattern.",
+        "Next: split the {{dataset}} into {{trainSet}} and {{testSet}}."
       ],
       "check": {
         "prompt": "In one short phrase: what is a supervised {{dataset}} made of?",
-        "answer": "Labeled input–target rows",
+        "answer": "Labeled input-target rows",
         "accept": [
           "input target pairs",
           "input and target pairs",
@@ -93,9 +94,9 @@
           "rows of inputs and targets",
           "a collection of labeled pairs"
         ],
-        "explanation": "A {{dataset}} is not \"some files somewhere.\" It is a collection of {{labeledData}} — each row pairs an {{input}} with a {{target}} the {{model}} should learn.",
+        "explanation": "A {{dataset}} is not \"some files somewhere.\" It is a collection of {{labeledData}}. Each row pairs an {{input}} with a {{target}} the {{model}} should learn.",
         "wordBank": [
-          "input–target",
+          "input-target",
           "labeled",
           "rows",
           "unlabeled",
@@ -115,7 +116,7 @@
         "Server logs with no agreed labels",
         "An empty spreadsheet titled \"training\""
       ],
-      "explanation": "The four XOR corners — (0,0), (0,1), (1,0), (1,1) — with {{target}}s are {{labeledData}}. Files without labels are not yet a supervised {{dataset}}, no matter how you name the folder."
+      "explanation": "The four XOR corners ((0,0), (0,1), (1,0), (1,1)) with {{target}}s are {{labeledData}}. Files without labels are not yet a supervised {{dataset}}, no matter how you name the folder."
     },
     {
       "prompt": "Why does the lab offer both AND and XOR {{dataset}}s?",
@@ -126,7 +127,7 @@
         "XOR does not need targets",
         "AND cannot be stored as rows"
       ],
-      "explanation": "Both puzzles use input–target rows. AND is easier (linearly separable); XOR shows when a hidden layer helps. Different decks, same idea of a {{dataset}}."
+      "explanation": "Both puzzles use input-target rows. AND is easier (linearly separable); XOR shows when a hidden layer helps. Different decks, same idea of a {{dataset}}."
     }
   ]
 }

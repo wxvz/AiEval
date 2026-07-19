@@ -13,7 +13,7 @@
     </p>
     @if (prereqMeta) {
       <p class="text-muted small mb-3">
-        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — feel the explore / exploit trade-off
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>: feel the explore / exploit trade-off
         with two arms.
       </p>
     }
@@ -28,7 +28,7 @@
 
     @if (solved()) {
       <div class="alert alert-success mb-4" role="status">
-        Solved — you explored both arms and locked the New café policy (higher long-run reward).
+        Solved: you explored both arms and locked the New café policy (higher long-run reward).
       </div>
     }
 
@@ -50,7 +50,7 @@
                   @if (stats()[arm.id].mean !== null) {
                     {{ stats()[arm.id].mean | number: '1.2-2' }}
                   } @else {
-                    —
+                    -
                   }
                 </strong>
               </p>
@@ -74,7 +74,7 @@
             Explore until each arm has at least two pulls, then lock a policy below.
           </p>
         } @else {
-          <p class="small text-success mb-3">Exploration complete — lock a policy for future visits.</p>
+          <p class="small text-success mb-3">Exploration complete: lock a policy for future visits.</p>
         }
 
         <p class="form-label mb-2">Lock policy (exploitation)</p>
@@ -126,13 +126,13 @@
         <summary class="learn-lab-faq__question">Why show the true mean in a teaching lab?</summary>
         <p class="mb-0 text-muted">
           So you can check whether your locked policy matches the better arm. In production you would not see the true
-          mean — only samples — which is why exploration matters.
+          mean, only samples, which is why exploration matters.
         </p>
       </details>
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">Is locking a policy the end of learning?</summary>
         <p class="mb-0 text-muted">
-          For this lab, yes. Real systems often keep a little exploration, re-evaluate on held-out scenarios, and
+          For this lab, yes. Real systems often keep a little exploration, re-evaluate on held-out scenarios and
           revisit the reward definition when behavior looks wrong.
         </p>
       </details>

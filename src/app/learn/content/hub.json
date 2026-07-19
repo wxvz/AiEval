@@ -1,9 +1,9 @@
 {
   "subtitle": "Start with Foundation, then LLM systems, then Systems & production.",
-  "toolsLabel": "AiEval — compare model answers",
+  "toolsLabel": "AiEval: compare model answers",
   "tracks": {
     "foundation": "Core ideas every AI engineer should have.",
-    "llm-systems": "Language models, retrieval, evaluation, and agents.",
-    "systems-production": "Ship, monitor, and scale AI with eval harnesses."
+    "llm-systems": "Language models, retrieval, evaluation and agents.",
+    "systems-production": "Ship, monitor and scale AI with eval harnesses."
   }
 }

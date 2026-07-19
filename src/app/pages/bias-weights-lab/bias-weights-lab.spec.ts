@@ -36,10 +36,10 @@ describe('BiasWeightsLabPage', () => {
   });
 
   it('shows success banner when solved', () => {
-    expect(fixture.nativeElement.textContent).not.toContain('Solved — every probe');
+    expect(fixture.nativeElement.textContent).not.toContain('Solved: every probe');
     page.applyTip();
     fixture.detectChanges();
     expect(page.solved()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Solved — every probe');
+    expect(fixture.nativeElement.textContent).toContain('Solved: every probe');
   });
 });

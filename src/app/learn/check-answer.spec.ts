@@ -9,7 +9,7 @@ import type { CheckQuestion } from './learn-content';
 
 const question: CheckQuestion = {
   prompt: 'What is supervised learning?',
-  answer: 'Learning from labeled input–target examples.',
+  answer: 'Learning from labeled input-target examples.',
   accept: ['learning from examples with targets', 'learning from labeled examples'],
   explanation: 'Supervised learning uses labeled pairs.',
 };
@@ -26,7 +26,7 @@ describe('isCheckAnswerCorrect', () => {
   });
 
   it('matches canonical answer with normalization', () => {
-    expect(isCheckAnswerCorrect('  LEARNING FROM labeled input–target examples. ', question)).toBe(
+    expect(isCheckAnswerCorrect('  LEARNING FROM labeled input-target examples. ', question)).toBe(
       true,
     );
   });

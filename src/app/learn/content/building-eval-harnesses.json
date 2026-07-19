@@ -3,11 +3,11 @@
     {
       "title": "What an eval harness does",
       "paragraphs": [
-        "An eval harness is a system that runs {{evaluation}}s automatically: pick a dataset, generate {{model}} answers, score them with a {{judge}} or ground-truth labels, and report results. Tools like AiEval, LangSmith, and PromptLayer are eval harnesses — they wire the generate-score loop so you do not script it by hand.",
+        "An eval harness is a system that runs {{evaluation}}s automatically: pick a dataset, generate {{model}} answers, score them with a {{judge}} or ground-truth labels and report results. Tools like AiEval, LangSmith and PromptLayer are eval harnesses: they wire the generate-score loop so you do not script it by hand.",
         "The core workflow is always the same. Start with a set of {{prompt}}s (test cases). Call one or more {{model}}s to generate answers. Apply a {{rubric}} or reference answers to score quality. Store results for comparison.",
-        "Harnesses add convenience: UI for creating evaluations, automation for running many {{model}}s in parallel, dashboards for tracking scores over time, and integrations with CI/CD so every code push triggers a regression check.",
+        "Harnesses add convenience: UI for creating evaluations, automation for running many {{model}}s in parallel, dashboards for tracking scores over time and integrations with CI/CD so every code push triggers a regression check.",
         "AiEval is a harness focused on manual and automated {{rubric}}-based scoring. You saw this in the First evaluation lab: create prompt + rubric, run automation, open Compare. That entire flow is the harness at work.",
-        "Next: how the pieces connect — from {{prompt}} to {{model}} to {{judge}} to dashboard."
+        "Next: how the pieces connect, from {{prompt}} to {{model}} to {{judge}} to dashboard."
       ],
       "bullets": [
         "Eval harness: automates generate → score → report.",
@@ -15,23 +15,23 @@
         "Convenience: UI, automation, tracking, CI/CD integration."
       ],
       "check": {
-        "prompt": "A teammate suggests: \"Let's manually call the {{model}} API, copy-paste answers into a spreadsheet, and score by hand.\" What does a harness provide that this workflow lacks?",
-        "answer": "Automation, tracking over time, and reproducibility",
+        "prompt": "A teammate suggests: \"Let's manually call the {{model}} API, copy-paste answers into a spreadsheet and score by hand.\" What does a harness provide that this workflow lacks?",
+        "answer": "Automation, tracking over time and reproducibility",
         "choices": [
-          "Nothing — spreadsheets are just as good.",
-          "Automation, tracking over time, and reproducibility",
+          "Nothing: spreadsheets are just as good.",
+          "Automation, tracking over time and reproducibility",
           "Slower performance and higher cost",
-          "The ability to generate answers — APIs cannot do that."
+          "The ability to generate answers: APIs cannot do that."
         ],
-        "explanation": "Harnesses automate repetitive steps, log results for comparison across {{model}} versions, and ensure the same test runs the same way every time."
+        "explanation": "Harnesses automate repetitive steps, log results for comparison across {{model}} versions and ensure the same test runs the same way every time."
       }
     },
     {
-      "title": "Generate, score, improve — the feedback loop",
+      "title": "Generate, score, improve: the feedback loop",
       "paragraphs": [
-        "Evaluation is not a one-time task. Production teams run evaluations weekly, daily, or on every code change to catch regressions. The harness makes this repeatable: same {{prompt}}s, same {{rubric}}, new {{model}} or new prompt wording.",
-        "The cycle: generate answers with your current {{model}} or prompt. Score them. If quality is below your bar, adjust — try a different {{model}}, rewrite the {{prompt}}, or refine the {{rubric}}. Re-run and compare scores.",
-        "Click each step below to see how the loop fits together. Notice that improvement is iterative — no one ships a perfect system on the first try.",
+        "Evaluation is not a one-time task. Production teams run evaluations weekly, daily or on every code change to catch regressions. The harness makes this repeatable: same {{prompt}}s, same {{rubric}}, new {{model}} or new prompt wording.",
+        "The cycle: generate answers with your current {{model}} or prompt and score them. If quality is below your bar, adjust. Try a different {{model}}, rewrite the {{prompt}} or refine the {{rubric}}. Then re-run and compare scores.",
+        "Click each step below to see how the loop fits together. Improvement is iterative: no one ships a perfect system on the first try.",
         "Harnesses track history, so you can see: \"We switched from Model A to Model B and accuracy went from 75% to 82%.\" That data justifies {{model}} upgrades and catches when updates make things worse."
       ],
       "reveals": [
@@ -41,11 +41,11 @@
         },
         {
           "prompt": "Step 2: Score. What happens?",
-          "reveal": "Apply the {{rubric}} — either via human review or a {{judge}} {{model}}. Record scores per {{criterion}}."
+          "reveal": "Apply the {{rubric}} (either via human review or a {{judge}} {{model}}). Record scores per {{criterion}}."
         },
         {
           "prompt": "Step 3: Compare. What happens?",
-          "reveal": "Look at the results. If quality is low, identify which {{criterion}} failed. Adjust {{model}}, {{prompt}}, or {{rubric}}."
+          "reveal": "Look at the results. If quality is low, identify which {{criterion}} failed. Adjust {{model}}, {{prompt}} or {{rubric}}."
         },
         {
           "prompt": "Step 4: Re-run. What happens?",
@@ -56,7 +56,7 @@
         "prompt": "Your harness shows that accuracy dropped from 85% to 78% after a {{model}} update. What is the next step?",
         "answer": "Inspect failing test cases to understand what changed",
         "choices": [
-          "Ship anyway — the model vendor knows best.",
+          "Ship anyway: the model vendor knows best.",
           "Inspect failing test cases to understand what changed",
           "Assume the harness is broken and ignore the result.",
           "Revert immediately without investigation."
@@ -68,10 +68,10 @@
       "title": "Building your own or using a tool",
       "paragraphs": [
         "Small teams often start by scripting evals: a Python loop that calls {{model}} APIs, a CSV of test cases, manual scoring in a spreadsheet. That works for dozens of tests but breaks at hundreds.",
-        "Off-the-shelf harnesses (AiEval, LangSmith, Braintrust, PromptLayer) save time. They handle API retries, parallel execution, result storage, and dashboards. The trade-off is learning a new tool and accepting its workflow.",
-        "If your needs are unique — custom scoring logic, proprietary {{model}}s, integration with internal CI — building a harness is justified. Use a task queue (Celery, BullMQ), a database for results (Postgres, SQLite), and a dashboard (Streamlit, React).",
+        "Off-the-shelf harnesses (AiEval, LangSmith, Braintrust, PromptLayer) save time. They handle API retries, parallel execution, result storage and dashboards. The trade-off is learning a new tool and accepting its workflow.",
+        "If your needs are unique (custom scoring logic, proprietary {{model}}s, integration with internal CI), building a harness is justified. Use a task queue (Celery, BullMQ), a database for results (Postgres, SQLite) and a dashboard (Streamlit, React).",
         "Either way, the principles stay the same: reproducible test cases, automated scoring, tracked history. Whether you build or buy, the goal is to make evaluation cheap enough to run often.",
-        "You have now completed the core curriculum. You understand {{supervisedLearning}}, {{prompt}} design, {{rubric}}s, {{judge}}s, and how harnesses connect the pieces. Next: apply this to your own evaluations."
+        "You have now completed the core curriculum. You understand {{supervisedLearning}}, {{prompt}} design, {{rubric}}s, {{judge}}s and how harnesses connect the pieces. Next: apply this to your own evaluations."
       ],
       "bullets": [
         "Script vs tool: DIY for unique needs, off-the-shelf for speed.",
@@ -80,7 +80,7 @@
       ],
       "check": {
         "prompt": "In one short phrase: what does an eval harness automate?",
-        "answer": "Generate, score, and track evaluations",
+        "answer": "Generate, score and track evaluations",
         "accept": [
           "generate score track",
           "running evaluations automatically",
@@ -88,12 +88,12 @@
           "evaluation workflow",
           "automated evaluation"
         ],
-        "explanation": "A harness automates the repetitive steps: calling {{model}}s, scoring answers, storing results, and comparing over time.",
+        "explanation": "A harness automates the repetitive steps: calling {{model}}s, scoring answers, storing results and comparing over time.",
         "wordBank": [
           "track",
           "generate,",
           "evaluations",
-          "score,",
+          "score",
           "and",
           "delete",
           "weights",

@@ -61,7 +61,7 @@ export class RagPlaygroundPage {
     const context = this.assembledContext();
     const query = this.query().trim();
     if (!context) {
-      return `User question: ${query}\n\n(Context empty — select chunks above.)`;
+      return `User question: ${query}\n\n(Context empty: select chunks above.)`;
     }
     return `System: Answer using only the context below.\n\nContext:\n${context}\n\nUser: ${query}`;
   });

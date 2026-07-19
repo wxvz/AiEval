@@ -6,7 +6,7 @@
     <p class="lead mb-3">
       Set
       <app-learn-term-hint term="attention" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
-      weights over a fixed sentence, build a context vector, and watch which next
+      weights over a fixed sentence, build a context vector and watch which next
       <app-learn-term-hint term="token" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       ranks highest.
     </p>
@@ -14,11 +14,11 @@
       <p class="text-muted small mb-3">
         Optional practice for
         <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
-        — a tiny attention drill after the read lesson.
+        : a tiny attention drill after the read lesson.
       </p>
     }
     <div class="alert alert-light border mb-3" role="note">
-      Teaching shortcut: this is a hand-tuned toy, not a real transformer. There are no learned query/key matrices —
+      Teaching shortcut: this is a hand-tuned toy, not a real transformer. There are no learned query/key matrices;
       you set the
       <app-learn-term-hint term="attention" hintId="attention-honesty" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       weights yourself and we do a weighted sum of tiny fixed meaning vectors.
@@ -82,7 +82,7 @@
           <span class="small text-muted">
             Weight sum: {{ weightSum() | number: '1.2-2' }}
             @if (needsNormalize()) {
-              — normalize so weights sum to 1
+              (normalize so weights sum to 1)
             }
           </span>
         </div>
@@ -147,7 +147,7 @@
 
     <p class="learn-lab-footer text-muted small mb-4">
       Review: <a routerLink="/learn/lessons/transformers-overview">Transformers</a> ·
-      Next: <a routerLink="/learn">Learn hub</a> — continue the systems track when ready.
+      Next: <a routerLink="/learn">Learn hub</a>: continue the systems track when ready.
     </p>
 
     <section class="mb-4">
@@ -157,7 +157,7 @@
         <summary class="learn-lab-faq__question">What is the context vector?</summary>
         <p class="mb-0 text-muted">
           It is a blend of the four token meaning vectors, weighted by your attention. Higher weight on a token
-          pulls the blend toward that token's numbers — the same idea as attention pooling, without learned keys and queries.
+          pulls the blend toward that token's numbers: the same idea as attention pooling, without learned keys and queries.
         </p>
       </details>
 
@@ -165,7 +165,7 @@
         <summary class="learn-lab-faq__question">Why does focusing on “sat” prefer “quietly”?</summary>
         <p class="mb-0 text-muted">
           In this toy, <span class="font-monospace">sat</span> and <span class="font-monospace">quietly</span> share a
-          strong dimension (posture / manner). Dot product scores that overlap — so attention on the verb boosts the
+          strong dimension (posture / manner). Dot product scores that overlap, so attention on the verb boosts the
           manner adverb.
         </p>
       </details>

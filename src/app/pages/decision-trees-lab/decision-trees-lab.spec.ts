@@ -34,12 +34,12 @@ describe('DecisionTreesLabPage', () => {
   });
 
   it('shows success when the refund split is labeled correctly', () => {
-    expect(fixture.nativeElement.textContent).not.toContain('Solved —');
+    expect(fixture.nativeElement.textContent).not.toContain('Solved:');
     page.selectFeature('mentionsRefund');
     page.selectYesLabel('billing');
     page.selectNoLabel('access');
     fixture.detectChanges();
     expect(page.solved()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Solved —');
+    expect(fixture.nativeElement.textContent).toContain('Solved:');
   });
 });

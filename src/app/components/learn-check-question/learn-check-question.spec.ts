@@ -17,7 +17,7 @@ describe('LearnCheckQuestion', () => {
       prompt: 'What is supervised learning?',
       answer: 'learning from labeled examples',
       wordBank: ['learning', 'from', 'labeled', 'examples', 'random', 'weights'],
-      explanation: 'Supervised learning uses labeled input–target pairs.',
+      explanation: 'Supervised learning uses labeled input-target pairs.',
     });
     fixture.detectChanges();
   });

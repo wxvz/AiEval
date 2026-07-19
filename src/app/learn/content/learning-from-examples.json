@@ -3,25 +3,25 @@
     {
       "title": "Learning like flash cards",
       "paragraphs": [
-        "If you have ever studied with flash cards, you already understand the core idea behind most machine learning. You look at the front of the card, try to remember the back, and check yourself. Do that enough times and patterns start to stick.",
-        "Most machine learning you will use day to day is {{supervisedLearning}}. That means we show a {{model}} many examples where the correct answer is already known, and the {{model}} learns to predict that answer for new inputs.",
-        "Each example has two parts. The {{input}} is what you show the {{model}} — a photo, a customer email, two numbers in a puzzle, or a prompt. The {{target}} is the answer you want it to learn — spam or not spam, dog or cat, the correct sum, or a helpful reply.",
-        "Training is repeated practice. The {{model}} makes a {{prediction}}, compares it to the {{target}}, and adjusts internal numbers called {{weights}} so the next {{prediction}} is closer. You do not program every rule by hand; the examples teach the pattern.",
-        "This is different from dumping raw files into a folder and hoping something happens. {{supervisedLearning}} needs {{labeledData}} — inputs with agreed correct answers a human expert could defend."
+        "If you have ever studied with flash cards, you already understand the core idea behind most machine learning. You look at the front of the card, try to remember the back and check yourself. Do that enough times and patterns start to stick.",
+        "Most machine learning you will use day to day is {{supervisedLearning}}. That means we show a {{model}} many examples where the correct answer is already known. The {{model}} learns to predict that answer for new inputs.",
+        "Each example has two parts. The {{input}} is what you show the {{model}}: a photo, a customer email, two numbers in a puzzle or a prompt. The {{target}} is the answer you want it to learn: spam or not spam, dog or cat, the correct sum or a helpful reply.",
+        "Training is repeated practice. The {{model}} makes a {{prediction}}, compares it to the {{target}} and adjusts internal numbers called {{weights}} so the next {{prediction}} is closer. You do not program every rule by hand; the examples teach the pattern.",
+        "This is different from dumping raw files into a folder and hoping something happens. {{supervisedLearning}} needs {{labeledData}}: inputs with agreed correct answers a human expert could defend."
       ],
       "bullets": [
-        "{{input}} — what you show the {{model}}.",
-        "{{target}} — the correct answer for that input.",
-        "{{prediction}} — what the {{model}} outputs before it has learned well."
+        "{{input}}: what you show the {{model}}.",
+        "{{target}}: the correct answer for that input.",
+        "{{prediction}}: what the {{model}} outputs before it has learned well."
       ],
       "check": {
-        "prompt": "A teammate says: \"We downloaded 50,000 product photos with no tags — we can train a {{classifier}} tomorrow.\" What is the honest reply?",
-        "answer": "We still need labels — photos alone are not supervised examples.",
+        "prompt": "A teammate says: \"We downloaded 50,000 product photos with no tags. We can train a {{classifier}} tomorrow.\" What is the honest reply?",
+        "answer": "We still need labels: photos alone are not supervised examples.",
         "choices": [
-          "Yes — more photos always means a better model.",
-          "We still need labels — photos alone are not supervised examples.",
-          "No — supervised learning only works on text.",
-          "Yes — the model can invent its own labels during training."
+          "Yes: more photos always means a better model.",
+          "We still need labels: photos alone are not supervised examples.",
+          "No: supervised learning only works on text.",
+          "Yes: the model can invent its own labels during training."
         ],
         "explanation": "A {{classifier}} needs {{labeledData}}: each photo needs a {{target}} such as product category or defect type. Without labels there is nothing to grade {{prediction}}s against, so training cannot start."
       }
@@ -29,44 +29,44 @@
     {
       "title": "See inputs paired with targets",
       "paragraphs": [
-        "Every training row is a pair: an {{input}} and a {{target}}. The {{model}} never magically knows the right answer — it only learns because we show pairs over and over.",
+        "Every training row is a pair: an {{input}} and a {{target}}. The {{model}} never magically knows the right answer; it only learns because we show pairs over and over.",
         "The pairs can look very different depending on the task. A routing {{model}} might map a user message to an intent. A vision {{model}} might map pixels to a category. A small neural network in the next lab maps two numbers to one output.",
-        "Click each row below to see the {{target}} for that {{input}}. Notice how different the tasks look while the pattern stays the same: show input, teach target."
+        "Click each row below to see the {{target}} for that {{input}}. The tasks look different while the pattern stays the same: show input, teach target."
       ],
       "reveals": [
         {
           "prompt": "Input: \"Reset my password\" → Target: ?",
-          "reveal": "Intent: account_recovery — the {{model}} should route this to the password-reset flow."
+          "reveal": "Intent: account_recovery. The {{model}} should route this to the password-reset flow."
         },
         {
           "prompt": "Input: Photo of a golden retriever → Target: ?",
-          "reveal": "Label: dog — the {{model}} should classify the image as a dog."
+          "reveal": "Label: dog. The {{model}} should classify the image as a dog."
         },
         {
           "prompt": "Input: (0, 0) and (1, 1) in an XOR puzzle → Target: ?",
-          "reveal": "0 for both corners, 1 for (0,1) and (1,0) — you will train exactly this in the neural network lab."
+          "reveal": "0 for both corners, 1 for (0,1) and (1,0). You will train exactly this in the neural network lab."
         }
       ],
       "check": {
-        "prompt": "You want a {{model}} to score essay quality from 1–5. Which dataset fits {{supervisedLearning}} best?",
-        "answer": "Essays with human 1–5 ratings",
+        "prompt": "You want a {{model}} to score essay quality from 1-5. Which dataset fits {{supervisedLearning}} best?",
+        "answer": "Essays with human 1-5 ratings",
         "choices": [
-          "Essays with human 1–5 ratings",
-          "Essays with no scores — only word counts",
+          "Essays with human 1-5 ratings",
+          "Essays with no scores, only word counts",
           "A dictionary of spelling words",
           "Random paragraphs scraped from the web"
         ],
-        "explanation": "{{supervisedLearning}} needs a {{target}} for every {{input}}. Human 1–5 ratings are the {{target}}; essays alone are only half of each example."
+        "explanation": "{{supervisedLearning}} needs a {{target}} for every {{input}}. Human 1-5 ratings are the {{target}}; essays alone are only half of each example."
       }
     },
     {
-      "title": "What counts — and what does not",
+      "title": "What counts and what does not",
       "paragraphs": [
         "Not every dataset can train a supervised {{model}}. The rule is simple: for each {{input}}, experts should be able to agree on the right {{target}}.",
-        "Good examples include customer reviews with star ratings, code snippets labeled pass or fail, medical images with diagnoses, and prompt–answer pairs edited by humans for quality.",
-        "Weak examples include a folder of images with no tags, text with no agreed label, or the same prompt answered differently by every reviewer with no rubric.",
-        "In AiEval you will later compare model answers to the same prompt. That only works when you can define what \"better\" means — another form of {{target}}.",
-        "Next up: **What is a dataset?** — how labeled rows form a {{dataset}}, and why the lab offers puzzles like AND and XOR."
+        "Good examples include customer reviews with star ratings, code snippets labeled pass or fail, medical images with diagnoses and prompt-answer pairs edited by humans for quality.",
+        "Weak examples include a folder of images with no tags, text with no agreed label or the same prompt answered differently by every reviewer with no rubric.",
+        "In AiEval you will later compare model answers to the same prompt. That only works when you can define what \"better\" means. That definition is another form of {{target}}.",
+        "Next up: **What is a dataset?** It covers how labeled rows form a {{dataset}} and why the lab offers puzzles like AND and XOR."
       ],
       "bullets": [
         "Counts: inputs with human-agreed {{target}}s.",
@@ -103,11 +103,11 @@
       "answer": "Millions of web pages with no quality scores or labels",
       "choices": [
         "10,000 emails labeled spam or not spam",
-        "Prompt–answer pairs reviewed by editors",
+        "Prompt-answer pairs reviewed by editors",
         "Millions of web pages with no quality scores or labels",
         "Images of skin lesions with doctor diagnoses"
       ],
-      "explanation": "Unlabeled web pages lack {{target}}s. The other options all pair {{input}}s with agreed {{target}}s — exactly what {{supervisedLearning}} needs."
+      "explanation": "Unlabeled web pages lack {{target}}s. The other options all pair {{input}}s with agreed {{target}}s. That pairing is exactly what {{supervisedLearning}} needs."
     },
     {
       "prompt": "Why do we show a {{model}} the {{target}} during training?",
@@ -118,7 +118,7 @@
         "So we never need a test set",
         "So the model can skip making predictions"
       ],
-      "explanation": "Training is feedback. The {{model}} predicts, sees the {{target}}, measures error, and updates {{weights}}. Without the {{target}}, there is no signal for improvement."
+      "explanation": "Training is feedback. The {{model}} predicts, sees the {{target}}, measures error and updates {{weights}}. Without the {{target}}, there is no signal for improvement."
     }
   ]
 }

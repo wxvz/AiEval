@@ -11,7 +11,7 @@
     </p>
     @if (prereqMeta) {
       <p class="text-muted small mb-3">
-        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — practice a readable path on four
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>: practice a readable path on four
         labeled tickets.
       </p>
     }
@@ -27,7 +27,7 @@
 
     @if (solved()) {
       <div class="alert alert-success mb-4" role="status">
-        Solved — “Mentions refund?” separates the labels, and both leaves match the table.
+        Solved: “Mentions refund?” separates the labels and both leaves match the table.
       </div>
     }
 
@@ -63,7 +63,7 @@
                     {{ entry.prediction }} {{ entry.correct ? '✓' : '✗' }}
                   </span>
                 } @else {
-                  <span class="text-muted">—</span>
+                  <span class="text-muted">-</span>
                 }
               </td>
             </tr>

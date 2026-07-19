@@ -3,22 +3,22 @@
     {
       "title": "Same prompt, different rolls",
       "paragraphs": [
-        "Imagine rolling dice to finish a sentence. A loaded die always lands on the same word; a fair die gives different endings each time. {{largeLanguageModel}}s sample the next {{token}} the same way — the prompt is fixed, but the path through possible words can vary.",
-        "{{temperature}} controls how adventurous that sampling is. Near zero, the {{model}} almost always picks the highest-probability wording. Higher {{temperature}} lets less likely phrases appear — creative, but harder to compare fairly.",
-        "That matters the moment you run an {{evaluation}}. If Model A wins on run 1 and Model B wins on run 2 with the same {{prompt}}, you may be measuring randomness — not quality.",
+        "Imagine rolling dice to finish a sentence. A loaded die always lands on the same word; a fair die gives different endings each time. {{largeLanguageModel}}s sample the next {{token}} the same way. The prompt is fixed, but the path through possible words can vary.",
+        "{{temperature}} controls how adventurous that sampling is. Near zero, the {{model}} almost always picks the highest-probability wording. Higher {{temperature}} lets less likely phrases appear. That can be creative, but it is harder to compare fairly.",
+        "That matters the moment you run an {{evaluation}}. If Model A wins on run 1 and Model B wins on run 2 with the same {{prompt}}, you may be measuring randomness, not quality.",
         "Providers also expose {{topP}} (nucleus sampling) and {{maxTokens}} caps. Together they shape length and variety. Evaluation teams record these settings beside every run so results are reproducible.",
         "Next: the knobs you should lock before comparing answers."
       ],
       "bullets": [
-        "{{temperature}} — low = predictable, high = varied wording.",
-        "{{topP}} — limits which next tokens are even considered.",
-        "{{maxTokens}} — hard stop on answer length."
+        "{{temperature}}: low = predictable, high = varied wording.",
+        "{{topP}}: limits which next tokens are even considered.",
+        "{{maxTokens}}: hard stop on answer length."
       ],
       "check": {
         "prompt": "You compare two {{model}}s on the same {{prompt}}. Model A uses {{temperature}} 0; Model B uses {{temperature}} 0.9. A teammate says the winner is obvious after one run. What is the risk?",
         "answer": "High temperature adds randomness so one run may not reflect true quality",
         "choices": [
-          "No risk — temperature only affects speed.",
+          "No risk: temperature only affects speed.",
           "High temperature adds randomness so one run may not reflect true quality",
           "Low temperature always produces wrong answers",
           "Temperature changes the rubric automatically"
@@ -29,23 +29,23 @@
     {
       "title": "Knobs that matter for evals",
       "paragraphs": [
-        "{{maxTokens}} prevents runaway essays — but set it too low and answers truncate mid-thought. When scoring completeness, a truncated answer loses points for a setting problem, not model quality.",
+        "{{maxTokens}} prevents runaway essays, but set it too low and answers truncate mid-thought. When scoring completeness, a truncated answer loses points for a setting problem, not model quality.",
         "{{topP}} works with {{temperature}}: even at moderate temperature, a low {{topP}} keeps word choice focused. Teams often fix both when they need stable regression checks.",
-        "Click each scenario to see which setting likely caused the behavior. Notice that \"better\" is meaningless if generation settings differ between contestants.",
+        "Click each scenario to see which setting likely caused the behavior. \"Better\" is meaningless if generation settings differ between contestants.",
         "In AiEval, document provider defaults in your notes. If one {{model}} ignores temperature (some APIs treat 0 and 0.1 similarly), say so when you interpret scores."
       ],
       "reveals": [
         {
           "prompt": "Same prompt, answers differ wildly between runs of one {{model}}.",
-          "reveal": "Likely high {{temperature}} or high {{topP}} — increase repeatability by lowering them."
+          "reveal": "Likely high {{temperature}} or high {{topP}}. Increase repeatability by lowering them."
         },
         {
           "prompt": "Answers stop mid-sentence with no error.",
-          "reveal": "Check {{maxTokens}} — the cap may be shorter than the task needs."
+          "reveal": "Check {{maxTokens}}. The cap may be shorter than the task needs."
         },
         {
           "prompt": "Two {{model}}s compared; one always writes twice as long.",
-          "reveal": "Compare {{maxTokens}} and {{prompt}} length instructions — may be settings, not capability."
+          "reveal": "Compare {{maxTokens}} and {{prompt}} length instructions. Differences may be settings, not capability."
         }
       ],
       "aside": {
@@ -70,11 +70,11 @@
       "title": "Lock settings, then compare",
       "paragraphs": [
         "Fair {{evaluation}} flow: write a clear {{prompt}}, fix generation settings, then compare {{model}}s on the same footing. Changing wording and {{temperature}} at once makes root-cause analysis impossible.",
-        "Optional practice: the Generation variance lab simulates how {{temperature}} spreads answers — a teaching shortcut, not a live API, but the lesson carries.",
-        "Next up: Comparing answers — same {{prompt}}, matched settings, measurable quality across {{model}}s."
+        "Optional practice: the Generation variance lab simulates how {{temperature}} spreads answers. It is a teaching shortcut, not a live API, but the lesson carries.",
+        "Next up: Comparing answers, using the same {{prompt}}, matched settings and measurable quality across {{model}}s."
       ],
       "bullets": [
-        "Fix {{temperature}}, {{topP}}, and {{maxTokens}} before judging quality.",
+        "Fix {{temperature}}, {{topP}} and {{maxTokens}} before judging quality.",
         "Record settings with every {{evaluation}} run.",
         "Separate prompt changes from sampling changes when debugging."
       ],
@@ -88,7 +88,7 @@
           "avoid measuring luck",
           "so results are reproducible"
         ],
-        "explanation": "Matched sampling settings ensure score differences reflect {{model}} capability and {{prompt}} following — not dice-roll luck.",
+        "explanation": "Matched sampling settings ensure score differences reflect {{model}} capability and {{prompt}} following, not dice-roll luck.",
         "wordBank": [
           "randomness",
           "to",
@@ -129,7 +129,7 @@
         "temperature change",
         "settings change not quality"
       ],
-      "explanation": "A {{temperature}} change alters sampling — re-run with matched settings before declaring a true quality shift.",
+      "explanation": "A {{temperature}} change alters sampling. Re-run with matched settings before declaring a true quality shift.",
       "wordBank": [
         "model",
         "randomness",

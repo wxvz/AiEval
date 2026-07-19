@@ -89,7 +89,7 @@ describe('LearnLessonPage', () => {
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Optional — try it yourself');
+    expect(el.textContent).toContain('Optional: try it yourself');
     expect(el.querySelector('app-learn-lesson-aside a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
     expect(el.querySelector('.learn-lesson-footer a[href="/learn/labs/train-vs-test"]')).toBeFalsy();
   });

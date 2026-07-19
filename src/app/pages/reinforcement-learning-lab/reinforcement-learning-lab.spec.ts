@@ -34,7 +34,7 @@ describe('ReinforcementLearningLabPage', () => {
   });
 
   it('shows success after exploring both arms and locking New café', () => {
-    expect(fixture.nativeElement.textContent).not.toContain('Solved —');
+    expect(fixture.nativeElement.textContent).not.toContain('Solved:');
     page.pull('known');
     page.pull('known');
     page.pull('new');
@@ -42,6 +42,6 @@ describe('ReinforcementLearningLabPage', () => {
     page.lockPolicy('new');
     fixture.detectChanges();
     expect(page.solved()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Solved —');
+    expect(fixture.nativeElement.textContent).toContain('Solved:');
   });
 });

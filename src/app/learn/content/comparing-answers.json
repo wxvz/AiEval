@@ -4,43 +4,43 @@
       "title": "Same prompt, different answers",
       "paragraphs": [
         "You send the same {{prompt}} to three {{model}}s and get three different answers. One is concise, one adds extra examples, one misses the point entirely. Which is best?",
-        "That question is the heart of LLM evaluation. You cannot know if a system improved unless you can measure answer quality consistently. Comparing answers is how you decide which {{model}} to deploy, which prompt wording works, or whether a new version regressed.",
-        "In traditional {{supervisedLearning}}, the {{target}} is a fixed label — spam or not spam, dog or cat, 0 or 1. For open-ended generation there is often no single right answer, but there are still better and worse ones.",
-        "AiEval makes this comparison structured: same {{prompt}}, multiple {{model}}s, scored on a shared {{rubric}}. You will run that workflow in the upcoming lab — but first, understand what makes an answer better."
+        "That question is the heart of LLM evaluation. You cannot know if a system improved unless you can measure answer quality consistently. Comparing answers is how you decide which {{model}} to deploy, which prompt wording works or whether a new version regressed.",
+        "In traditional {{supervisedLearning}}, the {{target}} is a fixed label: spam or not spam, dog or cat, 0 or 1. For open-ended generation there is often no single right answer, but there are still better and worse ones.",
+        "AiEval makes this comparison structured: same {{prompt}}, multiple {{model}}s, scored on a shared {{rubric}}. You will run that workflow in the upcoming lab, but first understand what makes an answer better."
       ],
       "bullets": [
-        "{{evaluation}} — comparing {{model}} outputs to measure quality.",
+        "{{evaluation}}: comparing {{model}} outputs to measure quality.",
         "Open-ended answers have no fixed {{target}}, but quality still varies.",
         "Structured comparison: shared {{prompt}}, shared {{rubric}}, measurable scores."
       ],
       "check": {
-        "prompt": "A teammate says: \"Our {{model}} answered every test prompt without crashing — we can ship it.\" What is the missing step?",
-        "answer": "Check whether the answers are correct, helpful, and meet quality standards",
+        "prompt": "A teammate says: \"Our {{model}} answered every test prompt without crashing, so we can ship it.\" What is the missing step?",
+        "answer": "Check whether the answers are correct, helpful and meet quality standards",
         "choices": [
-          "Nothing — if it runs, it is ready.",
-          "Check whether the answers are correct, helpful, and meet quality standards",
+          "Nothing: if it runs, it is ready.",
+          "Check whether the answers are correct, helpful and meet quality standards",
           "Train a bigger model from scratch and compare file sizes",
           "Ask the model to score itself and accept its judgment"
         ],
-        "explanation": "Running without errors does not mean producing good answers. {{evaluation}} measures whether outputs meet your quality bar — accuracy, helpfulness, safety, tone."
+        "explanation": "Running without errors does not mean producing good answers. {{evaluation}} measures whether outputs meet your quality bar: accuracy, helpfulness, safety, tone."
       }
     },
     {
       "title": "What makes an answer better?",
       "paragraphs": [
-        "Judging quality requires criteria. For customer support, \"better\" might mean accurate, polite, and under 100 words. For code generation, it might mean correct syntax, no security flaws, and readable style.",
+        "Judging quality requires criteria. For customer support, \"better\" might mean accurate, polite and under 100 words. For code generation, it might mean correct syntax, no security flaws and readable style.",
         "The criteria depend on your task. A creative writing prompt may reward originality; a compliance answer must stick to policy verbatim. Define \"better\" before you start comparing.",
-        "Click each scenario below to see how the winning answer changes with different goals. Notice that no answer is universally best — context shapes the rubric.",
+        "Click each scenario below to see how the winning answer changes with different goals. No answer is universally best; context shapes the rubric.",
         "Next lesson: breaking these criteria into scorable {{rubric}} rows with anchors for each level."
       ],
       "reveals": [
         {
           "prompt": "Task: Draft a customer apology. Goal: warm and empathetic. Which answer wins?",
-          "reveal": "The one that acknowledges frustration, apologizes sincerely, and offers next steps — even if slightly longer."
+          "reveal": "The one that acknowledges frustration, apologizes sincerely and offers next steps, even if slightly longer."
         },
         {
           "prompt": "Task: Draft a customer apology. Goal: concise and formal. Which answer wins?",
-          "reveal": "The one that states the fix in under three sentences with no extra emotion — even if it feels curt."
+          "reveal": "The one that states the fix in under three sentences with no extra emotion, even if it feels curt."
         },
         {
           "prompt": "Task: Summarize a research paper. Goal: technical accuracy. Which answer wins?",
@@ -48,7 +48,7 @@
         },
         {
           "prompt": "Task: Summarize a research paper. Goal: explain to a general audience. Which answer wins?",
-          "reveal": "The one that simplifies jargon, adds context, and skips technical minutiae — even if it omits some details."
+          "reveal": "The one that simplifies jargon, adds context and skips technical minutiae, even if it omits some details."
         }
       ],
       "aside": {
@@ -73,9 +73,9 @@
       "title": "Side by side, scored on shared criteria",
       "paragraphs": [
         "Fair comparison means holding everything constant except the {{model}}. Same {{prompt}}, same inputs, same {{rubric}}. That way, score differences reflect {{model}} quality, not shifting goals.",
-        "In the upcoming **First evaluation lab** you will create an evaluation in AiEval, run automation to generate answers, and open the Compare page to see scores side by side. Each answer is graded on the same {{criterion}} rows.",
-        "This is structured evaluation: you define the task (prompt), the quality bar (rubric), and the contestants (models). The scores tell you which {{model}} met your bar best.",
-        "After this lab, the next lesson teaches how to build rubrics from scratch — turning vague ideas like \"helpful\" into clear score anchors."
+        "In the upcoming **First evaluation lab** you will create an evaluation in AiEval, run automation to generate answers and open the Compare page to see scores side by side. Each answer is graded on the same {{criterion}} rows.",
+        "This is structured evaluation: you define the task (prompt), the quality bar (rubric) and the contestants (models). The scores tell you which {{model}} met your bar best.",
+        "After this lab, the next lesson teaches how to build rubrics from scratch. You will turn vague ideas like \"helpful\" into clear score anchors."
       ],
       "bullets": [
         "Hold constant: {{prompt}}, {{rubric}}, {{input}} data.",

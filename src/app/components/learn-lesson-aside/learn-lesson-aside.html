@@ -8,7 +8,7 @@
 
   @if (!locked() && optionalLab(); as lab) {
     <section class="learn-optional-lab mb-3" aria-label="Optional lab">
-      <p class="learn-optional-lab__eyebrow text-muted small mb-1">Optional — try it yourself</p>
+      <p class="learn-optional-lab__eyebrow text-muted small mb-1">Optional: try it yourself</p>
       <h2 class="h6 mb-2">{{ lab.title }}</h2>
       <p class="text-muted small mb-3">{{ lab.summary }}</p>
       <a class="btn btn-outline-primary btn-sm" [routerLink]="lab.route">

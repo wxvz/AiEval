@@ -46,7 +46,7 @@ describe('LearnLessonAside', () => {
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Optional — try it yourself');
+    expect(el.textContent).toContain('Optional: try it yourself');
     expect(el.querySelector('a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
     expect(el.textContent).toContain('Try in AiEval');
     expect(el.textContent).toContain('New evaluation');
@@ -71,7 +71,7 @@ describe('LearnLessonAside', () => {
 
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('Progress');
-    expect(el.textContent).not.toContain('Optional — try it yourself');
+    expect(el.textContent).not.toContain('Optional: try it yourself');
     expect(el.textContent).not.toContain('Try in AiEval');
     expect(el.querySelector('.learn-lesson-aside__nav-link')).toBeFalsy();
   });

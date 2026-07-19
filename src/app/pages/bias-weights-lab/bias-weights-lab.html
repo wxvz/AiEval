@@ -17,7 +17,7 @@
       <p class="text-muted small mb-3">
         Optional practice for
         <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
-        — feel how weight sets the slope and bias shifts the decision boundary.
+        : feel how weight sets the slope and bias shifts the decision boundary.
       </p>
     }
     <div class="alert alert-light border mb-3" role="note">
@@ -34,7 +34,7 @@
 
     @if (solved()) {
       <div class="alert alert-success mb-4" role="status">
-        Solved — every probe
+        Solved: every probe
         <app-nn-term-hint
           term="input"
           hintId="input-success"
@@ -212,7 +212,7 @@
         <summary class="learn-lab-faq__question">What does the weight control?</summary>
         <p class="mb-0 text-muted">
           Weight scales how strongly x pulls the score. A larger positive weight makes the sigmoid rise faster
-          as x increases — a steeper decision slope.
+          as x increases: a steeper decision slope.
         </p>
       </details>
 
@@ -228,7 +228,7 @@
         <summary class="learn-lab-faq__question">Why is prediction 0.5 wrong for x = 0.5?</summary>
         <p class="mb-0 text-muted">
           This lab treats “high” as strictly greater than 0.5. Sitting exactly on the sigmoid midpoint means the
-          neuron has not committed to the positive class yet — nudge bias or weight until the score is positive
+          neuron has not committed to the positive class yet. Nudge bias or weight until the score is positive
           at x = 0.5.
         </p>
       </details>

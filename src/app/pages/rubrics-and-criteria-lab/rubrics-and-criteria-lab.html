@@ -50,7 +50,7 @@
               [class.text-success]="isWithinTolerance(row.id)"
               [class.text-warning]="!isWithinTolerance(row.id)"
             >
-              Reference: {{ row.reference }}/5 — {{ row.rationale }}
+              Reference: {{ row.reference }}/5. {{ row.rationale }}
             </p>
           }
         </div>
@@ -67,14 +67,14 @@
     @if (checked()) {
       <div class="alert alert-info mb-4" role="status">
         Within ±1 of the reference on {{ agreementCount() }} of {{ rubric.length }} criteria. Anchored scales keep two
-        honest scorers this close — that is the whole point of anchors.
+        honest scorers this close. That is the whole point of anchors.
       </div>
     }
 
     <details class="learn-lab-faq">
       <summary class="learn-lab-faq__question">Why allow ±1 instead of exact agreement?</summary>
       <p class="mb-0 text-muted">
-        Even with anchors, judgment calls differ by a point. Rubrics aim for consistency, not robotic identical scores —
+        Even with anchors, judgment calls differ by a point. Rubrics aim for consistency, not robotic identical scores;
         a two-point spread is the signal that an anchor needs sharper wording.
       </p>
     </details>

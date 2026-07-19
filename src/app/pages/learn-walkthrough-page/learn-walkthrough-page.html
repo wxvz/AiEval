@@ -9,7 +9,7 @@
       </p>
       @if (prereqMeta) {
         <p class="text-muted small mb-3">
-          Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you saw how retrieval feeds
+          Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>. You saw how retrieval feeds
           context; now judge real model answers with a rubric.
         </p>
       }
@@ -65,7 +65,7 @@
     <p class="text-muted small mb-4">
       Review: <a routerLink="/learn/labs/rag-playground">RAG playground</a> ·
       @if (nextLessonMeta) {
-        Next: <a [routerLink]="nextLessonMeta.route">{{ nextLessonMeta.title }}</a> — when to trust AI scores.
+        Next: <a [routerLink]="nextLessonMeta.route">{{ nextLessonMeta.title }}</a>, when to trust AI scores.
       }
     </p>
 
@@ -75,15 +75,15 @@
       <details class="learn-lab-faq" open>
         <summary class="learn-lab-faq__question">Do I need to fill in title and prompt?</summary>
         <p class="mb-0 text-muted">
-          No for your first run. You can leave them empty and click Run full automation — AiEval will draft a
-          title, prompt, and answers for you.
+          No for your first run. You can leave them empty and click Run full automation. AiEval will draft a
+          title, prompt and answers for you.
         </p>
       </details>
 
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">What does Run full automation do?</summary>
         <p class="mb-0 text-muted">
-          It generates answers from multiple models, scores them against the default rubric, picks a winner, and
+          It generates answers from multiple models, scores them against the default rubric, picks a winner and
           drafts an improved response. This may take a few minutes.
         </p>
       </details>
@@ -99,7 +99,7 @@
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">What should I look for on Compare?</summary>
         <p class="mb-0 text-muted">
-          Read each model answer, check rubric scores per criterion, note which answer won, and ask whether the
+          Read each model answer, check rubric scores per criterion, note which answer won and ask whether the
           winner actually meets the criteria you care about.
         </p>
       </details>
