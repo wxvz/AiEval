@@ -20,6 +20,7 @@ describe('getPrimaryTermHintIds', () => {
 
     const primary = getPrimaryTermHintIds(content!);
     expect(primary.get('classifier')).toBe('s0-check-classifier-1');
-    expect(primary.get('dataset')).toBe('s2-p4-dataset-1');
+    // Bold markers in the same paragraph shift the term's segment index.
+    expect(primary.get('dataset')).toBe('s2-p4-dataset-3');
   });
 });

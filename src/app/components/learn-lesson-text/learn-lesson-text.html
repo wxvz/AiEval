@@ -1,1 +1,47 @@
-<span class="learn-lesson-text">@for (segment of segments(); track $index) {@if (segment.kind === 'text') {<span class="learn-lesson-text__chunk">{{ segment.text }}</span>}@else {<app-learn-term-hint [term]="segment.term" [hintId]="hintId(segment.term, $index)" [activeId]="activeId()" (activeIdChange)="activeIdChange.emit($event)" [savedTerms]="savedTerms()" (termSelect)="termSelect.emit($event)" [isPrimaryOccurrence]="isPrimaryTermHint(segment.term, $index)" />}}</span>
+<span class="learn-lesson-text">
+  @for (segment of segments(); track $index) {
+    @if (segment.kind === 'text') {
+      @if (segment.emphasis === 'bold') {
+        <strong class="learn-lesson-text__chunk">{{ segment.text }}</strong>
+      } @else if (segment.emphasis === 'italic') {
+        <em class="learn-lesson-text__chunk">{{ segment.text }}</em>
+      } @else {
+        <span class="learn-lesson-text__chunk">{{ segment.text }}</span>
+      }
+    } @else if (segment.emphasis === 'bold') {
+      <strong class="learn-lesson-text__chunk">
+        <app-learn-term-hint
+          [term]="segment.term"
+          [hintId]="hintId(segment.term, $index)"
+          [activeId]="activeId()"
+          (activeIdChange)="activeIdChange.emit($event)"
+          [savedTerms]="savedTerms()"
+          (termSelect)="termSelect.emit($event)"
+          [isPrimaryOccurrence]="isPrimaryTermHint(segment.term, $index)"
+        />
+      </strong>
+    } @else if (segment.emphasis === 'italic') {
+      <em class="learn-lesson-text__chunk">
+        <app-learn-term-hint
+          [term]="segment.term"
+          [hintId]="hintId(segment.term, $index)"
+          [activeId]="activeId()"
+          (activeIdChange)="activeIdChange.emit($event)"
+          [savedTerms]="savedTerms()"
+          (termSelect)="termSelect.emit($event)"
+          [isPrimaryOccurrence]="isPrimaryTermHint(segment.term, $index)"
+        />
+      </em>
+    } @else {
+      <app-learn-term-hint
+        [term]="segment.term"
+        [hintId]="hintId(segment.term, $index)"
+        [activeId]="activeId()"
+        (activeIdChange)="activeIdChange.emit($event)"
+        [savedTerms]="savedTerms()"
+        (termSelect)="termSelect.emit($event)"
+        [isPrimaryOccurrence]="isPrimaryTermHint(segment.term, $index)"
+      />
+    }
+  }
+</span>
