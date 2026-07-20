@@ -1,0 +1,90 @@
+<div class="learn-chat-fab">
+  @if (open()) {
+    <section class="learn-chat-fab__panel" aria-label="Learn tutor chat">
+      <header class="learn-chat-fab__header">
+        <div>
+          <h2 class="learn-chat-fab__title">Learn tutor</h2>
+          <p class="learn-chat-fab__subtitle text-muted">Ask about lessons and labs</p>
+        </div>
+        <button type="button" class="learn-chat-fab__icon-btn" (click)="close()" aria-label="Close chat">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+
+      <div #messageList class="learn-chat-fab__messages" role="log" aria-live="polite">
+        @if (messages().length === 0) {
+          <p class="learn-chat-fab__empty text-muted">
+            Ask a question about the AiEval Learn curriculum.
+          </p>
+        }
+        @for (message of messages(); track $index) {
+          <article
+            class="learn-chat-fab__bubble"
+            [class.learn-chat-fab__bubble--user]="message.role === 'user'"
+            [class.learn-chat-fab__bubble--assistant]="message.role === 'assistant'"
+          >
+            <p class="learn-chat-fab__text">
+              <app-learn-lesson-text [text]="message.text" />
+            </p>
+            @if (message.sources?.length) {
+              <ul class="learn-chat-fab__sources">
+                @for (source of message.sources; track $index) {
+                  <li>
+                    @if (source.route) {
+                      <a [routerLink]="source.route">{{ source.title || source.route }}</a>
+                    } @else {
+                      <span>{{ source.title }}</span>
+                    }
+                  </li>
+                }
+              </ul>
+            }
+          </article>
+        }
+        @if (sending()) {
+          <p class="learn-chat-fab__status text-muted">Thinking…</p>
+        }
+        @if (error(); as err) {
+          <p class="learn-chat-fab__error" role="alert">{{ err }}</p>
+        }
+      </div>
+
+      <form class="learn-chat-fab__composer" (ngSubmit)="send()">
+        <label class="visually-hidden" for="learn-chat-draft">Message</label>
+        <textarea
+          #draftInput
+          id="learn-chat-draft"
+          class="form-control learn-chat-fab__input"
+          rows="2"
+          [(ngModel)]="draft"
+          name="draft"
+          [disabled]="sending()"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask about this lesson…"
+        ></textarea>
+        <button
+          type="submit"
+          class="btn btn-primary btn-sm learn-chat-fab__send"
+          [disabled]="sending() || !draft.trim()"
+        >
+          Send
+        </button>
+      </form>
+    </section>
+  }
+
+  <button
+    type="button"
+    class="learn-chat-fab__toggle"
+    (click)="toggle()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-label]="open() ? 'Close Learn tutor' : 'Open Learn tutor'"
+  >
+    <svg class="learn-chat-fab__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2zm2 4v2h12V8H6zm0 4v2h8v-2H6z"
+      />
+    </svg>
+  </button>
+</div>
