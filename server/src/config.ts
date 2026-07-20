@@ -87,6 +87,8 @@ export const config = {
   logFile: process.env['LOG_FILE'] ?? '',
   logPrompts: process.env['LOG_PROMPTS'] === 'true',
   startupPreflight: process.env['STARTUP_PREFLIGHT'] !== 'false',
+  /** n8n Learn tutor webhook (production URL). Empty disables /api/learn-chat. */
+  learnChatWebhookUrl: process.env['LEARN_CHAT_WEBHOOK_URL']?.trim() ?? '',
 } as const;
 
 export function assertConfig(): void {

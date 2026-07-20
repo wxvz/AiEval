@@ -8,6 +8,7 @@ import { logEvent } from './logging/logger.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { createAutomationRouter } from './routes/automation.js';
 import { createEvaluationsRouter } from './routes/evaluations.js';
+import { createLearnChatRouter } from './routes/learn-chat.js';
 import { createSettingsRouter } from './routes/settings.js';
 import { createStatusRouter } from './routes/status.js';
 import { createTemplatesRouter } from './routes/templates.js';
@@ -31,6 +32,7 @@ async function start(): Promise<void> {
 
   app.use('/api/status', createStatusRouter());
   app.use('/api/settings', createSettingsRouter());
+  app.use('/api/learn-chat', createLearnChatRouter());
   app.use('/api/evaluation-templates', createTemplatesRouter());
   app.use('/api/evaluations', createAutomationRouter());
   app.use('/api/evaluations', createEvaluationsRouter());
