@@ -52,21 +52,30 @@ function normalizeSources(value: unknown): LearnChatSource[] {
     return [];
   }
 
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const record = entry as Record<string, unknown>;
-      const title = asOptionalString(record['title']) ?? undefined;
-      const route = asOptionalString(record['route']) ?? undefined;
-      if (!title && !route) {
-        return null;
-      }
-      return { title, route };
-    })
-    .filter((entry): entry is LearnChatSource => entry !== null)
-    .slice(0, 5);
+  const sources: LearnChatSource[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const title = asOptionalString(record['title']);
+    const route = asOptionalString(record['route']);
+    if (!title && !route) {
+      continue;
+    }
+    const source: LearnChatSource = {};
+    if (title) {
+      source.title = title;
+    }
+    if (route) {
+      source.route = route;
+    }
+    sources.push(source);
+    if (sources.length >= 5) {
+      break;
+    }
+  }
+  return sources;
 }
 
 function normalizeTermHints(value: unknown): TermHint[] {
@@ -74,26 +83,28 @@ function normalizeTermHints(value: unknown): TermHint[] {
     return [];
   }
 
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const record = entry as Record<string, unknown>;
-      const term = asOptionalString(record['term']);
-      const label = asOptionalString(record['label']);
-      const sense = asOptionalString(record['sense']);
-      if (!term || !label || !sense) {
-        return null;
-      }
-      return {
-        term,
-        label,
-        sense: sense.slice(0, MAX_SENSE_LENGTH),
-      };
-    })
-    .filter((entry): entry is TermHint => entry !== null)
-    .slice(0, MAX_TERM_HINTS);
+  const hints: TermHint[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const term = asOptionalString(record['term']);
+    const label = asOptionalString(record['label']);
+    const sense = asOptionalString(record['sense']);
+    if (!term || !label || !sense) {
+      continue;
+    }
+    hints.push({
+      term,
+      label,
+      sense: sense.slice(0, MAX_SENSE_LENGTH),
+    });
+    if (hints.length >= MAX_TERM_HINTS) {
+      break;
+    }
+  }
+  return hints;
 }
 
 function normalizeExcerpts(value: unknown): Excerpt[] {
@@ -101,24 +112,27 @@ function normalizeExcerpts(value: unknown): Excerpt[] {
     return [];
   }
 
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') {
-        return null;
-      }
-      const record = entry as Record<string, unknown>;
-      const text = asOptionalString(record['text']);
-      if (!text) {
-        return null;
-      }
-      const heading = asOptionalString(record['heading']) ?? undefined;
-      return {
-        text: text.slice(0, MAX_EXCERPT_TEXT),
-        heading,
-      };
-    })
-    .filter((entry): entry is Excerpt => entry !== null)
-    .slice(0, MAX_EXCERPTS);
+  const excerpts: Excerpt[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const text = asOptionalString(record['text']);
+    if (!text) {
+      continue;
+    }
+    const excerpt: Excerpt = { text: text.slice(0, MAX_EXCERPT_TEXT) };
+    const heading = asOptionalString(record['heading']);
+    if (heading) {
+      excerpt.heading = heading;
+    }
+    excerpts.push(excerpt);
+    if (excerpts.length >= MAX_EXCERPTS) {
+      break;
+    }
+  }
+  return excerpts;
 }
 
 function normalizeResponse(payload: unknown, fallbackSessionId: string): LearnChatResponse {
