@@ -89,7 +89,7 @@ describe('LearnLessonPage', () => {
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Optional: try it yourself');
+    expect(el.textContent).toContain('Optional — try it yourself');
     expect(el.querySelector('app-learn-lesson-aside a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
     expect(el.querySelector('.learn-lesson-footer a[href="/learn/labs/train-vs-test"]')).toBeFalsy();
   });
@@ -150,10 +150,12 @@ describe('LearnLessonPage', () => {
     const rail = fixture.nativeElement.querySelector('.learn-lesson-rail__key-terms');
     expect(rail).toBeTruthy();
     expect(rail.textContent).toContain('Key terms');
+    const toggle = rail.querySelector('.learn-lesson-rail__key-term-toggle') as HTMLButtonElement;
+    expect(toggle).toBeTruthy();
+    toggle.click();
+    fixture.detectChanges();
     expect(rail.querySelector('.learn-lesson-rail__key-term-body')).toBeTruthy();
-    expect(
-      rail.querySelector('.learn-lesson-rail__key-term-toggle')?.getAttribute('aria-expanded'),
-    ).toBe('true');
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
 
     const savedMentions = fixture.nativeElement.querySelectorAll('.learn-term-hint__saved');
     expect(savedMentions.length).toBeGreaterThan(0);
