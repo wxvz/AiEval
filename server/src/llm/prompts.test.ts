@@ -30,6 +30,8 @@ describe('system prompts', () => {
   it('instructs answer models to avoid rubric meta', () => {
     expect(GENERATE_SYSTEM).toMatch(/plain text/i);
     expect(GENERATE_SYSTEM).toMatch(/rubric|scoring/i);
+    expect(GENERATE_SYSTEM).toMatch(/thinking markup|chain-of-thought/i);
+    expect(GENERATE_SYSTEM).toMatch(/constraint checklists|self-correction|verification/i);
   });
 
   it('instructs batch judge to compare indexed answers with anchors', () => {

@@ -103,7 +103,7 @@ describe('chatWithModelFallback', () => {
     const result = await chatWithModelFallback(
       {
         ...setup,
-        judgeModel: { model: 'llama-3.3-70b-versatile', label: 'versatile' },
+        judgeModel: { model: 'openai/gpt-oss-120b', label: 'gpt-oss-120b' },
       },
       'judge',
       0,
@@ -114,7 +114,7 @@ describe('chatWithModelFallback', () => {
 
     expect(result.text).toBe('Generated title');
     expect(chat).toHaveBeenCalledTimes(2);
-    expect(chat.mock.calls[0]?.[1]).toBe('llama-3.3-70b-versatile');
+    expect(chat.mock.calls[0]?.[1]).toBe('openai/gpt-oss-120b');
     expect(chat.mock.calls[1]?.[1]).toBe('meta-llama/llama-3.3-70b-instruct:free');
   });
 });
@@ -129,10 +129,11 @@ describe('buildFallbackCandidates judge role', () => {
     vi.spyOn(modelPresetsModule, 'resolveSingleModel').mockImplementation(
       (_provider, role, _slot, preset) => {
         if (role === 'judge' && preset === 'fast') {
+          // Intentionally an answer-slot model so judge fallback must skip it.
           return 'llama-3.1-8b-instant';
         }
 
-        return 'llama-3.3-70b-versatile';
+        return 'openai/gpt-oss-120b';
       },
     );
 
@@ -141,15 +142,15 @@ describe('buildFallbackCandidates judge role', () => {
       provider: mockProvider,
       answerModels: [
         { model: 'llama-3.1-8b-instant', label: 'instant' },
-        { model: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'scout' },
-        { model: 'qwen/qwen3-32b', label: 'qwen' },
+        { model: 'qwen/qwen3.6-27b', label: 'qwen3.6' },
+        { model: 'openai/gpt-oss-20b', label: 'gpt-oss-20b' },
       ],
-      judgeModel: { model: 'llama-3.3-70b-versatile', label: 'versatile' },
+      judgeModel: { model: 'openai/gpt-oss-120b', label: 'gpt-oss-120b' },
     };
 
     const candidates = await buildFallbackCandidates(groqSetup, 'judge', 0);
 
-    expect(candidates.map((candidate) => candidate.model)).toEqual(['llama-3.3-70b-versatile']);
+    expect(candidates.map((candidate) => candidate.model)).toEqual(['openai/gpt-oss-120b']);
   });
 });
 
@@ -304,6 +305,7 @@ describe('isFallbackEligible', () => {
   it('treats 429 and fetch failed as eligible for fallback', () => {
     expect(isFallbackEligible(new Error('429 rate limit'))).toBe(true);
     expect(isFallbackEligible(new Error('fetch failed'))).toBe(true);
+    expect(isFallbackEligible(new Error('Answer qwen3.6-27b has empty content.'))).toBe(true);
     expect(isFallbackEligible(new Error('Invalid JSON'))).toBe(false);
   });
 

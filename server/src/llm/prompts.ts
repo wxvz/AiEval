@@ -9,7 +9,7 @@ import { stripModelArtifacts } from './sanitize-model-output.js';
 import type { Answer, ImprovedAnswer, RubricCriterion } from '../types/evaluation.js';
 
 export const GENERATE_SYSTEM =
-  'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
+  'You produce a candidate answer for automated evaluation. Reply directly to the user prompt in plain text—no JSON, no preamble about being an AI, and no mention of rubrics or scoring. Do not wrap the reply in chain-of-thought or thinking markup tags; do not emit constraint checklists, self-correction, or verification notes. Output only the final answer. Address every part of the request; be accurate and concise; use structure (lists, steps) when it helps readability.';
 
 export const TITLE_GENERATE_SYSTEM = `You create clear evaluation titles for an AI response evaluation app. Generate one concise title that can later be used to create a challenging prompt for comparing language model answers. The title should be specific, balanced, realistic, and not too broad. Choose a topic yourself. Across separate requests, vary the subject area and angle; do not reuse the same topic or near-duplicate wording. Avoid vague titles, clickbait, jokes, or overly broad topics. Output only the title, with no extra explanation.`;
 

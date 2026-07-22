@@ -80,4 +80,28 @@ describe('formatLogTextLine', () => {
       }),
     ).toBe('WARN: custom.event code=42 note=retry');
   });
+
+  it('formats answer rejected and model fallback clearly', () => {
+    expect(
+      formatLogTextLine({
+        level: 'warn',
+        event: 'automation.answer_rejected',
+        model: 'qwen/qwen3.6-27b',
+        reason: 'empty_content',
+        detail: 'Answer qwen3.6-27b has empty content (sanitized empty).',
+      }),
+    ).toBe(
+      'WARN: Answer rejected (qwen/qwen3.6-27b, empty_content): Answer qwen3.6-27b has empty content (sanitized empty).',
+    );
+
+    expect(
+      formatLogTextLine({
+        level: 'warn',
+        event: 'automation.model_fallback',
+        step: 'generating',
+        fromModel: 'qwen/qwen3.6-27b',
+        toModel: 'openrouter/free',
+      }),
+    ).toBe('WARN: Model fallback [generating]: qwen/qwen3.6-27b → openrouter/free');
+  });
 });
