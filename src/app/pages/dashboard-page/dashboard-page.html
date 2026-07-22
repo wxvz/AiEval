@@ -1,4 +1,7 @@
-<app-page-shell>
+<app-page-shell
+  [wideMain]="true"
+  [spanRight]="!loading() && !loadError() && evaluations().length > 0"
+>
   @if (!loading() && !loadError() && evaluations().length > 0) {
     <app-dashboard-day-rail
       shellLeft

@@ -1,5 +1,7 @@
 :host {
   display: block;
+  position: sticky;
+  top: 5rem;
 }
 
 .day-rail {

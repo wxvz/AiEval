@@ -1,4 +1,8 @@
-<div class="page-shell">
+<div
+  class="page-shell"
+  [class.page-shell--wide-main]="wideMain()"
+  [class.page-shell--span-right]="spanRight()"
+>
   <aside class="page-shell__left">
     <ng-content select="[shellLeft]" />
   </aside>
