@@ -10,7 +10,7 @@ import { LeaveDuringAutomationComponent } from '../../components/leave-during-au
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { Evaluation } from '../../models';
 import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
-import { loadWalkthroughContent } from '../../learn/learn-content';
+import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { TemplateService } from '../../services/template.service';
