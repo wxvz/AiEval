@@ -18,6 +18,7 @@ import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-
 import { CriteriaMode } from '../../models';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
+import { TemplateService } from '../../services/template.service';
 
 @Component({
   selector: 'app-edit-evaluation-page',
@@ -39,6 +40,7 @@ import { EvaluationService } from '../../services/evaluation.service';
 export class EditEvaluationPage {
   private readonly route = inject(ActivatedRoute);
   private readonly evaluationService = inject(EvaluationService);
+  private readonly templateService = inject(TemplateService);
   private readonly learnHandoff = inject(LearnHandoffService);
 
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
@@ -100,6 +102,7 @@ export class EditEvaluationPage {
       {
         name: value.name,
         maxPoints: value.maxPoints,
+        weight: value.weight,
         ...(value.description.trim() ? { description: value.description } : {}),
       },
       {
@@ -152,6 +155,29 @@ export class EditEvaluationPage {
         error: 'Could not remove model answer.',
       },
     );
+  }
+
+  protected saveAsTemplate(): void {
+    const current = this.evaluation();
+
+    if (!current) {
+      return;
+    }
+
+    const name = window.prompt('Template name');
+
+    if (!name?.trim()) {
+      return;
+    }
+
+    void this.templateService.create({
+      name: name.trim(),
+      title: current.title,
+      prompt: current.prompt,
+      criteriaMode: current.criteriaMode,
+      criteria: current.criteria,
+      evaluationConfig: current.evaluationConfig,
+    });
   }
 
 }

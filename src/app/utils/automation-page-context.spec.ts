@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
+import { DEFAULT_EVALUATION_CONFIG } from '../models';
 import { EvaluationService } from '../services/evaluation.service';
 import { useAutomationPageContext } from './automation-page-context';
 
@@ -44,6 +45,7 @@ describe('useAutomationPageContext', () => {
       prompt: 'P',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       tokenUsage: usage,
       createdAt: new Date().toISOString(),
@@ -68,6 +70,7 @@ describe('useAutomationPageContext', () => {
       prompt: 'P',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       tokenUsage: stored,
       createdAt: new Date().toISOString(),

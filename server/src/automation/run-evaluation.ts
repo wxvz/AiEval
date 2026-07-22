@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { config } from '../config.js';
 import { getLlmPreset } from '../runtime-settings.js';
 import { getEvaluationsCollection } from '../db.js';
+import { computeScoringConfigRevision } from '../scoring-config-revision.js';
 import { needsAutomationMetadataPrep } from './constants.js';
 import { getActiveCriteria } from './criteria.js';
 import {
@@ -23,16 +24,13 @@ import {
   buildBatchScorePrompt,
   buildComparativeRankPrompt,
   buildImprovedPrompt,
-  GENERATE_SYSTEM,
+  buildGenerateSystem,
   JUDGE_BATCH_SCORE_SYSTEM,
   JUDGE_IMPROVED_SYSTEM,
   JUDGE_RANK_SYSTEM,
   parseImprovedAnswer,
 } from '../llm/prompts.js';
-import {
-  isUnusableAnswerModel,
-  stripModelArtifacts,
-} from '../llm/sanitize-model-output.js';
+import { stripModelArtifacts } from '../llm/sanitize-model-output.js';
 import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
 import {
   clearAutomationRun,
@@ -64,11 +62,12 @@ import type {
 } from '../llm/types.js';
 
 export type { AutomationPhase };
-import { toApiEvaluation } from '../serialization.js';
+import { normalizeEvaluationRecord, toApiEvaluation } from '../serialization.js';
 import type {
   Answer,
   Evaluation,
   EvaluationDocument,
+  EvaluationConfig,
   ImprovedAnswer,
   RubricCriterion,
 } from '../types/evaluation.js';
@@ -190,47 +189,6 @@ function tokenUsageField(accumulator: TokenAccumulator): {
   return { tokenUsage: accumulator.totals() };
 }
 
-function classifyAnswerRejectReason(error: unknown): string {
-  if (isRateLimitExhausted(error)) {
-    return 'rate_limit';
-  }
-
-  if (!(error instanceof Error)) {
-    return 'failed';
-  }
-
-  const message = error.message.toLowerCase();
-
-  if (message.includes('unusable model')) {
-    return 'unusable_model';
-  }
-
-  if (message.includes('sanitized empty') || message.includes('has empty content')) {
-    return 'empty_content';
-  }
-
-  return 'failed';
-}
-
-function logAnswerRejected(
-  context: {
-    runId?: string;
-    evaluationId?: string;
-    provider?: string;
-    model: string;
-    resolvedModel?: string;
-    step: AutomationStep;
-    slotIndex?: number;
-  },
-  error: unknown,
-): void {
-  logEvent('warn', LogEvents.automationAnswerRejected, {
-    ...context,
-    reason: classifyAnswerRejectReason(error),
-    detail: error instanceof Error ? error.message : String(error),
-  });
-}
-
 function modelFallbackHandlers(
   onProgress: ProgressCallback,
   step: AutomationStep,
@@ -252,13 +210,6 @@ function modelFallbackHandlers(
         });
       }
 
-      logEvent('warn', LogEvents.automationModelFallback, {
-        step,
-        fromModel,
-        toModel,
-        ...(index !== undefined ? { slotIndex: index } : {}),
-      });
-
       emit(onProgress, {
         type: 'model_fallback',
         step,
@@ -272,6 +223,23 @@ function modelFallbackHandlers(
 
 function candidateKey(candidate: FallbackCandidate): string {
   return `${candidate.providerName}:${candidate.model}`;
+}
+
+async function buildJudgeCandidates(
+  setup: ResolvedLlmSetup,
+  evaluationConfig: EvaluationConfig,
+): Promise<FallbackCandidate[]> {
+  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const requested = evaluationConfig.judgeProfile.model;
+
+  if (!requested || candidates.some((candidate) => candidate.model === requested)) {
+    return candidates;
+  }
+
+  return [
+    { providerName: setup.providerName, model: requested, label: modelIdToLabel(requested) },
+    ...candidates,
+  ];
 }
 
 async function persistGenerateCheckpoint(
@@ -294,6 +262,7 @@ async function generateOneAnswerSlot(
   evaluationId: string,
   prompt: string,
   criteria: RubricCriterion[],
+  evaluationConfig: EvaluationConfig,
   slotIndex: number,
   runId: string,
   onProgress: ProgressCallback,
@@ -305,7 +274,7 @@ async function generateOneAnswerSlot(
 
   const total = setup.answerModels.length;
   const generateMessages: ChatMessage[] = [
-    { role: 'system', content: GENERATE_SYSTEM },
+    { role: 'system', content: buildGenerateSystem(evaluationConfig) },
     { role: 'user', content: prompt },
   ];
 
@@ -335,28 +304,13 @@ async function generateOneAnswerSlot(
     model: candidate.model,
     step: 'generating',
   });
-  const effectiveModel = completion.resolvedModel ?? candidate.model;
-  const label = modelIdToLabel(effectiveModel);
-
-  // OpenRouter `openrouter/free` can route to guardrail classifiers (e.g. Nemotron
-  // Content Safety) that only emit "User Safety: safe" — reject so fallback runs.
-  if (isUnusableAnswerModel(effectiveModel)) {
-    throw new Error(
-      `Answer ${label} has empty content (unusable model: ${effectiveModel}).`,
-    );
-  }
-
-  const content = stripModelArtifacts(completion.text);
-
-  if (!content) {
-    throw new Error(`Answer ${label} has empty content (sanitized empty).`);
-  }
+  const label = modelIdToLabel(completion.resolvedModel ?? candidate.model);
 
   const answer: Answer = {
     id: crypto.randomUUID(),
     evaluationId,
     label,
-    content,
+    content: stripModelArtifacts(completion.text),
     scores: initialScoresForCriteria(criteria),
   };
 
@@ -380,6 +334,7 @@ async function generateAnswers(
   evaluationId: string,
   prompt: string,
   criteria: RubricCriterion[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
@@ -418,6 +373,7 @@ async function generateAnswers(
           evaluationId,
           prompt,
           criteria,
+          evaluationConfig,
           slotIndex,
           runId,
           onProgress,
@@ -432,25 +388,10 @@ async function generateAnswers(
         slots[slotIndex] = answer;
         attempted.add(`${setup.providerName}:${modelRef.model}`);
       } catch (error) {
-        const emptyAfterSanitize =
-          error instanceof Error && /has empty content/i.test(error.message);
-
-        // Leave the slot null so sequential fallback can try another model.
-        if (!isRateLimitExhausted(error) && !emptyAfterSanitize) {
+        if (!isRateLimitExhausted(error)) {
           throw error;
         }
 
-        logAnswerRejected(
-          {
-            runId,
-            evaluationId,
-            provider: setup.providerName,
-            model: modelRef.model,
-            step: 'generating',
-            slotIndex,
-          },
-          error,
-        );
         attempted.add(`${setup.providerName}:${modelRef.model}`);
       }
     });
@@ -489,6 +430,7 @@ async function generateAnswers(
           evaluationId,
           prompt,
           criteria,
+          evaluationConfig,
           slotIndex,
           runId,
           onProgress,
@@ -520,6 +462,7 @@ async function scoreAnswers(
   prompt: string,
   criteria: RubricCriterion[],
   answers: Answer[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
@@ -527,7 +470,7 @@ async function scoreAnswers(
 ): Promise<Answer[]> {
   assertNotCancelled(signal, 'scoring');
 
-  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const candidates = await buildJudgeCandidates(setup, evaluationConfig);
 
   emit(onProgress, {
     type: 'scoring_batch',
@@ -549,7 +492,7 @@ async function scoreAnswers(
     content: JUDGE_BATCH_SCORE_SYSTEM,
   };
 
-  const userContent = buildBatchScorePrompt(prompt, criteria, answers);
+  const userContent = buildBatchScorePrompt(prompt, criteria, answers, evaluationConfig);
   const messages: ChatMessage[] = [judgeSystem, { role: 'user', content: userContent }];
 
   const rows = await callSingleModelWithFallback(
@@ -568,6 +511,7 @@ async function scoreAnswers(
         (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
       ),
   );
+  assertNotCancelled(signal, 'scoring');
 
   const scored = rows.map((row, index) => {
     const answer = answers[index]!;
@@ -600,6 +544,7 @@ async function scoreAnswers(
     prompt,
     criteria,
     scored,
+    evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -650,12 +595,13 @@ async function rebalanceTiedScores(
   prompt: string,
   criteria: RubricCriterion[],
   answers: Answer[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
   llmCtx: CompleteContext,
 ): Promise<Answer[]> {
-  if (!allAnswersHaveEqualTotals(answers)) {
+  if (!allAnswersHaveEqualTotals(answers, criteria)) {
     return answers;
   }
 
@@ -663,9 +609,12 @@ async function rebalanceTiedScores(
 
   const rankMessages: ChatMessage[] = [
     { role: 'system', content: JUDGE_RANK_SYSTEM },
-    { role: 'user', content: buildComparativeRankPrompt(prompt, criteria, answers) },
+    {
+      role: 'user',
+      content: buildComparativeRankPrompt(prompt, criteria, answers, evaluationConfig),
+    },
   ];
-  const rankCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const rankCandidates = await buildJudgeCandidates(setup, evaluationConfig);
 
   const rankings = await callSingleModelWithFallback(
     rankCandidates,
@@ -684,6 +633,7 @@ async function rebalanceTiedScores(
           ),
       ),
   );
+  assertNotCancelled(signal, 'scoring');
 
   const bestPercent = Math.max(...rankings.map((entry) => entry.qualityPercent));
 
@@ -837,11 +787,12 @@ function findWinnerAnswer(answers: Answer[], winnerAnswerId?: string): Answer | 
 
 async function applyWinner(
   scored: Answer[],
+  criteria: RubricCriterion[],
   runId: string,
   evaluationId: string,
   onProgress: ProgressCallback,
 ): Promise<{ answersWithWinner: Answer[]; winner: Answer; winnerAnswerId: string }> {
-  const winnerResult = pickWinner(scored);
+  const winnerResult = pickWinner(scored, criteria);
 
   if (!winnerResult) {
     throw new AutomationError('No winner could be determined.', 'scoring');
@@ -885,6 +836,7 @@ async function runGeneratePhase(
     evaluationId,
     prompt,
     criteria,
+    doc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -892,6 +844,7 @@ async function runGeneratePhase(
     { existingAnswers: doc.answers, docId: doc._id, accumulator },
   );
   logAutomationStepComplete('generating', runId, evaluationId);
+  assertNotCancelled(signal, 'generating');
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
@@ -926,6 +879,7 @@ async function runScorePhase(
     prompt,
     criteria,
     doc.answers,
+    doc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -933,14 +887,17 @@ async function runScorePhase(
   );
   validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
+  assertNotCancelled(signal, 'scoring');
 
   const { answersWithWinner, winnerAnswerId } = await applyWinner(
     scored,
+    criteria,
     runId,
     evaluationId,
     onProgress,
   );
   const now = new Date().toISOString();
+  const scoringConfigRevision = computeScoringConfigRevision(doc, criteria);
   const saved = await persistEvaluation(
     doc._id,
     {
@@ -948,6 +905,12 @@ async function runScorePhase(
       winnerAnswerId,
       automatedAt: now,
       updatedAt: now,
+      scoringConfigRevision,
+      lastScoringRun: {
+        at: now,
+        strictness: doc.evaluationConfig.judgeProfile.strictness,
+        judgeModel: doc.evaluationConfig.judgeProfile.model ?? setup.judgeModel.model,
+      },
       ...tokenUsageField(accumulator),
     },
     undefined,
@@ -987,6 +950,7 @@ async function runImprovedPhase(
     llmCtx,
   );
   logAutomationStepComplete('improved', runId, evaluationId);
+  assertNotCancelled(signal, 'improved');
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
@@ -1016,7 +980,12 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const { title, prompt } = await generateEvaluationMetadata(setup, handlers, llmCtx);
+  const { title, prompt } = await generateEvaluationMetadata(
+    setup,
+    handlers,
+    llmCtx,
+    doc.evaluationConfig,
+  );
   const now = new Date().toISOString();
 
   const saved = await persistEvaluation(
@@ -1070,6 +1039,7 @@ async function runFullPipeline(
     evaluationId,
     prompt,
     criteria,
+    preparedDoc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -1086,6 +1056,7 @@ async function runFullPipeline(
     prompt,
     criteria,
     answers,
+    preparedDoc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -1093,9 +1064,11 @@ async function runFullPipeline(
   );
   validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
+  assertNotCancelled(signal, 'scoring');
 
   const { answersWithWinner, winner, winnerAnswerId } = await applyWinner(
     scored,
+    criteria,
     runId,
     evaluationId,
     onProgress,
@@ -1114,8 +1087,10 @@ async function runFullPipeline(
     llmCtx,
   );
   logAutomationStepComplete('improved', runId, evaluationId);
+  assertNotCancelled(signal, 'improved');
 
   const now = new Date().toISOString();
+  const scoringConfigRevision = computeScoringConfigRevision(preparedDoc, criteria);
   const saved = await persistEvaluation(
     preparedDoc._id,
     {
@@ -1124,6 +1099,13 @@ async function runFullPipeline(
       improvedAnswer,
       automatedAt: now,
       updatedAt: now,
+      scoringConfigRevision,
+      lastScoringRun: {
+        at: now,
+        strictness: preparedDoc.evaluationConfig.judgeProfile.strictness,
+        judgeModel:
+          preparedDoc.evaluationConfig.judgeProfile.model ?? setup.judgeModel.model,
+      },
       ...tokenUsageField(accumulator),
     },
     undefined,
@@ -1229,11 +1211,17 @@ export async function prepareDocForPhase(
           { _id: doc._id },
           {
             $set: { answers, updatedAt: now },
-            $unset: { winnerAnswerId: '', automatedAt: '' },
+            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
           },
         );
 
-        return { ...doc, answers, winnerAnswerId: undefined, automatedAt: undefined };
+        return {
+          ...doc,
+          answers,
+          winnerAnswerId: undefined,
+          improvedAnswer: undefined,
+          automatedAt: undefined,
+        };
       }
 
       return doc;
@@ -1272,11 +1260,15 @@ export async function runEvaluationAutomation(options: {
   const { evaluationObjectId, runId, force, onProgress } = options;
   const phase = options.phase ?? 'full';
   const collection = getEvaluationsCollection();
-  const doc = await collection.findOne({ _id: evaluationObjectId });
+  const storedDoc = await collection.findOne({ _id: evaluationObjectId });
 
-  if (!doc) {
+  if (!storedDoc) {
     throw new AutomationError('Evaluation not found.', initialFailureStep(phase));
   }
+  const doc: EvaluationDocument = {
+    _id: storedDoc._id,
+    ...normalizeEvaluationRecord(storedDoc, storedDoc._id.toString()),
+  };
 
   const evaluationId = doc._id.toString();
   const signal = registerAutomationRun(evaluationId, runId);

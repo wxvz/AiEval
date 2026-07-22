@@ -37,11 +37,11 @@ describe('normalizeAnswer', () => {
 describe('toApiEvaluation', () => {
   it('uses document _id as api id and normalizes nested answers', () => {
     const objectId = new ObjectId();
-    const record: EvaluationRecord = {
+    const record = {
       title: 'Test',
       prompt: 'Prompt',
       criteriaMode: 'default',
-      criteria: [],
+      criteria: [{ id: 'legacy', name: 'Legacy', maxPoints: 5 }],
       answers: [
         {
           id: 'answer-1',
@@ -53,11 +53,14 @@ describe('toApiEvaluation', () => {
       ],
       createdAt: 'now',
       updatedAt: 'now',
-    };
+    } as unknown as EvaluationRecord;
 
     const api = toApiEvaluation({ _id: objectId, ...record });
 
     expect(api.id).toBe(objectId.toHexString());
     expect(api.answers[0]?.evaluationId).toBe(objectId.toHexString());
+    expect(api.evaluationConfig.taskDifficulty).toBe('balanced');
+    expect(api.evaluationConfig.goal).toBe('general');
+    expect(api.criteria[0]?.weight).toBe(1);
   });
 });

@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DEFAULT_CRITERIA, Evaluation, RubricCriterion } from '../models';
+import { DEFAULT_CRITERIA, DEFAULT_EVALUATION_CONFIG, Evaluation, RubricCriterion } from '../models';
 import { EvaluationService } from './evaluation.service';
 import { FeedbackService } from './feedback.service';
 
@@ -14,6 +14,7 @@ describe('EvaluationService criteria modes', () => {
     name: 'Custom accuracy',
     description: 'Custom scoring definition',
     maxPoints: 7,
+    weight: 1,
   };
 
   let httpMock: HttpTestingController;
@@ -47,6 +48,7 @@ describe('EvaluationService criteria modes', () => {
       prompt: 'Evaluate these model answers for quality.',
       criteriaMode: 'default',
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
@@ -69,6 +71,7 @@ describe('EvaluationService criteria modes', () => {
       title: 'Create-page evaluation',
       prompt: 'Title and prompt only, as in full automation.',
       criteriaMode: 'default',
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     });
     post.flush(savedEvaluation());
 
@@ -93,6 +96,7 @@ describe('EvaluationService criteria modes', () => {
       title: 'Custom rubric evaluation',
       prompt: 'Created with custom criteria.',
       criteriaMode: 'custom',
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       criteria: [customCriterion],
     });
     post.flush(savedEvaluation({ criteriaMode: 'custom', criteria: [customCriterion] }));
@@ -114,6 +118,7 @@ describe('EvaluationService criteria modes', () => {
       title: 'New evaluation',
       prompt: 'Evaluate these model answers for quality.',
       criteriaMode: 'default',
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     });
     post.flush(savedEvaluation());
 
@@ -146,6 +151,7 @@ describe('EvaluationService criteria modes', () => {
       name: customCriterion.name,
       description: customCriterion.description,
       maxPoints: customCriterion.maxPoints,
+      weight: customCriterion.weight,
     });
     httpMock.expectOne(`/api/evaluations/${created.id}`).flush({
       ...service.getById(created.id)!,
@@ -372,7 +378,7 @@ describe('EvaluationService.generateTitle', () => {
 
     const req = httpMock.expectOne('/api/evaluations/generate-title');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({});
+    expect(req.request.body).toEqual({ evaluationConfig: DEFAULT_EVALUATION_CONFIG });
     req.flush({ title: 'Remote work policy trade-offs' });
 
     await expect(promise).resolves.toBe('Remote work policy trade-offs');
@@ -400,7 +406,10 @@ describe('EvaluationService.generatePrompt', () => {
 
     const req = httpMock.expectOne('/api/evaluations/generate-prompt');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ title: 'My evaluation title' });
+    expect(req.request.body).toEqual({
+      title: 'My evaluation title',
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+    });
     req.flush({ prompt: 'Write a detailed explanation of the topic.' });
 
     await expect(promise).resolves.toBe('Write a detailed explanation of the topic.');

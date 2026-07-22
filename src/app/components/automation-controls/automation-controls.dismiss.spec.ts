@@ -3,7 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Evaluation } from '../../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
 import { SettingsService } from '../../services/settings.service';
@@ -20,6 +20,7 @@ describe('AutomationControlsComponent dismiss', () => {
     prompt: 'Say hello',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

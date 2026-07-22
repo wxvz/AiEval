@@ -29,11 +29,11 @@ describe('generateEvaluationMetadata', () => {
     const extraContext = { runId: 'run-1', evaluationId: 'eval-1' };
     const result = await generateEvaluationMetadata(setup, handlers, extraContext);
 
-    expect(generateEvaluationTitle).toHaveBeenCalledWith(extraContext, { setup, handlers });
+    expect(generateEvaluationTitle).toHaveBeenCalledWith(extraContext, { setup, handlers }, expect.any(Object));
     expect(generateEvaluationPrompt).toHaveBeenCalledWith('Generated title', extraContext, {
       setup,
       handlers,
-    });
+    }, expect.any(Object));
     expect(result).toEqual({
       title: 'Generated title',
       prompt: 'Generated prompt for evaluation.',

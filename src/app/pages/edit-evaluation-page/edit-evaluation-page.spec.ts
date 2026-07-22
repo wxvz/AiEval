@@ -4,9 +4,10 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
-import { Evaluation } from '../../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
+import { TemplateService } from '../../services/template.service';
 import { EditEvaluationPage } from './edit-evaluation-page';
 
 describe('EditEvaluationPage.canDeactivate', () => {
@@ -20,6 +21,7 @@ describe('EditEvaluationPage.canDeactivate', () => {
     prompt: 'Say hello',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -38,6 +40,7 @@ describe('EditEvaluationPage.canDeactivate', () => {
         provideHttpClient(),
         EvaluationService,
         FeedbackService,
+        TemplateService,
         {
           provide: ActivatedRoute,
           useValue: {

@@ -17,8 +17,8 @@ import {
 import type { Answer, RubricCriterion, Score } from '../types/evaluation.js';
 
 const criteria: RubricCriterion[] = [
-  { id: 'c1', name: 'Accuracy', maxPoints: 5 },
-  { id: 'c2', name: 'Clarity', maxPoints: 5 },
+  { id: 'c1', name: 'Accuracy', maxPoints: 5, weight: 1 },
+  { id: 'c2', name: 'Clarity', maxPoints: 5, weight: 1 },
 ];
 
 function score(criterionId: string, points: number, maxPoints: number): Score {
@@ -115,6 +115,30 @@ describe('scores', () => {
     expect(winner?.answerId).toBe('b');
   });
 
+  it('picks by normalized weighted score with deterministic ties', () => {
+    const weightedCriteria: RubricCriterion[] = [
+      { id: 'c1', name: 'Accuracy', maxPoints: 5, weight: 3 },
+      { id: 'c2', name: 'Clarity', maxPoints: 5, weight: 1 },
+    ];
+    const winner = pickWinner(
+      [
+        {
+          id: 'a',
+          label: 'A',
+          scores: [score('c1', 5, 5), score('c2', 1, 5)],
+        },
+        {
+          id: 'b',
+          label: 'B',
+          scores: [score('c1', 3, 5), score('c2', 5, 5)],
+        },
+      ],
+      weightedCriteria,
+    );
+
+    expect(winner?.answerId).toBe('a');
+  });
+
   it('returns null for empty answers', () => {
     expect(pickWinner([])).toBeNull();
   });
@@ -134,7 +158,7 @@ describe('scores', () => {
       {
         answerNotes: 'Strong overall; minor clarity gaps.',
         scores: [
-          { criterionId: 'c1', points: 4, notes: 'Mostly correct.' },
+          { criterionId: 'c1', points: 4, confidence: 82, notes: 'Mostly correct.' },
           { criterionId: 'c2', points: 3, notes: 'Readable but dense.' },
         ],
       },
@@ -145,6 +169,7 @@ describe('scores', () => {
     expect(parsed.answerNotes).toBe('Strong overall; minor clarity gaps.');
     expect(parsed.scores[0]?.points).toBe(4);
     expect(parsed.scores[0]?.notes).toBe('Mostly correct.');
+    expect(parsed.scores[0]?.confidence).toBe(0.82);
     expect(parsed.scores[1]?.notes).toBe('Readable but dense.');
   });
 

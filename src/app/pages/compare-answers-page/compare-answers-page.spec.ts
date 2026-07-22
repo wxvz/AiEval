@@ -1,9 +1,8 @@
-import { RubricCriterion, Score } from '../../models';
+import { RubricCriterion, Score, upsertCriterionScore } from '../../models';
 import {
   activeScoresForCriteria,
   nextAnswerIndex,
   previousAnswerIndex,
-  upsertCriterionScore,
 } from './compare-answers-page';
 
 describe('upsertCriterionScore', () => {
@@ -11,6 +10,7 @@ describe('upsertCriterionScore', () => {
     id: 'criterion-accuracy',
     name: 'Accuracy',
     maxPoints: 5,
+    weight: 1,
   };
 
   const inactiveScore: Score = {
@@ -91,6 +91,7 @@ describe('focused compare helpers', () => {
       id: 'criterion-active',
       name: 'Active criterion',
       maxPoints: 5,
+      weight: 1,
     };
     const activeScore: Score = {
       criterionId: activeCriterion.id,

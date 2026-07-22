@@ -3,10 +3,15 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 
-import { AUTOMATION_METADATA_STUB } from '../../models';
+import {
+  AUTOMATION_METADATA_STUB_PROMPT,
+  AUTOMATION_METADATA_STUB_TITLE,
+} from '../../../../server/src/automation/constants';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
+import { TemplateService } from '../../services/template.service';
 import { CreateEvaluationPage } from './create-evaluation-page';
 
 describe('CreateEvaluationPage', () => {
@@ -27,6 +32,7 @@ describe('CreateEvaluationPage', () => {
         provideHttpClientTesting(),
         EvaluationService,
         FeedbackService,
+        TemplateService,
         { provide: Router, useValue: { navigate: routerNavigate } },
         {
           provide: ActivatedRoute,
@@ -45,10 +51,11 @@ describe('CreateEvaluationPage', () => {
   it('onRunFullAutomation creates stub evaluation when form is empty', async () => {
     const created = {
       id: 'eval-new',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -60,8 +67,9 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       },
       {
         success: 'Evaluation created.',
@@ -86,6 +94,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'A detailed prompt for comparing model answers.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -99,6 +108,7 @@ describe('CreateEvaluationPage', () => {
       {
         title: 'My evaluation',
         prompt: 'A detailed prompt for comparing model answers.',
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       },
       {
         success: 'Evaluation created.',
@@ -139,7 +149,7 @@ describe('CreateEvaluationPage', () => {
     await page['onGeneratePrompt']();
 
     expect(generateTitleSpy).toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', {
+    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', DEFAULT_EVALUATION_CONFIG, {
       success: 'Prompt generated.',
       error: 'Could not generate prompt.',
     });
@@ -164,7 +174,7 @@ describe('CreateEvaluationPage', () => {
     await page['onGeneratePrompt']();
 
     expect(generateTitleSpy).toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', {
+    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', DEFAULT_EVALUATION_CONFIG, {
       success: 'Prompt generated.',
       error: 'Could not generate prompt.',
     });
@@ -177,6 +187,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Generated prompt for the evaluation run.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -203,6 +214,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Done prompt for evaluation.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -227,6 +239,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Synced prompt text for the evaluation.',
       criteriaMode: 'default',
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -248,10 +261,11 @@ describe('CreateEvaluationPage', () => {
       ...list,
       {
         id: 'eval-live',
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
         criteriaMode: 'default',
         criteria: [],
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
         answers: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -283,6 +297,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Complete prompt.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -310,6 +325,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Complete prompt.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -331,6 +347,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Prompt A.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -339,10 +356,11 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -358,8 +376,9 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       },
       {
         success: 'Evaluation created.',
@@ -378,6 +397,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Prompt A.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -386,10 +406,11 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -411,8 +432,9 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       },
       {
         success: 'Evaluation created.',
@@ -430,6 +452,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Rerun prompt.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -457,6 +480,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Dismiss prompt.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -478,6 +502,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Dismiss prompt text for the evaluation.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -512,7 +537,7 @@ describe('CreateEvaluationPage', () => {
     await page['onGeneratePrompt']();
 
     expect(generateTitleSpy).not.toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('My existing title', {
+    expect(generatePromptSpy).toHaveBeenCalledWith('My existing title', DEFAULT_EVALUATION_CONFIG, {
       success: 'Prompt generated.',
       error: 'Could not generate prompt.',
     });
@@ -527,6 +552,7 @@ describe('CreateEvaluationPage', () => {
       prompt: 'Learn prompt.',
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -542,10 +568,11 @@ describe('CreateEvaluationPage', () => {
   it('does not record learn handoff without from=learn', async () => {
     const created = {
       id: 'eval-plain',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
