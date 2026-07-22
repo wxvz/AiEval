@@ -63,6 +63,32 @@ describe('resilient-llm helpers', () => {
     expect(answersFromSlots(slots)).toHaveLength(2);
   });
 
+  it('leaves slots pending when existing answers have empty content', () => {
+    const slots = mapAnswersToSlots(
+      [
+        {
+          id: '1',
+          evaluationId: 'e',
+          label: 'A',
+          content: '   ',
+          scores: [],
+        },
+        {
+          id: '2',
+          evaluationId: 'e',
+          label: 'B',
+          content: 'ok',
+          scores: [],
+        },
+      ],
+      setup,
+    );
+
+    expect(slots[0]).toBeNull();
+    expect(slots[1]?.content).toBe('ok');
+    expect(pendingSlotIndices(slots)).toEqual([0, 2]);
+  });
+
   it('validateAnswersForScoring rejects empty content', () => {
     expect(() =>
       validateAnswersForScoring(
