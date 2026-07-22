@@ -1,0 +1,32 @@
+.retrieval-term-hint {
+  overflow: visible;
+}
+
+.retrieval-term-hint__trigger {
+  vertical-align: baseline;
+}
+
+.retrieval-term-hint__popover {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.35rem);
+  transform: translateX(-50%);
+  z-index: 1080;
+  display: block;
+  width: max-content;
+  max-width: min(16rem, 90vw);
+  padding: 0.5rem 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.retrieval-term-hint__popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 0.35rem solid transparent;
+}

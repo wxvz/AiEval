@@ -27,10 +27,12 @@ describe('SettingsService', () => {
     service.setDefaultCriteriaMode('custom');
     service.setAutomationProviderPreference('cloud');
     service.setAutoDismissAutomationStatus(true);
+    service.setLearnUnlockAll(true);
 
     expect(localStorage.getItem('aieval-settings-default-criteria-mode')).toBe('custom');
     expect(localStorage.getItem('aieval-settings-automation-provider-preference')).toBe('cloud');
     expect(localStorage.getItem('aieval-settings-auto-dismiss-automation-status')).toBe('true');
+    expect(localStorage.getItem('aieval-settings-learn-unlock-all')).toBe('true');
   });
 
   it('resetAll clears settings keys and resets theme', () => {
@@ -46,5 +48,6 @@ describe('SettingsService', () => {
     expect(localStorage.getItem('aieval-theme')).toBeNull();
     expect(service.defaultCriteriaMode()).toBe('default');
     expect(themeService.theme()).toBe('system');
+    expect(service.learnUnlockAll()).toBe(false);
   });
 });

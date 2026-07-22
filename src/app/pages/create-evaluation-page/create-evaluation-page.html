@@ -3,6 +3,13 @@
   <app-token-usage-badge [usage]="displayTokenUsage()" [live]="automating()" />
 </div>
 
+@if (fromLearn() && learnHint) {
+  <div class="alert alert-info mb-3" role="status">
+    <strong>Learn lab.</strong> {{ learnHint }}
+    <a routerLink="/learn/labs/first-evaluation" class="alert-link ms-1">Back to lab</a>
+  </div>
+}
+
 <p class="text-muted small mb-3">
   <strong>Run full automation</strong> is the main path: it creates an evaluation, generates a title and prompt when
   needed, then runs answers, scoring and an improved answer. Use <strong>Generate prompt</strong> to preview title and

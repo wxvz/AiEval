@@ -1,0 +1,34 @@
+.learn-lesson-aside {
+  position: sticky;
+  top: 5rem;
+}
+
+.learn-lesson-aside__block {
+  padding: 0.85rem 1rem;
+}
+
+.learn-lesson-aside__heading {
+  letter-spacing: 0.02em;
+}
+
+.learn-lesson-aside__nav-link {
+  text-decoration: none;
+  color: var(--bs-body-color);
+}
+
+.learn-lesson-aside__nav-link:hover {
+  color: var(--aieval-primary);
+  text-decoration: underline;
+}
+
+.learn-optional-lab {
+  padding: 1rem 1.1rem;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background: var(--bs-tertiary-bg);
+}
+
+.learn-optional-lab__eyebrow {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

@@ -12,6 +12,7 @@ import { TokenUsageBadge } from '../token-usage-badge/token-usage-badge';
 })
 export class EvaluationCard {
   readonly evaluation = input.required<Evaluation>();
+  readonly highlighted = input(false);
 
   readonly deleteRequested = output<string>();
 }

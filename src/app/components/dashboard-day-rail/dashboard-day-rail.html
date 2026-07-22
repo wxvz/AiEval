@@ -1,0 +1,33 @@
+<nav class="day-rail" aria-label="Evaluation dates">
+  @for (month of months(); track month.monthKey) {
+    <section class="day-rail__month">
+      <button
+        type="button"
+        class="day-rail__month-button"
+        [attr.aria-expanded]="openMonthKey() === month.monthKey"
+        [attr.aria-controls]="'dashboard-month-' + month.monthKey"
+        (click)="toggleMonth(month.monthKey)"
+      >
+        <span>{{ month.label }}</span>
+        <span class="day-rail__chevron" aria-hidden="true"></span>
+      </button>
+
+      @if (openMonthKey() === month.monthKey) {
+        <div class="day-rail__days" [id]="'dashboard-month-' + month.monthKey">
+          @for (day of month.days; track day.dayKey) {
+            <button
+              type="button"
+              class="day-rail__day-button"
+              [class.day-rail__day-button--selected]="selectedDayKey() === day.dayKey"
+              [attr.aria-pressed]="selectedDayKey() === day.dayKey"
+              (click)="selectDay(day.dayKey)"
+            >
+              <span>{{ day.compactLabel }}</span>
+              <span class="day-rail__count">{{ day.evaluations.length }}</span>
+            </button>
+          }
+        </div>
+      }
+    </section>
+  }
+</nav>

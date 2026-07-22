@@ -45,6 +45,10 @@ export function formatAutoDismiss(enabled: boolean): string {
   return enabled ? 'On' : 'Off';
 }
 
+export function formatLearnUnlockAll(unlocked: boolean): string {
+  return unlocked ? 'All open' : 'Sequential';
+}
+
 export function serverAggregateReady(
   mongoOk: boolean,
   hasActiveProvider: boolean,

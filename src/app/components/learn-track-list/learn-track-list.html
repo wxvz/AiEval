@@ -1,0 +1,38 @@
+<section class="learn-track">
+  <h2 class="learn-track__title h5">{{ trackTitle() }}</h2>
+  <p class="learn-track__description text-muted small">{{ description() }}</p>
+
+  <ul class="learn-track__list list-unstyled mb-0">
+    @for (row of lessonRows(); track row.lesson.id) {
+      <li class="learn-track__item">
+        @if (row.lesson.status === 'planned' || !row.lesson.route) {
+          <div class="learn-track__card learn-track__card--planned card-elevated">
+            <span class="learn-track__badge learn-track__badge--muted">Coming soon</span>
+            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
+            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+          </div>
+        } @else if (row.route; as route) {
+          <a class="learn-track__card card-elevated" [routerLink]="route">
+            @if (row.complete) {
+              <span class="learn-track__badge learn-track__badge--done">Complete</span>
+            } @else if (row.lesson.kind !== 'read') {
+              <span class="learn-track__badge">Lab</span>
+            }
+            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
+            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+            <span class="learn-track__cta">Open →</span>
+          </a>
+        } @else {
+          <div class="learn-track__card learn-track__card--locked card-elevated" aria-disabled="true">
+            <span class="learn-track__badge learn-track__badge--muted">Locked</span>
+            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
+            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+            @if (row.prereqLabel; as prereq) {
+              <p class="learn-track__prereq small mb-0">Complete {{ prereq }} first</p>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</section>

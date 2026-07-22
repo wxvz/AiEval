@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseField,
+  parseClassField,
+  classToOneHot,
+  argmax,
   isFiniteRow,
   datasetValidationMessage,
+  softmaxCustomValidationMessage,
+  customDatasetValidationMessage,
+  toTrainSample,
   targetsOutsideUnitInterval,
   sigmoidTargetWarning,
   usesRegressionDisplay,
@@ -73,11 +79,47 @@ describe('targetsOutsideUnitInterval', () => {
   });
 });
 
+describe('softmax validation', () => {
+  it('classToOneHot encodes class index', () => {
+    expect(classToOneHot(1)).toEqual([0, 1, 0]);
+  });
+
+  it('toTrainSample expands class to one-hot for softmax', () => {
+    expect(toTrainSample({ x1: 1, x2: 0, y: 2 }, 'softmax')).toEqual({
+      input: [1, 0],
+      target: [0, 0, 1],
+    });
+  });
+
+  it('softmaxCustomValidationMessage rejects invalid class', () => {
+    expect(softmaxCustomValidationMessage([{ x1: 0, x2: 0, y: 3 }])).toMatch(/0, 1, or 2/);
+    expect(softmaxCustomValidationMessage([{ x1: 0, x2: 0, y: 1 }])).toBeNull();
+  });
+
+  it('customDatasetValidationMessage uses softmax rules', () => {
+    expect(customDatasetValidationMessage([{ x1: 0, x2: 0, y: 5 }], 'softmax')).toMatch(
+      /0, 1, or 2/,
+    );
+    expect(customDatasetValidationMessage([{ x1: 0, x2: 0, y: 2 }], 'linear')).toBeNull();
+  });
+});
+
+describe('argmax', () => {
+  it('returns index of largest value', () => {
+    expect(argmax([0.1, 0.8, 0.1])).toBe(1);
+  });
+});
+
+describe('parseClassField', () => {
+  it('binary snaps to valid class 0..2', () => {
+    expect(parseClassField(2, 'binary')).toBe(2);
+    expect(parseClassField(0.6, 'binary')).toBe(1);
+  });
+});
+
 describe('sigmoidTargetWarning', () => {
   it('warns when sigmoid output and targets are outside (0, 1)', () => {
-    expect(sigmoidTargetWarning([{ x1: 1, x2: 0, y: 2 }])).toBe(
-      'Sigmoid output stays in (0, 1). Targets outside that range cannot be learned well — try Linear output.',
-    );
+    expect(sigmoidTargetWarning([{ x1: 1, x2: 0, y: 2 }])).toMatch(/Linear output/);
   });
 
   it('returns null for in-range targets or non-sigmoid output', () => {

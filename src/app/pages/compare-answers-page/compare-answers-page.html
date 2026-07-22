@@ -1,6 +1,11 @@
 @if (!evaluation()) {
   <app-empty-state title="Evaluation not found" message="Return to the dashboard and try again." />
 } @else {
+  @if (showLearnBackLink()) {
+    <p class="mb-3">
+      <a routerLink="/learn/labs/first-evaluation" class="btn btn-link px-0">← Back to Learn lab</a>
+    </p>
+  }
   <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
     <h1 class="h3 mb-0">Compare: {{ evaluation()!.title }}</h1>
     <div class="d-flex align-items-center gap-2 ms-auto">

@@ -15,6 +15,9 @@ export type NnGlossaryTerm =
   | 'bias'
   | 'activation'
   | 'sigmoid'
+  | 'relu'
+  | 'tanh'
+  | 'softmax'
   | 'linear'
   | 'forwardPass'
   | 'training'
@@ -84,7 +87,7 @@ export const NN_GLOSSARY: Record<NnGlossaryTerm, NnGlossaryEntry> = {
   loss: {
     label: 'Loss',
     explanation:
-      'Average squared error between predictions and targets. Lower loss means the network fits the data better.',
+      'How wrong predictions are on average (MSE for sigmoid/linear output, cross-entropy for softmax). Lower is better.',
   },
   weights: {
     label: 'Weights',
@@ -105,6 +108,21 @@ export const NN_GLOSSARY: Record<NnGlossaryTerm, NnGlossaryEntry> = {
     label: 'Sigmoid',
     explanation:
       'Squashes values into (0, 1), good for binary-style targets. Cannot reach outputs outside that range.',
+  },
+  relu: {
+    label: 'ReLU',
+    explanation:
+      'Rectified linear unit: returns 0 for negative inputs and the input itself for positive values. Often learns faster in hidden layers.',
+  },
+  tanh: {
+    label: 'Tanh',
+    explanation:
+      'Hyperbolic tangent: squashes values into (-1, 1). Similar to sigmoid but centered at zero.',
+  },
+  softmax: {
+    label: 'Softmax',
+    explanation:
+      'Turns several output scores into probabilities that sum to 1. Use when picking one class among many (here 3 classes).',
   },
   linear: {
     label: 'Linear',
