@@ -139,6 +139,28 @@ export class EvaluationForm {
     this.form.controls.prompt.markAsTouched();
   }
 
+  /** Clear title/prompt and restore default evaluation config (e.g. after “run new”). */
+  resetForNewAutomation(): void {
+    const config = DEFAULT_EVALUATION_CONFIG;
+
+    this.form.patchValue({
+      title: '',
+      prompt: '',
+      taskDifficulty: config.taskDifficulty,
+      goal: config.goal,
+      audience: config.audience,
+      blindJudging: config.blindJudging,
+      strictness: config.judgeProfile.strictness,
+      format: config.responseConstraints.format,
+      maxWords: config.responseConstraints.maxWords ?? null,
+      requireCitations: config.responseConstraints.requireCitations,
+      requireCode: config.responseConstraints.requireCode,
+      requireTests: config.responseConstraints.requireTests,
+      expectedAnswer: '',
+      judgeModel: '',
+    });
+  }
+
   isTitleValid(): boolean {
     return this.form.controls.title.valid;
   }

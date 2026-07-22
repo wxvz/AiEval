@@ -341,8 +341,7 @@ export class CreateEvaluationPage {
     const form = this.evaluationForm();
 
     if (options.clearForm && form) {
-      form.setTitle('');
-      form.setPrompt('');
+      form.resetForNewAutomation();
       this.appliedTemplateRubric.set(null);
     }
 
