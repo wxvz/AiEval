@@ -318,6 +318,9 @@ async function generateOneAnswerSlot(
   assertNotCancelled(signal, 'generating');
 
   const total = setup.answerModels.length;
+  const progressLabel = evaluationConfig.blindJudging
+    ? `Answer ${String.fromCharCode(65 + slotIndex)}`
+    : candidate.label;
   const generateMessages: ChatMessage[] = [
     { role: 'system', content: buildGenerateSystem(evaluationConfig) },
     { role: 'user', content: prompt },
@@ -325,7 +328,7 @@ async function generateOneAnswerSlot(
 
   emit(onProgress, {
     type: 'generating',
-    modelLabel: candidate.label,
+    modelLabel: progressLabel,
     index: slotIndex + 1,
     total,
   });
@@ -384,7 +387,11 @@ async function generateOneAnswerSlot(
     durationMs: Date.now() - start,
     answerId: answer.id,
   });
-  emit(onProgress, { type: 'answer_generated', answerId: answer.id, label: answer.label });
+  emit(onProgress, {
+    type: 'answer_generated',
+    answerId: answer.id,
+    label: evaluationConfig.blindJudging ? progressLabel : answer.label,
+  });
 
   return answer;
 }
