@@ -14,7 +14,7 @@ function storageKey(lessonId: string): string {
 export class LearnLessonSessionService {
   private readonly revision = signal(0);
 
-  /** Bumped when session state changes — subscribe in computed() to refresh. */
+  /** Bumped when session state changes; subscribe in computed() to refresh. */
   readonly changed = this.revision.asReadonly();
 
   read(lessonId: string): LearnLessonSessionState | null {

@@ -1,60 +1,183 @@
 import { Routes } from '@angular/router';
 
 import { automationCanDeactivateGuard } from './guards/automation-can-deactivate.guard';
-import { AboutPage } from './pages/about-page/about-page';
-import { CompareAnswersPage } from './pages/compare-answers-page/compare-answers-page';
-import { CreateEvaluationPage } from './pages/create-evaluation-page/create-evaluation-page';
-import { ControllingGenerationLabPage } from './pages/controlling-generation-lab/controlling-generation-lab';
-import { FaithfulnessLabPage } from './pages/faithfulness-lab/faithfulness-lab';
-import { JudgeJsonLabPage } from './pages/judge-json-lab/judge-json-lab';
 import { DashboardPage } from './pages/dashboard-page/dashboard-page';
-import { EditEvaluationPage } from './pages/edit-evaluation-page/edit-evaluation-page';
-import { ImprovedAnswerPage } from './pages/improved-answer-page/improved-answer-page';
-import { LearnLessonPage } from './pages/learn-lesson-page/learn-lesson-page';
-import { LearnPage } from './pages/learn-page/learn-page';
-import { LearnWalkthroughPage } from './pages/learn-walkthrough-page/learn-walkthrough-page';
-import { NnPlaygroundPage } from './pages/nn-playground/nn-playground';
-import { RagPlaygroundPage } from './pages/rag-playground/rag-playground';
-import { SemanticSearchLabPage } from './pages/semantic-search-lab/semantic-search-lab';
-import { SemanticMemoryLabPage } from './pages/semantic-memory-lab/semantic-memory-lab';
-import { TrainTestLabPage } from './pages/train-test-lab/train-test-lab';
-import { LossUpdatesLabPage } from './pages/loss-updates-lab/loss-updates-lab';
 
 export const routes: Routes = [
   { path: '', component: DashboardPage },
   {
     path: 'evaluations/new',
-    component: CreateEvaluationPage,
+    loadComponent: () =>
+      import('./pages/create-evaluation-page/create-evaluation-page').then(
+        (m) => m.CreateEvaluationPage,
+      ),
     canDeactivate: [automationCanDeactivateGuard],
   },
   {
     path: 'evaluations/:id/edit',
-    component: EditEvaluationPage,
+    loadComponent: () =>
+      import('./pages/edit-evaluation-page/edit-evaluation-page').then(
+        (m) => m.EditEvaluationPage,
+      ),
     canDeactivate: [automationCanDeactivateGuard],
   },
   {
     path: 'evaluations/:id/compare',
-    component: CompareAnswersPage,
+    loadComponent: () =>
+      import('./pages/compare-answers-page/compare-answers-page').then(
+        (m) => m.CompareAnswersPage,
+      ),
     canDeactivate: [automationCanDeactivateGuard],
   },
   {
     path: 'evaluations/:id/improved',
-    component: ImprovedAnswerPage,
+    loadComponent: () =>
+      import('./pages/improved-answer-page/improved-answer-page').then(
+        (m) => m.ImprovedAnswerPage,
+      ),
     canDeactivate: [automationCanDeactivateGuard],
   },
-  { path: 'about', component: AboutPage },
-  { path: 'learn', component: LearnPage },
-  { path: 'learn/lessons/:lessonId', component: LearnLessonPage },
-  { path: 'learn/labs/neural-network', component: NnPlaygroundPage },
-  { path: 'learn/labs/train-vs-test', component: TrainTestLabPage },
-  { path: 'learn/labs/loss-and-updates', component: LossUpdatesLabPage },
-  { path: 'learn/labs/controlling-generation', component: ControllingGenerationLabPage },
-  { path: 'learn/labs/judge-json', component: JudgeJsonLabPage },
-  { path: 'learn/labs/faithfulness', component: FaithfulnessLabPage },
-  { path: 'learn/labs/semantic-memory', component: SemanticMemoryLabPage },
-  { path: 'learn/labs/semantic-search', component: SemanticSearchLabPage },
-  { path: 'learn/labs/rag-playground', component: RagPlaygroundPage },
-  { path: 'learn/labs/first-evaluation', component: LearnWalkthroughPage },
+  {
+    path: 'about',
+    loadComponent: () =>
+      import('./pages/about-page/about-page').then((m) => m.AboutPage),
+  },
+  {
+    path: 'learn',
+    loadComponent: () =>
+      import('./pages/learn-page/learn-page').then((m) => m.LearnPage),
+  },
+  {
+    path: 'learn/lessons/:lessonId',
+    loadComponent: () =>
+      import('./pages/learn-lesson-page/learn-lesson-page').then(
+        (m) => m.LearnLessonPage,
+      ),
+  },
+  {
+    path: 'learn/labs/neural-network',
+    loadComponent: () =>
+      import('./pages/nn-playground/nn-playground').then((m) => m.NnPlaygroundPage),
+  },
+  {
+    path: 'learn/labs/learning-from-examples',
+    loadComponent: () =>
+      import('./pages/learning-from-examples-lab/learning-from-examples-lab').then(
+        (m) => m.LearningFromExamplesLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/what-is-a-dataset',
+    loadComponent: () =>
+      import('./pages/what-is-a-dataset-lab/what-is-a-dataset-lab').then(
+        (m) => m.WhatIsADatasetLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/comparing-answers',
+    loadComponent: () =>
+      import('./pages/comparing-answers-lab/comparing-answers-lab').then(
+        (m) => m.ComparingAnswersLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/rubrics-and-criteria',
+    loadComponent: () =>
+      import('./pages/rubrics-and-criteria-lab/rubrics-and-criteria-lab').then(
+        (m) => m.RubricsAndCriteriaLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/train-vs-test',
+    loadComponent: () =>
+      import('./pages/train-test-lab/train-test-lab').then((m) => m.TrainTestLabPage),
+  },
+  {
+    path: 'learn/labs/loss-and-updates',
+    loadComponent: () =>
+      import('./pages/loss-updates-lab/loss-updates-lab').then((m) => m.LossUpdatesLabPage),
+  },
+  {
+    path: 'learn/labs/bias-and-weights',
+    loadComponent: () =>
+      import('./pages/bias-weights-lab/bias-weights-lab').then((m) => m.BiasWeightsLabPage),
+  },
+  {
+    path: 'learn/labs/activation-functions',
+    loadComponent: () =>
+      import('./pages/activation-functions-lab/activation-functions-lab').then(
+        (m) => m.ActivationFunctionsLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/decision-trees',
+    loadComponent: () =>
+      import('./pages/decision-trees-lab/decision-trees-lab').then((m) => m.DecisionTreesLabPage),
+  },
+  {
+    path: 'learn/labs/reinforcement-learning',
+    loadComponent: () =>
+      import('./pages/reinforcement-learning-lab/reinforcement-learning-lab').then(
+        (m) => m.ReinforcementLearningLabPage,
+      ),
+  },
+
+  {
+    path: 'learn/labs/controlling-generation',
+    loadComponent: () =>
+      import('./pages/controlling-generation-lab/controlling-generation-lab').then(
+        (m) => m.ControllingGenerationLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/judge-json',
+    loadComponent: () =>
+      import('./pages/judge-json-lab/judge-json-lab').then((m) => m.JudgeJsonLabPage),
+  },
+  {
+    path: 'learn/labs/faithfulness',
+    loadComponent: () =>
+      import('./pages/faithfulness-lab/faithfulness-lab').then((m) => m.FaithfulnessLabPage),
+  },
+  {
+    path: 'learn/labs/semantic-memory',
+    loadComponent: () =>
+      import('./pages/semantic-memory-lab/semantic-memory-lab').then(
+        (m) => m.SemanticMemoryLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/multimodal-vector-databases',
+    loadComponent: () =>
+      import('./pages/multimodal-vector-lab/multimodal-vector-lab').then(
+        (m) => m.MultimodalVectorLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/transformers',
+    loadComponent: () =>
+      import('./pages/transformers-lab/transformers-lab').then((m) => m.TransformersLabPage),
+  },
+
+  {
+    path: 'learn/labs/semantic-search',
+    loadComponent: () =>
+      import('./pages/semantic-search-lab/semantic-search-lab').then(
+        (m) => m.SemanticSearchLabPage,
+      ),
+  },
+  {
+    path: 'learn/labs/rag-playground',
+    loadComponent: () =>
+      import('./pages/rag-playground/rag-playground').then((m) => m.RagPlaygroundPage),
+  },
+  {
+    path: 'learn/labs/first-evaluation',
+    loadComponent: () =>
+      import('./pages/learn-walkthrough-page/learn-walkthrough-page').then(
+        (m) => m.LearnWalkthroughPage,
+      ),
+  },
   { path: 'learn/neural-network', redirectTo: 'learn/labs/neural-network', pathMatch: 'full' },
   { path: '**', redirectTo: '' },
 ];

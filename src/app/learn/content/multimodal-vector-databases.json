@@ -1,0 +1,137 @@
+{
+  "sections": [
+    {
+      "title": "Put different media on one map",
+      "paragraphs": [
+        "Imagine a library where a photo of a red hiking boot, the phrase \"scarlet trail shoe,\" and an audio description of that boot can be shelved near one another.",
+        "A {{multimodalEmbedding}} places content from different media on a numerical map so related meaning can be close even when the original formats differ.",
+        "A {{vectorDatabase}} stores those {{embedding}} vectors together with an identifier, source information and searchable {{metadata}}. At query time, the system embeds the text, image or other input and retrieves nearby records. The database returns candidates; it does not decide by itself whether they are correct evidence.",
+        "Some systems use one model trained to align text and images in a shared vector space. Others use separate embeddings and search each modality independently before merging results. You cannot safely compare vectors merely because they have the same length. The embedding models, versions and similarity rules must be compatible.",
+        "The retrieval unit also changes by modality. Each text {{chunk}} might be a paragraph, while a video may be split into scenes or keyframes and a long document into page images plus extracted text.",
+        "Each vector should point back to the original evidence so a reviewer or model can inspect more than an isolated thumbnail.",
+        "This is the first trap to spot: storing every vector in one collection does not make the vectors comparable. Record modality and embedding-model version in {{metadata}}, separate incompatible spaces and re-index deliberately when an embedding model changes."
+      ],
+      "bullets": [
+        "Embed compatible media into a shared space or search separate spaces and merge.",
+        "Store source pointers and {{metadata}} beside each vector.",
+        "Choose retrieval units that preserve useful evidence.",
+        "Never compare vectors from incompatible embedding models as if they shared one scale."
+      ],
+      "check": {
+        "prompt": "A team mixes image vectors from model A with text vectors from unrelated model B because both contain 768 numbers. What is the main mistake?",
+        "answer": "Equal vector length does not make embedding spaces compatible",
+        "choices": [
+          "Equal vector length does not make embedding spaces compatible",
+          "Vector databases can store only text",
+          "Every image must be converted to a single word",
+          "Metadata automatically aligns unrelated models"
+        ],
+        "explanation": "Dimensions describe the shape of a vector, not the meaning of its coordinates. Cross-modal comparison requires an aligned {{multimodalEmbedding}} model or a deliberate multi-index retrieval strategy."
+      }
+    },
+    {
+      "title": "Design retrieval around the question",
+      "paragraphs": [
+        "Suppose a shopper uploads a photo and asks, \"Do we sell a waterproof version of this?\" The application embeds the image, searches a compatible product-image index, filters to available waterproof items and returns product records with captions and source images. The model can then answer from those records.",
+        "{{metadata}} filtering narrows candidates before or during vector search. Useful fields include tenant, product category, language, access level, timestamp, modality and embedding version. Filters enforce scope and improve relevance, but sensitive access rules must be checked by trusted application code rather than inferred from similarity.",
+        "Hybrid retrieval combines signals. Vector similarity can find a visually or semantically related item, keyword search can preserve an exact SKU and structured filters can enforce inventory or permissions. A reranker can then reorder a small candidate set using more detail than the first retrieval stage.",
+        "Modality conversion creates extra failure modes. Optical character recognition may misread text in an image; speech recognition may drop a product code; a captioning model may describe the wrong object. Preserve the original media, record derived text separately and test whether each conversion helps or corrupts retrieval.",
+        "Be explicit about the teaching shortcut: a nearest-neighbor demo with a handful of fixed vectors explains ranking, but production systems must handle index updates, deletions, tenant isolation, model-version migrations, latency and approximate search.",
+        "Faster approximate search can miss a true neighbor, so measure recall rather than assuming the nearest result is always found."
+      ],
+      "reveals": [
+        {
+          "prompt": "A query says \"invoice AC-1047\" and includes a photo of the invoice.",
+          "reveal": "Use exact or keyword matching for the identifier alongside image or text-vector search. Semantic similarity alone can blur precise codes."
+        },
+        {
+          "prompt": "Two customers uploaded visually similar private diagrams.",
+          "reveal": "Apply tenant and authorization filters in trusted code before returning candidates. Similarity is not permission."
+        },
+        {
+          "prompt": "A product image is relevant, but its generated caption is wrong.",
+          "reveal": "Keep the source image linked to the record and evaluate image retrieval separately from caption quality. Derived text should not silently replace original evidence."
+        }
+      ],
+      "check": {
+        "prompt": "A catalog assistant must retrieve an exact SKU from text while also finding products visually similar to an uploaded photo. Which design is strongest?",
+        "answer": "Combine exact search, compatible image-vector search, metadata filters and reranking",
+        "choices": [
+          "Use only image similarity and ignore the SKU",
+          "Combine exact search, compatible image-vector search, metadata filters and reranking",
+          "Paste the entire catalog into the prompt",
+          "Mix every embedding model in one unversioned index"
+        ],
+        "explanation": "Different signals solve different parts of the request. Exact search protects identifiers, compatible vectors capture visual meaning, {{metadata}} enforces scope and reranking improves the ordering of a manageable candidate set."
+      },
+      "aside": {
+        "title": "Evaluate retrieval before generation",
+        "body": "Create an {{evaluation}} whose cases name the expected product evidence. Score whether the answer uses only the retrieved records and refuses when no authorized match exists.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "Create retrieval eval"
+      }
+    },
+    {
+      "title": "Measure retrieval and answer quality separately",
+      "paragraphs": [
+        "A multimodal RAG system has at least two quality questions: did {{retrieval}} return the right evidence? Did the model use that evidence faithfully? If you score only the final answer, a model can guess correctly after poor retrieval or write badly despite an excellent candidate set.",
+        "Create a labeled {{dataset}} of realistic queries with relevant source IDs, acceptable alternates and explicit no-match cases. Include text-to-image, image-to-text, image-to-image and mixed queries that reflect the product. Split results by modality, language, tenant and media quality so one easy group cannot hide another's failures.",
+        "For retrieval, measure whether relevant evidence appears near the top, how often no relevant item is found and latency at realistic index size. Inspect hard negatives: records that look similar but differ on the fact that matters, such as a visually identical part with the wrong voltage.",
+        "For generation, use a {{rubric}} that checks source attribution, {{faithfulness}}, uncertainty and whether unsupported media details were invented. Keep the retrieved IDs and model answer in the evaluation trace, but redact private content and avoid logging raw media when identifiers and safe previews are enough.",
+        "The optional **Multimodal vector databases lab** lets you rank a tiny catalog with image and text vectors, then apply tenant and waterproof filters until the authorized match wins. After that practice, **Production concerns** turns these measurements into operating constraints: cost, latency, monitoring, safety and recovery under real traffic."
+      ],
+      "bullets": [
+        "Label relevant source IDs before judging generated prose.",
+        "Report retrieval quality by modality and difficult subgroup.",
+        "Include no-match and hard-negative cases.",
+        "Version embeddings and re-run the golden retrieval set after migrations."
+      ],
+      "check": {
+        "prompt": "Complete the evaluation rule in one short phrase.",
+        "answer": "Score retrieval and generation separately",
+        "accept": [
+          "evaluate retrieval before generation",
+          "measure search and answers separately",
+          "separate retrieval from answer quality",
+          "test evidence retrieval and response",
+          "score search and generation independently"
+        ],
+        "wordBank": [
+          "score",
+          "retrieval",
+          "and",
+          "generation",
+          "separately",
+          "only",
+          "fluency",
+          "together"
+        ],
+        "explanation": "Separate scores reveal whether a failure began in the index and ranking stages or after evidence reached the model. That diagnosis tells you whether to change embeddings, filters, reranking, prompts or the generating model."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "A photo search returns visually similar products from another customer's private catalog. Which change is essential?",
+      "answer": "Enforce tenant authorization filters in trusted application code",
+      "choices": [
+        "Increase vector similarity so private products rank even higher",
+        "Ask the language model to guess which customer owns each result",
+        "Enforce tenant authorization filters in trusted application code",
+        "Remove metadata because vectors already contain every access rule"
+      ],
+      "explanation": "{{retrieval}} similarity measures relatedness, not permission. Trusted filters and authorization checks must prevent unauthorized records from becoming candidates or entering the model's context."
+    },
+    {
+      "prompt": "After an embedding-model upgrade, final answers get worse. What comparison best locates the regression?",
+      "answer": "Run the same labeled queries and compare retrieved source IDs before scoring answers",
+      "choices": [
+        "Judge only whether the new answers are longer",
+        "Run the same labeled queries and compare retrieved source IDs before scoring answers",
+        "Assume the database is correct because indexing completed",
+        "Mix old and new vectors without recording their versions"
+      ],
+      "explanation": "A stable labeled retrieval set shows whether relevant evidence moved out of the top results after re-indexing. Once retrieval is measured, answer scoring can determine whether a separate generation problem remains."
+    }
+  ]
+}

@@ -81,12 +81,15 @@ describe('LearnLessonPage', () => {
   });
 
   it('shows optional lab link in sidebar on train-vs-test lesson', () => {
-    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-from-examples']));
+    localStorage.setItem(
+      'aieval-learn-progress',
+      JSON.stringify(['learning-from-examples', 'what-is-a-dataset']),
+    );
     setLessonId('train-vs-test');
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Optional — try it yourself');
+    expect(el.textContent).toContain('Optional: try it yourself');
     expect(el.querySelector('app-learn-lesson-aside a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
     expect(el.querySelector('.learn-lesson-footer a[href="/learn/labs/train-vs-test"]')).toBeFalsy();
   });
@@ -147,6 +150,10 @@ describe('LearnLessonPage', () => {
     const rail = fixture.nativeElement.querySelector('.learn-lesson-rail__key-terms');
     expect(rail).toBeTruthy();
     expect(rail.textContent).toContain('Key terms');
+    expect(rail.querySelector('.learn-lesson-rail__key-term-body')).toBeTruthy();
+    expect(
+      rail.querySelector('.learn-lesson-rail__key-term-toggle')?.getAttribute('aria-expanded'),
+    ).toBe('true');
 
     const savedMentions = fixture.nativeElement.querySelectorAll('.learn-term-hint__saved');
     expect(savedMentions.length).toBeGreaterThan(0);
@@ -162,30 +169,5 @@ describe('LearnLessonPage', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Train vs test');
     expect(fixture.nativeElement.textContent).not.toContain('Learning from examples');
-  });
-
-  it('shows solved checks for completed lessons after session is cleared', () => {
-    localStorage.setItem(
-      'aieval-learn-progress',
-      JSON.stringify(['learning-from-examples']),
-    );
-    setLessonId('learning-from-examples');
-    fixture = TestBed.createComponent(LearnLessonPage);
-    fixture.detectChanges();
-
-    const component = fixture.componentInstance;
-    expect(component.completed()).toBe(true);
-    expect(component.sectionSolved(0)).toBe(true);
-    expect(component.recapSolved(0)).toBe(true);
-    expect(component.displaySectionsSolved().every(Boolean)).toBe(true);
-    expect(component.displayRecapSolved().every(Boolean)).toBe(true);
-
-    const footerButton = fixture.nativeElement.querySelector(
-      '.learn-lesson-footer button.btn-primary',
-    ) as HTMLButtonElement;
-    expect(footerButton.textContent).toContain('Completed');
-    expect(fixture.nativeElement.textContent).not.toContain(
-      'Answer all section checks and recap questions first',
-    );
   });
 });

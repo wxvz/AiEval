@@ -27,4 +27,13 @@ describe('LearnPage', () => {
       'Continue',
     );
   });
+
+  it('shows the next lesson title and summary above Continue', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    const next = el.querySelector('.learn-hub-nav__next');
+    expect(next?.textContent).toContain('Up next');
+    expect(next?.textContent).toContain('Learning from examples');
+    expect(next?.textContent).toContain('Supervised learning');
+    expect(el.querySelector('.learn-hub-nav__continue')?.textContent).toContain('Continue');
+  });
 });

@@ -1,0 +1,107 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Comparing answers lab</h1>
+    <p class="lead mb-3">
+      Two model answers to the same
+      <app-learn-term-hint term="prompt" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+      Pick the stronger answer per
+      <app-learn-term-hint term="criterion" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      then compare your verdicts to the reference.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: canned answers and one reference verdict. In AiEval a
+      <app-learn-term-hint term="judge" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      scores real model outputs and reasonable judges can disagree.
+    </div>
+
+    <h2 class="h6">Prompt</h2>
+    <p class="bg-light border rounded p-3 small mb-3">{{ labPrompt }}</p>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h3 class="h6 text-muted">Answer A</h3>
+            <p class="card-text small mb-0">{{ answerA }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body">
+            <h3 class="h6 text-muted">Answer B</h3>
+            <p class="card-text small mb-0">{{ answerB }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="h6 mb-3">Which answer wins each criterion?</h2>
+    @for (criterion of criteria; track criterion.id) {
+      <div class="mb-3">
+        <p class="mb-1">{{ criterion.label }}</p>
+        <div class="btn-group" role="group" [attr.aria-label]="criterion.label">
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="picks()[criterion.id] === 'a'"
+            [class.btn-outline-secondary]="picks()[criterion.id] !== 'a'"
+            (click)="pick(criterion.id, 'a')"
+          >
+            Answer A
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm"
+            [class.btn-primary]="picks()[criterion.id] === 'b'"
+            [class.btn-outline-secondary]="picks()[criterion.id] !== 'b'"
+            (click)="pick(criterion.id, 'b')"
+          >
+            Answer B
+          </button>
+        </div>
+        @if (checked()) {
+          <p class="small mt-1 mb-0" [class.text-success]="agreesWithReference(criterion.id)" [class.text-warning]="!agreesWithReference(criterion.id)">
+            Reference: Answer {{ criterion.reference.toUpperCase() }}. {{ criterion.rationale }}
+          </p>
+        }
+      </div>
+    }
+
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-primary" [disabled]="!allPicked()" (click)="check()">
+        Compare with reference
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="reset()">Reset</button>
+    </div>
+
+    @if (checked()) {
+      <div class="alert alert-info mb-4" role="status">
+        You agreed with the reference on {{ agreementCount() }} of {{ criteria.length }} criteria.
+        Disagreement is not failure; it is a reason to sharpen the criterion wording.
+      </div>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">What if I genuinely prefer Answer B somewhere?</summary>
+      <p class="mb-0 text-muted">
+        Then your criterion needs sharper wording. "Tone" that rewards vague reassurance is measuring different things for
+        different judges, which is exactly why rubrics with anchors come next.
+      </p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

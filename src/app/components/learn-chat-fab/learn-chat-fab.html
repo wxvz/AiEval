@@ -1,0 +1,106 @@
+<div class="learn-chat-fab">
+  @if (open()) {
+    <section class="learn-chat-fab__panel" aria-label="Learn tutor chat">
+      <header class="learn-chat-fab__header">
+        <div>
+          <h2 class="learn-chat-fab__title">Learn tutor</h2>
+          <p class="learn-chat-fab__subtitle text-muted">Ask about lessons and labs</p>
+        </div>
+        <button type="button" class="learn-chat-fab__icon-btn" (click)="close()" aria-label="Close chat">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </header>
+
+      <div #messageList class="learn-chat-fab__messages" role="log" aria-live="polite">
+        @if (messages().length === 0) {
+          <p class="learn-chat-fab__empty text-muted">
+            Ask a question about the AiEval Learn curriculum.
+          </p>
+        }
+        @for (message of messages(); track $index) {
+          <article
+            class="learn-chat-fab__bubble"
+            [class.learn-chat-fab__bubble--user]="message.role === 'user'"
+            [class.learn-chat-fab__bubble--assistant]="message.role === 'assistant'"
+            [class.learn-chat-fab__bubble--thinking]="
+              message.role === 'assistant' && !message.text && thinking()
+            "
+            [class.learn-chat-fab__bubble--revealing]="
+              message.role === 'assistant' && revealing() && !!message.text
+            "
+          >
+            @if (message.role === 'assistant' && !message.text && thinking()) {
+              <div class="learn-chat-fab__dots" role="status" aria-label="Thinking">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+            } @else {
+              <p class="learn-chat-fab__text">
+                <app-learn-lesson-text [text]="message.text" />
+                @if (message.role === 'assistant' && revealing() && $last) {
+                  <span class="learn-chat-fab__caret" aria-hidden="true"></span>
+                }
+              </p>
+            }
+            @if (message.sources?.length) {
+              <div class="learn-chat-fab__sources" aria-label="Lesson sources">
+                @for (source of message.sources; track $index) {
+                  @if (source.route) {
+                    <a class="learn-chat-fab__source-chip" [routerLink]="source.route">
+                      {{ source.title || source.route }}
+                    </a>
+                  } @else if (source.title) {
+                    <span class="learn-chat-fab__source-chip learn-chat-fab__source-chip--static">
+                      {{ source.title }}
+                    </span>
+                  }
+                }
+              </div>
+            }
+          </article>
+        }
+        @if (error(); as err) {
+          <p class="learn-chat-fab__error" role="alert">{{ err }}</p>
+        }
+      </div>
+
+      <form class="learn-chat-fab__composer" (ngSubmit)="send()">
+        <label class="visually-hidden" for="learn-chat-draft">Message</label>
+        <textarea
+          #draftInput
+          id="learn-chat-draft"
+          class="form-control learn-chat-fab__input"
+          rows="2"
+          [(ngModel)]="draft"
+          name="draft"
+          [disabled]="sending()"
+          (keydown)="onKeydown($event)"
+          placeholder="Ask about this lesson…"
+        ></textarea>
+        <button
+          type="submit"
+          class="btn btn-primary btn-sm learn-chat-fab__send"
+          [disabled]="sending() || !draft.trim()"
+        >
+          Send
+        </button>
+      </form>
+    </section>
+  }
+
+  <button
+    type="button"
+    class="learn-chat-fab__toggle"
+    (click)="toggle()"
+    [attr.aria-expanded]="open()"
+    [attr.aria-label]="open() ? 'Close Learn tutor' : 'Open Learn tutor'"
+  >
+    <svg class="learn-chat-fab__glyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2zm2 4v2h12V8H6zm0 4v2h8v-2H6z"
+      />
+    </svg>
+  </button>
+</div>

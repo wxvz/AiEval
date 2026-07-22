@@ -1,0 +1,133 @@
+{
+  "sections": [
+    {
+      "title": "Give the network the right kind of lens",
+      "paragraphs": [
+        "Imagine three specialists examining the same event. A photographer looks for nearby shapes, a note-taker follows what happened over time and a researcher connects details across a long report. Architectures used in {{deepLearning}} make similar choices about which relationships are easiest for a network to learn.",
+        "That built-in preference is an {{inductiveBias}}: assumptions in the model's structure that make some patterns easier to represent than others. It is not the harmful social meaning of bias. A good structural bias narrows the search toward relationships that match the data.",
+        "A {{convolutionalNeuralNetwork}} reuses small filters across nearby positions. In an image, a filter can detect an edge wherever it appears, then deeper layers combine edges into textures and objects. This local, repeated structure also helps grid-like signals such as spectrograms.",
+        "A {{recurrentNeuralNetwork}} processes a sequence step by step while carrying a learned state forward. That state summarizes earlier items for the current prediction. It suits time series, streaming signals and shorter ordered sequences. Long dependencies can be difficult because information must pass through many steps.",
+        "A {{transformer}} uses {{attention}} to connect positions more directly and can process many positions in parallel during training. It became especially effective for language and now supports images, audio and mixed media too. The architecture name suggests a useful starting point, not a guarantee that it will win your task."
+      ],
+      "bullets": [
+        "{{convolutionalNeuralNetwork}}: emphasizes local patterns reused across positions.",
+        "{{recurrentNeuralNetwork}}: carries sequence state from one step to the next.",
+        "{{transformer}}: uses attention to connect relevant positions.",
+        "{{inductiveBias}}: the structural preference that makes certain patterns easier to learn."
+      ],
+      "check": {
+        "prompt": "A team chooses a transformer for a small tabular risk dataset only because transformers are fashionable. What is the main mistake?",
+        "answer": "They chose an architecture before matching its inductive bias to the data",
+        "choices": [
+          "They chose an architecture before matching its inductive bias to the data",
+          "Transformers can process only photographs",
+          "Every small dataset requires the largest available model",
+          "Architecture choice removes the need for a held-out test set"
+        ],
+        "explanation": "An architecture supplies a useful structural preference only when that preference fits the signal and constraints. The team should compare a simple baseline and plausible model families on held-out evidence instead of selecting by popularity."
+      }
+    },
+    {
+      "title": "Match the relationships the task needs",
+      "paragraphs": [
+        "Start with the relationships a correct prediction needs. If nearby pixels form the useful pattern, convolution is a natural candidate. If observations arrive one by one and a compact running state matters, recurrence may fit. If distant positions must interact flexibly, attention may be worth its extra cost.",
+        "For a defect detector trained on product photos, a {{convolutionalNeuralNetwork}} can reuse the same scratch or crack detector across the image. A plain fully connected network would need to relearn similar evidence for many positions and usually use far more parameters.",
+        "For sensor readings that stream from a machine, a {{recurrentNeuralNetwork}} can update its state as each reading arrives. A transformer may help when events far apart interact but it can require more memory because attention compares many positions.",
+        "For an AiEval task that classifies long model answers by failure type, a pretrained {{transformer}} can use wording from distant parts of the response. Yet a decision tree over a few reliable features may still be cheaper, easier to explain and better with limited labels. Always include the simple baseline.",
+        "These examples are teaching shortcuts. Real systems use hybrids, convolutions can process sequences, recurrent models can handle images in parts and transformers can operate across modalities. Model names do not define one legal input; they describe a useful structural emphasis that experiments must verify."
+      ],
+      "reveals": [
+        {
+          "prompt": "Task: detect a small crack wherever it appears in a high-resolution product image.",
+          "reveal": "Start with convolution because local filters can detect the same visual pattern across positions. Compare against a pretrained vision model rather than training a large network from scratch."
+        },
+        {
+          "prompt": "Task: update an anomaly score as one sensor reading arrives each second on a tiny device.",
+          "reveal": "A compact recurrent model is a plausible starting point because it updates sequence state incrementally. Latency and memory may matter more than benchmark fashion."
+        },
+        {
+          "prompt": "Task: judge whether the conclusion of a long answer contradicts an instruction near its beginning.",
+          "reveal": "A transformer is a plausible candidate because {{attention}} can connect distant positions. The evaluation still needs explicit contradiction cases and a simple baseline."
+        }
+      ],
+      "check": {
+        "prompt": "You need to detect the same small defect anywhere in a product image with limited training data. Which starting approach best matches the structure?",
+        "answer": "Use a pretrained convolutional vision model and evaluate it on held-out defect images",
+        "choices": [
+          "Use a pretrained convolutional vision model and evaluate it on held-out defect images",
+          "Use a language-only recurrent model because images have an order",
+          "Choose the model with the most parameters without a baseline",
+          "Flatten every pixel and skip validation because deep learning generalizes automatically"
+        ],
+        "explanation": "Convolution provides a useful local and position-reused {{inductiveBias}} for visual defects. Pretraining can reduce label needs, while held-out defect types and image conditions reveal whether that advantage transfers."
+      },
+      "aside": {
+        "title": "Compare architecture claims",
+        "body": "Create an {{evaluation}} with failure cases that require local cues, order or long-range context. Use the same {{testCase}} set when comparing candidate models so architecture claims rest on shared evidence.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "Create an evaluation"
+      }
+    },
+    {
+      "title": "Let constraints and evidence choose",
+      "paragraphs": [
+        "Architecture is only one part of a system choice. Data volume, available pretraining, label quality, inference latency, memory, energy use, interpretability and the cost of each error can outweigh a small accuracy difference. Write these constraints before running the comparison.",
+        "Build a simple baseline first: a rule, decision tree, linear model or provider model used with a fixed {{prompt}}. Then compare realistic candidates on the same {{trainSet}}, {{validationSet}} and protected {{testSet}}. Tune each approach without letting test results guide repeated changes.",
+        "Slice results by the relationships each architecture claims to handle. For vision, vary object position and lighting; for sequences, vary length and delayed effects; for language, include long-range instructions and distractors. Report latency and memory beside task quality so the winner is deployable, not merely accurate.",
+        "Watch for {{overfitting}} at both model and decision levels. A large network can memorize scarce labels, while a team can also overfit architecture choices to one benchmark. Re-run on shifted conditions and compare confidence, calibration and important failure groups before making a release claim.",
+        "The next lesson, **Reinforcement learning**, changes the learning signal rather than only the network shape. Instead of learning from a fixed correct target for every row, an agent acts, receives rewards and learns from consequences. Understanding how structure guides supervised learning prepares you to see what changes next."
+      ],
+      "bullets": [
+        "State data and operating constraints before selecting a model family.",
+        "Compare against a simple baseline on identical held-out cases.",
+        "Test slices that exercise local, sequential and long-range relationships.",
+        "Measure task quality, latency, memory and costly failure modes together."
+      ],
+      "check": {
+        "prompt": "Complete the architecture-selection rule in one short phrase.",
+        "answer": "Match structure, constraints and evidence",
+        "accept": [
+          "match architecture to data and constraints",
+          "choose structure using held-out evidence",
+          "fit the model family to the task",
+          "match inductive bias to the problem"
+        ],
+        "wordBank": [
+          "Match",
+          "structure",
+          "constraints",
+          "and",
+          "evidence",
+          "choose",
+          "fashion",
+          "only"
+        ],
+        "explanation": "A useful {{inductiveBias}} matches the relationships in the data but deployment constraints and held-out results determine whether that advantage matters. No architecture label replaces a task-specific comparison."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which pairing gives the most defensible starting point?",
+      "answer": "Convolution for repeated local image patterns, recurrence for streaming state and attention for flexible distant interactions",
+      "choices": [
+        "Convolution for repeated local image patterns, recurrence for streaming state and attention for flexible distant interactions",
+        "Transformers for every task because newer always means better",
+        "Recurrence only for unordered tabular rows",
+        "Convolution only when every feature is already a category"
+      ],
+      "explanation": "Each architecture emphasizes a different relationship: local reuse, sequential state or flexible position-to-position interaction. These are starting hypotheses to test, not fixed laws about allowed data."
+    },
+    {
+      "prompt": "A transformer improves accuracy by one point but uses ten times the memory and misses a safety-critical slice that a small tree handles. What should the team do?",
+      "answer": "Choose using the critical slice and operating constraints, not average accuracy alone",
+      "choices": [
+        "Choose using the critical slice and operating constraints, not average accuracy alone",
+        "Ship the transformer because parameter count proves quality",
+        "Delete the safety slice so the average decides",
+        "Assume deep learning removes the need for release criteria"
+      ],
+      "explanation": "A model is suitable only if it meets the product's quality and operating requirements. One average point cannot compensate for a release-blocking failure or an infeasible memory budget."
+    }
+  ]
+}

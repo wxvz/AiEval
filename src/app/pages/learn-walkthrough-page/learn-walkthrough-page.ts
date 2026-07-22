@@ -4,8 +4,8 @@ import { RouterLink } from '@angular/router';
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
-import { loadWalkthroughContent } from '../../learn/learn-content';
 import { LearnProgressService } from '../../learn/learn-progress.service';
+import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 
 @Component({
   selector: 'app-learn-walkthrough-page',
@@ -40,5 +40,31 @@ export class LearnWalkthroughPage {
       return;
     }
     this.progress.markComplete('first-evaluation-lab');
+  }
+
+  /** Path segment only — query strings in actionRoute must not go through routerLink. */
+  actionPath(actionRoute: string): string {
+    return actionRoute.split('?')[0] || '/';
+  }
+
+  actionQueryParams(actionRoute: string): Record<string, string> {
+    const query = actionRoute.split('?')[1];
+    if (!query) {
+      return {};
+    }
+    const params: Record<string, string> = {};
+    for (const part of query.split('&')) {
+      if (!part) {
+        continue;
+      }
+      const eq = part.indexOf('=');
+      const rawKey = eq === -1 ? part : part.slice(0, eq);
+      const rawValue = eq === -1 ? '' : part.slice(eq + 1);
+      const key = decodeURIComponent(rawKey);
+      if (key) {
+        params[key] = decodeURIComponent(rawValue);
+      }
+    }
+    return params;
   }
 }

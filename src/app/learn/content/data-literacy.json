@@ -1,0 +1,146 @@
+{
+  "sections": [
+    {
+      "title": "Read the map before the route",
+      "paragraphs": [
+        "Imagine planning deliveries from a city map that shows only downtown streets at lunchtime. The map may be accurate, yet it cannot guide a night route through the suburbs.",
+        "Data works the same way: a collection can be correct row by row and still misrepresent the world where a {{model}} will operate.",
+        "A distribution is the pattern of what appears and how often. For support tickets, it includes languages, issue types, customer plans, message lengths and rare emergencies. Reading that pattern tells you which situations dominate the {{dataset}} and which are nearly absent.",
+        "Labels need the same scrutiny. A {{target}} can be missing, vague or applied differently by two reviewers. More {{labeledData}} does not automatically help when the labeling rule changes halfway through the collection.",
+        "Leakage is the trap where a row contains information that would not truly be available when the {{prediction}} is made or where held-out answers influence training decisions.",
+        "A cancellation classifier that includes a field written only after cancellation can look excellent on a {{testSet}} while failing at the moment the business needs it.",
+        "Data literacy means asking what each row represents, how it received its label and whether its fields would exist at decision time. Before changing layers or {{weights}}, check whether the evidence supports the claim you want to make."
+      ],
+      "bullets": [
+        "Coverage: does the {{dataset}} represent common and important real cases?",
+        "Label quality: do reviewers apply the same {{target}} rule?",
+        "Timing: is every input available before the real decision?",
+        "Separation: did the {{testSet}} remain outside training and tuning decisions?"
+      ],
+      "check": {
+        "prompt": "A churn row includes an account-closure timestamp but the product must predict churn one week before closure. What is the main trap?",
+        "answer": "The row leaks future information unavailable at prediction time",
+        "choices": [
+          "The row leaks future information unavailable at prediction time",
+          "The dataset needs more account-closure timestamps",
+          "The model should train and test on the same rows",
+          "Any timestamp makes supervised learning impossible"
+        ],
+        "explanation": "The closure timestamp reveals the outcome after it has happened, so it would not exist when the real prediction is needed. That leakage can produce an impressive test score without useful {{generalization}}."
+      }
+    },
+    {
+      "title": "Audit an evaluation before trusting it",
+      "paragraphs": [
+        "Suppose an AiEval team compares two support-answer models on 100 cases. Eighty cases are simple password resets in English, while the product also handles billing disputes, account recovery, accessibility requests and several languages.",
+        "The score mostly answers, \"Which model handles common English password resets?\" It does not reliably answer which model is better for the full product. An average inherits the distribution of the {{testCase}}s underneath it.",
+        "Now inspect the expected answers and labels. If one reviewer rewards concise refusals while another marks the same behavior unhelpful, the {{goldenSet}} contains disagreement disguised as truth. A precise {{rubric}} and a small label audit can reveal that inconsistency.",
+        "Choose collection by the decision you need to make. Add cases from missing high-impact groups, keep naturally common cases in realistic proportions and deliberately include rare failures that would be costly even if they occur infrequently.",
+        "Do not collect only examples where the current model fails. Those cases are useful for diagnosis but a comparison set made entirely from old failures distorts normal traffic. Keep a representative core and a clearly identified challenge slice so each score has an honest meaning."
+      ],
+      "reveals": [
+        {
+          "prompt": "The eval is 80% password resets. What can its overall score support?",
+          "reveal": "A strong claim about password-reset performance but only weak evidence about issue types and languages that are scarce or absent."
+        },
+        {
+          "prompt": "Two reviewers disagree on whether a concise refusal is correct. What should the team inspect?",
+          "reveal": "Inspect the labeling rule and {{rubric}}, resolve ambiguous cases and measure disagreement before treating the label as a trusted {{target}}."
+        },
+        {
+          "prompt": "A rare account-takeover failure is costly. Should its low frequency exclude it?",
+          "reveal": "No. Add a named challenge slice for high-impact rare cases, while preserving a representative core for normal product traffic."
+        }
+      ],
+      "check": {
+        "prompt": "Your model comparison set is almost entirely easy English requests but launch includes Spanish billing disputes. What is the best next collection step?",
+        "answer": "Add labeled Spanish billing cases and report that slice separately",
+        "choices": [
+          "Add labeled Spanish billing cases and report that slice separately",
+          "Duplicate the easy English requests until the set is larger",
+          "Choose the model with the current average and ignore coverage",
+          "Remove labels so reviewers cannot disagree"
+        ],
+        "explanation": "The missing slice matches a real launch condition, so collecting and labeling it directly reduces uncertainty about the decision. Reporting the slice separately prevents a large easy group from hiding poor Spanish billing performance."
+      },
+      "aside": {
+        "title": "Audit an AiEval comparison",
+        "body": "Before trusting an {{evaluation}}, list which user groups and failure modes its {{testCase}}s cover. Then compare that list with the traffic and risks your decision must serve.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      }
+    },
+    {
+      "title": "Collect evidence for the next decision",
+      "paragraphs": [
+        "A useful data plan starts with a decision, not with a storage target. Write the claim you want evidence for, such as \"Model B improves billing accuracy without harming account recovery,\" then name the cases and trustworthy labels needed to test it.",
+        "When collection is limited, prioritize gaps that could change the choice. Another thousand common password resets may barely affect confidence, while fifty carefully reviewed account-recovery cases could expose a release-blocking failure.",
+        "Document where rows came from, when fields become available, how labels were assigned and which split each row belongs to. This record helps future teammates distinguish real {{generalization}} from leakage, label noise or a shifted distribution.",
+        "The practical decision is whether the available data is fit for the claim. If important groups are absent, labels are inconsistent or future information leaks into inputs, pause the model choice and improve the evidence. If coverage and labels match the decision, proceed and state the limits.",
+        "Next, **Decision trees** turn input features into readable split rules. Data literacy comes first because even a transparent tree learns misleading rules from distorted rows; after trees, the Foundation path continues toward deep learning and the LLM systems you will evaluate in AiEval."
+      ],
+      "bullets": [
+        "State the product or model decision before collecting more rows.",
+        "Prioritize missing cases that could change or block that decision.",
+        "Record source, label rule, timing and split membership.",
+        "Proceed only when the evidence fits the claim and report remaining limits."
+      ],
+      "check": {
+        "prompt": "Your eval lacks a safety-critical user group and its labels conflict. In a short phrase, what should the team decide?",
+        "answer": "Improve the data before choosing",
+        "accept": [
+          "fix the data before choosing",
+          "collect better data first",
+          "pause and improve the evidence",
+          "repair labels and coverage first"
+        ],
+        "wordBank": [
+          "Improve",
+          "the",
+          "data",
+          "before",
+          "choosing",
+          "ship",
+          "average",
+          "weights"
+        ],
+        "explanation": "The current evidence cannot support a safe model choice because both coverage and labels are unreliable. Improve the missing slice and labeling process, then rerun the comparison on a protected {{testSet}}."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which evaluation gives the strongest evidence for a launch decision?",
+      "answer": "Cases match launch conditions, labels are consistent and no future information leaks",
+      "choices": [
+        "Cases match launch conditions, labels are consistent and no future information leaks",
+        "The largest available file, even if labels and sources are unknown",
+        "Only cases the current model already answers correctly",
+        "Training rows reused as the final test set"
+      ],
+      "explanation": "Useful evaluation data matches the decision's real conditions and has trustworthy labels. Keeping unavailable future fields and training influence out of the eval protects the meaning of its result."
+    },
+    {
+      "prompt": "In a short phrase, what should determine what data you collect next?",
+      "answer": "The decision and its evidence gaps",
+      "accept": [
+        "decision and evidence gaps",
+        "gaps that affect the decision",
+        "the claim you need to test",
+        "missing evidence for the choice"
+      ],
+      "wordBank": [
+        "The",
+        "decision",
+        "and",
+        "its",
+        "evidence",
+        "gaps",
+        "dataset",
+        "size",
+        "speed"
+      ],
+      "explanation": "Collection is valuable when it reduces uncertainty about a real choice, not merely when it increases row count. Prioritize missing or unreliable evidence that could change the outcome."
+    }
+  ]
+}

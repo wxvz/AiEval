@@ -1,8 +1,3 @@
-.learn-check-question__input {
-  flex: 1 1 12rem;
-  min-width: 0;
-}
-
 .learn-check-question__choices {
   border: 0;
   padding: 0;
@@ -28,6 +23,85 @@
 .learn-check-question__choice input {
   margin-top: 0.2rem;
   flex-shrink: 0;
+}
+
+.learn-check-question__assembled {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0.375rem 0.5rem;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.5rem;
+}
+
+.learn-check-question__bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.learn-check-question__chip {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 999px;
+  background: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.learn-check-question__chip:hover:not(:disabled) {
+  border-color: var(--bs-primary);
+}
+
+.learn-check-question__chip:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Assembled answer: plain clickable words (not pills); bank chips keep chip look. */
+.learn-check-question__chip--assembled {
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  padding: 0.125rem 0.35rem;
+  text-decoration: none;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.learn-check-question__chip--assembled:hover:not(:disabled) {
+  border: none;
+  background: transparent;
+  color: var(--bs-danger);
+  text-decoration: line-through;
+}
+
+.learn-check-question__chip--assembled.learn-check-question__chip--correct {
+  background: rgba(var(--bs-success-rgb), 0.2);
+  color: var(--bs-success-text-emphasis, #0a3622);
+}
+
+.learn-check-question__chip--assembled.learn-check-question__chip--wrong-place {
+  background: rgba(var(--bs-warning-rgb), 0.28);
+  color: var(--bs-warning-text-emphasis, #664d03);
+}
+
+.learn-check-question__chip--assembled.learn-check-question__chip--absent {
+  background: rgba(var(--bs-danger-rgb), 0.18);
+  color: var(--bs-danger-text-emphasis, #58151c);
+}
+
+.learn-check-question__chip--assembled.learn-check-question__chip--correct:hover:not(:disabled),
+.learn-check-question__chip--assembled.learn-check-question__chip--wrong-place:hover:not(:disabled),
+.learn-check-question__chip--assembled.learn-check-question__chip--absent:hover:not(:disabled) {
+  background: transparent;
+  color: var(--bs-danger);
+  text-decoration: line-through;
 }
 
 .learn-check-question__readonly-answer {

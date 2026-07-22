@@ -1,0 +1,131 @@
+{
+  "sections": [
+    {
+      "title": "Learning from consequences",
+      "paragraphs": [
+        "Imagine teaching a dog a new trick without showing a perfect example. The dog tries an action, sees whether it earns a treat and gradually repeats choices that work. {{reinforcementLearning}} uses the same trial-and-error idea: an {{agent}} acts, receives a {{reward}} and learns from the consequence.",
+        "The world the {{agent}} can observe and affect is its {{environment}}. At each step, the agent observes a state, chooses an action and reaches a new state. The environment then supplies a reward signal, such as points gained, time saved or a penalty for an unsafe move.",
+        "This differs from {{supervisedLearning}}, where every training input comes with a correct {{target}}. Reinforcement learning often has no label saying which action was best. It must discover useful behavior through interaction, sometimes learning from rewards that arrive much later.",
+        "The learned strategy for choosing actions is called a {{policy}}. A policy might be a table, a neural network or another rule that maps the current state to an action. Training adjusts the policy so actions with better long-term consequences become more likely.",
+        "A reward is not the same as the real goal. It is only the numeric signal the designer chose, so a poorly specified reward can teach clever but unwanted shortcuts."
+      ],
+      "bullets": [
+        "{{agent}}: the learner that chooses actions.",
+        "{{environment}}: the world that responds to those actions.",
+        "{{reward}}: feedback used to improve the {{policy}}."
+      ],
+      "check": {
+        "prompt": "A support bot receives +1 whenever a conversation ends quickly, so it closes difficult tickets without solving them. What is the core problem?",
+        "answer": "The reward encourages the wrong behavior",
+        "choices": [
+          "The reward encourages the wrong behavior",
+          "The bot needs every response labeled with a target",
+          "The environment should never return feedback",
+          "A policy cannot choose actions"
+        ],
+        "explanation": "The {{agent}} optimized exactly what the {{reward}} measured: short conversations. Because that signal did not represent successful support, the learned {{policy}} found an unwanted shortcut."
+      }
+    },
+    {
+      "title": "Balance exploration and exploitation",
+      "paragraphs": [
+        "Suppose you know one café that is reliably good but a new café might be better. Returning to the known option is exploitation; trying the unknown option is exploration. A reinforcement-learning {{agent}} needs both.",
+        "If the agent only exploits its current best action, it may never discover a stronger strategy. If it only explores, it keeps acting randomly and fails to benefit from what it has learned. Training therefore controls how often the policy tests alternatives.",
+        "Rewards can also be delayed. A move in a game may earn no immediate points but create a winning position ten steps later. The learner must estimate the return: the stream of future rewards connected to a choice, often giving distant outcomes less weight than immediate ones.",
+        "Consider tuning an LLM response system. An action might choose a {{prompt}} variant, the environment might contain a user request and the reward might combine task success, latency and cost. Exploration can test alternatives, while exploitation sends more traffic to the strongest known choice.",
+        "That setup is risky without guardrails. Exploration on real users can expose poor or unsafe actions and a single combined score can hide trade-offs. Offline tests, constrained action choices and human review should come before broad online learning."
+      ],
+      "reveals": [
+        {
+          "prompt": "Always choose the highest-scoring known action.",
+          "reveal": "This is exploitation. It uses current knowledge well but may miss a better action that has not been tried enough."
+        },
+        {
+          "prompt": "Occasionally try a less-certain prompt variant.",
+          "reveal": "This is exploration. It collects evidence about alternatives but it needs safety limits and a controlled traffic share."
+        },
+        {
+          "prompt": "Reward only fast responses.",
+          "reveal": "The {{agent}} may sacrifice accuracy or safety for speed. Use separate measurements and inspect behavior, not only the total reward."
+        }
+      ],
+      "check": {
+        "prompt": "A team routes every request to today's best prompt and never tests alternatives. Which learning problem should they address?",
+        "answer": "Not enough exploration",
+        "choices": [
+          "Not enough exploration",
+          "Too many labeled targets",
+          "The reward arrives too quickly",
+          "The policy has no actions"
+        ],
+        "explanation": "Pure exploitation can lock the system into a merely adequate {{policy}}. Controlled exploration gathers evidence about alternatives while limits protect users from unproven actions."
+      }
+    },
+    {
+      "title": "Evaluate the policy, not just the reward",
+      "paragraphs": [
+        "A high training reward is like a student earning points by finding a loophole in the marking scheme. The number rose but the intended skill may not have improved. Evaluation must check what the {{agent}} actually does in situations it did not train on.",
+        "Start with held-out scenarios and explicit criteria. For an LLM policy, measure answer quality, safety, cost and latency separately instead of trusting one blended reward. Compare against a fixed baseline and inspect failures where the new policy behaves differently.",
+        "The data is not independent when one action changes what happens next. A recommender affects what users click and those clicks become future training data. Log the policy version, available actions, chosen action and resulting outcome so later analysis can reconstruct the interaction.",
+        "Human judgment remains important when the reward is only a proxy. In AiEval, a {{rubric}} can expose dimensions such as accuracy and helpfulness that a click or completion signal misses. Repeated {{evaluation}}s can reveal whether an apparent gain survives across prompts and model versions.",
+        "Reinforcement learning teaches a general lesson: systems optimize the feedback they receive, not the intention in a designer's head.",
+        "Next, the **Reinforcement learning lab** lets you explore and exploit two reward arms, then lock a {{policy}}. After that, continue to **Generative adversarial networks**, where two models create each other's training signal through a competitive game."
+      ],
+      "bullets": [
+        "Compare the learned {{policy}} with a fixed baseline.",
+        "Keep safety and quality metrics visible beside total {{reward}}.",
+        "Test new situations and inspect behavior for reward shortcuts."
+      ],
+      "aside": {
+        "title": "Practice explore and exploit",
+        "body": "Open the Reinforcement learning lab: pull both cafés, then lock the higher-reward {{policy}}.",
+        "route": "/learn/labs/reinforcement-learning",
+        "actionLabel": "Open RL lab"
+      },
+      "check": {
+        "prompt": "In one short phrase, what should you inspect when training reward rises?",
+        "answer": "Actual policy behavior",
+        "accept": [
+          "actual policy behavior",
+          "the policy behavior",
+          "real behavior",
+          "agent behavior",
+          "what the agent does"
+        ],
+        "wordBank": [
+          "actual",
+          "policy",
+          "behavior",
+          "reward",
+          "only",
+          "training"
+        ],
+        "explanation": "{{reward}} is a designed proxy, so a higher number can reflect a shortcut. Held-out scenarios, separate metrics and direct inspection show whether the {{policy}} improved in the intended way."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which sequence best describes one reinforcement-learning interaction step?",
+      "answer": "Observe a state, choose an action, receive a reward and next state",
+      "choices": [
+        "Observe a state, choose an action, receive a reward and next state",
+        "Read a labeled target, copy it and stop",
+        "Generate a dataset once and never interact with it",
+        "Choose a reward after seeing the desired final score"
+      ],
+      "explanation": "The {{agent}} uses its {{policy}} to act in an {{environment}}. The resulting {{reward}} and next state provide experience from which the policy can improve."
+    },
+    {
+      "prompt": "An LLM routing policy earns more total reward but produces less accurate answers. What is the best response?",
+      "answer": "Revisit the reward and evaluate accuracy separately",
+      "choices": [
+        "Revisit the reward and evaluate accuracy separately",
+        "Ship it because total reward is the only valid metric",
+        "Remove held-out evaluations",
+        "Increase exploration for every user without guardrails"
+      ],
+      "explanation": "The reward is misaligned with the intended outcome or hides a damaging trade-off. Keep accuracy visible as its own {{criterion}}, revise the reward and compare the policy again on controlled scenarios."
+    }
+  ]
+}

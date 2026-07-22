@@ -1,0 +1,5 @@
+/* Uses shared .learn-lab-faq and .learn-lab-footer from styles.css */
+
+.font-monospace {
+  font-family: var(--bs-font-monospace);
+}

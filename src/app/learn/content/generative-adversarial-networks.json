@@ -1,0 +1,131 @@
+{
+  "sections": [
+    {
+      "title": "Two models in one training game",
+      "paragraphs": [
+        "Imagine an art student trying to paint convincing replicas while a critic learns to spot every flaw. As the critic improves, the student receives sharper feedback; as the student improves, the critic faces harder examples. A {{generativeAdversarialNetwork}} turns that contest into a training process.",
+        "The student is the {{generator}}. It starts from random numbers and produces synthetic samples such as images. The critic is the {{discriminator}}. It receives both real training examples and generated samples, then predicts which source each sample came from.",
+        "The two models have opposing objectives. The discriminator learns to separate real from generated data, while the generator learns to make outputs the discriminator classifies as real. This setup is called {{adversarialTraining}} because each model's challenge comes from the other.",
+        "Training alternates between them. First the discriminator improves on current real and fake examples; then the generator updates using the discriminator's feedback. Neither model is a fixed judge, so the learning target changes throughout the run.",
+        "A GAN does not simply copy a labeled answer for each random input. It learns patterns in the training distribution well enough to create new samples that resemble it. That makes evaluation more complicated than checking one exact {{target}}."
+      ],
+      "bullets": [
+        "{{generator}}: creates synthetic samples from random input.",
+        "{{discriminator}}: estimates whether samples are real or generated.",
+        "{{adversarialTraining}}: improves both through competing objectives."
+      ],
+      "check": {
+        "prompt": "During GAN training, generated images become easy to identify. Which model should receive feedback to make future fakes more convincing?",
+        "answer": "The generator",
+        "choices": [
+          "The generator",
+          "Only the real dataset",
+          "A fixed labeled target for every random input",
+          "Neither model because competition prevents learning"
+        ],
+        "explanation": "The {{discriminator}} supplies a learning signal about what looks fake. That signal updates the {{generator}} so its next samples better match patterns in the real data."
+      }
+    },
+    {
+      "title": "When the game becomes unstable",
+      "paragraphs": [
+        "Training two opponents is like balancing two cyclists on a seesaw: if one changes too quickly, the other may receive useless feedback. GAN losses can oscillate even when samples improve, so a single downward curve is not a reliable success signal.",
+        "If the discriminator becomes nearly perfect too early, the generator may get little useful direction. If the discriminator is too weak, unrealistic samples can pass without teaching the generator what to fix. Learning rates, update frequency, architecture and data quality all affect this balance.",
+        "A common failure is {{modeCollapse}}. The generator discovers a small set of outputs that repeatedly fool the discriminator and produces them over and over. Individual samples may look plausible while the collection lacks the diversity of the real {{dataset}}.",
+        "For example, a GAN trained on product photos might generate one convincing shoe shape in many colors but ignore boots and sandals. Looking at a few attractive samples would miss the problem; coverage and variety must be tested across many generated examples.",
+        "Memorization is another risk. A generator can reproduce training examples too closely, creating privacy and originality concerns. Nearest-neighbor checks and held-out comparisons help distinguish useful pattern learning from copying."
+      ],
+      "reveals": [
+        {
+          "prompt": "Generated samples look sharp but nearly identical.",
+          "reveal": "Suspect {{modeCollapse}}. Quality on one output does not prove that the {{generator}} covers the diversity of the real data."
+        },
+        {
+          "prompt": "The discriminator reaches perfect accuracy immediately.",
+          "reveal": "The training game may be unbalanced. The {{generator}} can receive weak learning signals when its opponent separates every sample too easily."
+        },
+        {
+          "prompt": "A generated face nearly matches one training photo.",
+          "reveal": "Check for {{memorization}} and privacy leakage rather than treating visual realism as sufficient evidence of success."
+        }
+      ],
+      "check": {
+        "prompt": "A product-image GAN creates realistic samples but 90% are variations of the same shoe. Which diagnosis fits best?",
+        "answer": "Mode collapse",
+        "choices": [
+          "Mode collapse",
+          "Healthy diversity",
+          "Supervised labeling",
+          "A larger context window"
+        ],
+        "explanation": "{{modeCollapse}} occurs when the {{generator}} relies on a narrow family of outputs that fool the {{discriminator}}. Evaluate the distribution of many samples, not only whether a few examples look realistic."
+      }
+    },
+    {
+      "title": "Evaluate generated data with more than realism",
+      "paragraphs": [
+        "Judging generated media is like reviewing a whole photo album, not one polished cover. You need to ask whether samples look plausible, cover the expected variety, avoid copying private examples and serve the intended use.",
+        "No single metric captures all of those goals. Automated similarity scores can compare feature distributions but they can hide missing subgroups or reward superficial resemblance. Human review can catch obvious artifacts and social harms but it also needs a clear {{rubric}} and enough representative samples.",
+        "For an AiEval-style comparison, hold the source {{dataset}}, sample count and review criteria constant across generators. Score fidelity, diversity, safety and usefulness separately. Record random seeds and model versions so surprising outputs can be reproduced and investigated.",
+        "The discriminator is not an independent evaluator after training. It learned inside the same competitive game and may share its blind spots, so final assessment should use held-out data, external models where appropriate and human reviewers.",
+        "GANs show that generative quality emerges from an objective and feedback loop, not from a guarantee of truth or safety. Continue to **Prompts as instructions**, where you will steer a pretrained language model at runtime instead of training a generator and discriminator from scratch."
+      ],
+      "bullets": [
+        "Evaluate realism and diversity as separate {{criterion}} rows.",
+        "Check for {{memorization}}, subgroup gaps and unsafe outputs.",
+        "Use held-out evidence rather than trusting the training discriminator."
+      ],
+      "aside": {
+        "title": "Compare generators consistently",
+        "body": "Build a {{rubric}} with separate fidelity, diversity and safety criteria, then review equal-size sample sets.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
+      "check": {
+        "prompt": "In one short phrase, why is the training discriminator insufficient for final evaluation?",
+        "answer": "It shares the training game",
+        "accept": [
+          "it shares the training game",
+          "part of the training game",
+          "it is not independent",
+          "shared training blind spots",
+          "it trained with the generator"
+        ],
+        "wordBank": [
+          "it",
+          "shares",
+          "the",
+          "training",
+          "game",
+          "independent",
+          "perfect"
+        ],
+        "explanation": "The {{discriminator}} co-evolved with the {{generator}} and may reward the same narrow patterns throughout training. Independent evaluation uses held-out evidence and criteria that reflect the actual deployment goal."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which statement best describes the GAN training relationship?",
+      "answer": "The discriminator learns to spot generated samples while the generator learns to fool it",
+      "choices": [
+        "The discriminator learns to spot generated samples while the generator learns to fool it",
+        "Both models copy a fixed target for every random input",
+        "The generator labels real data for supervised classification",
+        "The discriminator permanently replaces independent evaluation"
+      ],
+      "explanation": "{{adversarialTraining}} creates opposing objectives: better detection challenges the {{generator}} and better generation challenges the {{discriminator}}. Alternating updates drive the learning game."
+    },
+    {
+      "prompt": "Two GANs produce equally realistic individual images. What additional evidence best distinguishes them?",
+      "answer": "Diversity, subgroup coverage, memorization and safety across many samples",
+      "choices": [
+        "Diversity, subgroup coverage, memorization and safety across many samples",
+        "Only the lowest generator training loss",
+        "One hand-picked image from each model",
+        "The discriminator's opinion with no held-out checks"
+      ],
+      "explanation": "Realism is only one dimension of generative quality. A useful {{evaluation}} samples broadly and checks coverage, copying and harms with independent metrics and human review."
+    }
+  ]
+}

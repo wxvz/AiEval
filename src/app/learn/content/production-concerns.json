@@ -3,10 +3,10 @@
     {
       "title": "Cost per token",
       "paragraphs": [
-        "Every {{token}} you send and receive costs money. Providers charge per million {{token}}s — rates vary by {{model}} size, speed tier, and whether you are reading (input) or generating (output). A chatbot handling 10,000 requests per day can rack up thousands of dollars per month.",
-        "Cost optimization starts with {{prompt}} hygiene. Do not paste a 50-page document into every request if you only need one paragraph. Use {{retrieval}} to fetch relevant {{chunk}}s, or summarize upfront and reuse the summary.",
+        "Every {{token}} you send and receive costs money. Providers charge per million {{token}}s. Rates vary by {{model}} size, speed tier and whether you are reading (input) or generating (output). A chatbot handling 10,000 requests per day can rack up thousands of dollars per month.",
+        "Cost optimization starts with {{prompt}} hygiene. Do not paste a 50-page document into every request if you only need one paragraph. Use {{retrieval}} to fetch relevant {{chunk}}s or summarize upfront and reuse the summary.",
         "Smaller {{model}}s cost less but may produce lower-quality answers. Larger {{model}}s cost more but handle complex tasks better. Production teams often run a small {{model}} for simple requests and escalate to a big {{model}} only when needed.",
-        "Click each scenario below to see cost-saving strategies. Notice that the goal is not zero cost — it is predictable cost for acceptable quality."
+        "Click each scenario below to see cost-saving strategies. The goal is not zero cost but predictable cost for acceptable quality."
       ],
       "reveals": [
         {
@@ -15,7 +15,7 @@
         },
         {
           "prompt": "Scenario: Summarizing 100-page PDFs for every user query. How to reduce cost?",
-          "reveal": "Summarize the PDF once, store the summary, and reuse it. Do not re-read the full PDF on every request."
+          "reveal": "Summarize the PDF once, store the summary and reuse it. Do not re-read the full PDF on every request."
         },
         {
           "prompt": "Scenario: Generating 1,000-word reports when users need 200-word summaries. How to reduce cost?",
@@ -24,12 +24,12 @@
       ],
       "check": {
         "prompt": "Your app sends a 10,000-{{token}} document to the {{model}} 500 times per day. A teammate suggests: \"Cache the document {{embedding}} and retrieve only relevant sections per query.\" What is the benefit?",
-        "answer": "Lower cost — fewer input tokens per request",
+        "answer": "Lower cost: fewer input tokens per request",
         "choices": [
-          "No benefit — caching does not affect cost.",
-          "Lower cost — fewer input tokens per request",
-          "Higher cost — caching adds overhead.",
-          "Same cost — providers charge per request, not per token."
+          "No benefit: caching does not affect cost.",
+          "Lower cost: fewer input tokens per request",
+          "Higher cost: caching adds overhead.",
+          "Same cost: providers charge per request, not per token."
         ],
         "explanation": "{{retrieval}} sends only relevant {{chunk}}s to the {{model}}, cutting input {{token}}s from 10,000 to perhaps 500 per request. That saves cost linearly."
       }
@@ -37,9 +37,9 @@
     {
       "title": "Latency and user experience",
       "paragraphs": [
-        "Users expect instant responses. If your {{model}} takes 10 seconds to generate an answer, many will leave. Latency depends on {{model}} size, {{contextWindow}} length, output {{token}} count, and provider infrastructure.",
-        "Strategies to reduce latency: use smaller {{model}}s, shorten {{prompt}}s, limit max output {{token}}s, or stream responses so users see words appearing live instead of waiting for the full answer.",
-        "For high-traffic apps, consider caching common answers. If 80% of users ask the same five questions, store pre-generated responses and serve them instantly — no {{model}} call needed.",
+        "Users expect instant responses. If your {{model}} takes 10 seconds to generate an answer, many will leave. Latency depends on {{model}} size, {{contextWindow}} length, output {{token}} count and provider infrastructure.",
+        "Strategies to reduce latency: use smaller {{model}}s, shorten {{prompt}}s, limit max output {{token}}s or stream responses so users see words appearing live instead of waiting for the full answer.",
+        "For high-traffic apps, consider caching common answers. If 80% of users ask the same five questions, store pre-generated responses and serve them instantly (no {{model}} call needed).",
         "Latency is a trade-off with quality. A tiny {{model}} is fast but may give worse answers. A huge {{model}} is smart but slow. Production teams benchmark latency vs accuracy and pick the point that fits their UX bar."
       ],
       "bullets": [
@@ -51,7 +51,7 @@
         "prompt": "Your chatbot has 3-second response time. Users complain it feels slow. Which fix helps most?",
         "answer": "Stream the response so users see words appearing live",
         "choices": [
-          "Do nothing — 3 seconds is industry standard.",
+          "Do nothing: 3 seconds is industry standard.",
           "Stream the response so users see words appearing live",
           "Add a loading spinner and hope users wait.",
           "Switch to a bigger, slower model for better answers."
@@ -60,18 +60,18 @@
       }
     },
     {
-      "title": "Monitoring, safety, and compliance",
+      "title": "Monitoring, safety and compliance",
       "paragraphs": [
-        "Production systems need observability. Log every request: {{prompt}}, answer, {{token}} count, latency, error codes. Track {{model}} behavior over time — if answer quality drops or costs spike, you need data to debug.",
-        "Safety matters. {{largeLanguageModel}}s can generate harmful content, leak training data, or hallucinate facts. Production teams add content filters, human-in-the-loop review for high-stakes answers, and regular audits of {{model}} outputs.",
+        "Production systems need observability. Log every request: {{prompt}}, answer, {{token}} count, latency, error codes. Track {{model}} behavior over time. If answer quality drops or costs spike, you need data to debug.",
+        "Safety matters. {{largeLanguageModel}}s can generate harmful content, leak training data or hallucinate facts. Production teams add content filters, human-in-the-loop review for high-stakes answers and regular audits of {{model}} outputs.",
         "Compliance varies by industry. Healthcare apps must obey HIPAA, finance apps must log decisions for audits, EU apps must respect GDPR. Check your regulatory requirements before deploying.",
         "Evaluation is continuous in production. Run automated scoring on sampled live traffic to catch regressions. If a new {{model}} version starts failing your {{rubric}}, roll back before users notice.",
-        "Next lesson: building eval harnesses — how tools like AiEval wire generate, score, and improve."
+        "Next lesson: building eval harnesses. See how tools like AiEval wire generate, score and improve."
       ],
       "bullets": [
         "Monitoring: log every request, track costs and latency.",
         "Safety: content filters, human review, audits.",
-        "Compliance: HIPAA, GDPR, audit trails — know your rules."
+        "Compliance: know your rules for HIPAA, GDPR and audit trails."
       ],
       "check": {
         "prompt": "In one short phrase: what is the most important production practice after deploying an LLM app?",
@@ -83,7 +83,17 @@
           "track performance and safety",
           "continuous monitoring"
         ],
-        "explanation": "Production deployments need observability. Logging and monitoring let you catch cost spikes, quality regressions, and safety issues before they escalate."
+        "explanation": "Production deployments need observability. Logging and monitoring let you catch cost spikes, quality regressions and safety issues before they escalate.",
+        "wordBank": [
+          "outputs",
+          "monitor",
+          "continuously",
+          "logs",
+          "and",
+          "once",
+          "delete",
+          "annually"
+        ]
       }
     }
   ],

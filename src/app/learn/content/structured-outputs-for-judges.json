@@ -3,14 +3,14 @@
     {
       "title": "Prose scores do not scale",
       "paragraphs": [
-        "A human reviewer can read \"pretty good, dock a point for tone\" and move on. Automation cannot — it needs {{structuredOutput}} with fixed fields the pipeline can parse.",
-        "AiEval's {{judge}} returns JSON: an array of scores keyed by {{criterion}} id, plus optional notes. The automation phase reads that JSON and writes rows into Compare — no manual copy-paste.",
+        "A human reviewer can read \"pretty good, dock a point for tone\" and move on. Automation cannot. It needs {{structuredOutput}} with fixed fields the pipeline can parse.",
+        "AiEval's {{judge}} returns JSON: an array of scores keyed by {{criterion}} id, plus optional notes. The automation phase reads that JSON and writes rows into Compare. No manual copy-paste.",
         "When a {{judge}} replies with free-form paragraphs instead of JSON, scoring fails or fills partial blanks. That is a pipeline error, not a mysterious {{model}} quirk.",
-        "Good judge {{prompt}}s include the schema: field names, score ranges, and an example object. You are teaching the {{judge}} the wire format, not just the rubric prose.",
+        "Good judge {{prompt}}s include the schema: field names, score ranges and an example object. You are teaching the {{judge}} the wire format, not just the rubric prose.",
         "Next: how to design judge output that parsers accept."
       ],
       "bullets": [
-        "{{structuredOutput}} — machine-readable {{judge}} replies.",
+        "{{structuredOutput}}: machine-readable {{judge}} replies.",
         "Scores keyed by {{criterion}} id, not display name alone.",
         "Schema in the judge {{prompt}} reduces parse failures."
       ],
@@ -18,39 +18,39 @@
         "prompt": "Automation expects JSON scores but the {{judge}} returns a friendly paragraph. What breaks first?",
         "answer": "The parser cannot extract criterion scores",
         "choices": [
-          "Nothing — paragraphs parse automatically",
+          "Nothing: paragraphs parse automatically",
           "The parser cannot extract criterion scores",
           "The contestant models stop generating",
           "The rubric deletes itself"
         ],
-        "explanation": "Without {{structuredOutput}}, automation cannot map text to {{criterion}} rows — scoring stalls or records empty points."
+        "explanation": "Without {{structuredOutput}}, automation cannot map text to {{criterion}} rows. Scoring stalls or records empty points."
       }
     },
     {
       "title": "Schema and common failures",
       "paragraphs": [
-        "Minimal judge JSON includes a `scores` array: each entry has `criterionId`, `points`, and optional `notes`. Optional top-level `answerNotes` captures overall reasoning.",
-        "Failures you will see: markdown fences around JSON, trailing commas, wrong id strings, or numeric scores outside the rubric ladder. Parsers throw; humans fix the judge {{prompt}} or retry.",
+        "Minimal judge JSON includes a `scores` array: each entry has `criterionId`, `points` and optional `notes`. Optional top-level `answerNotes` captures overall reasoning.",
+        "Failures you will see: markdown fences around JSON, trailing commas, wrong id strings or numeric scores outside the rubric ladder. Parsers throw; humans fix the judge {{prompt}} or retry.",
         "Click each output style to see whether automation can consume it. The optional Judge JSON lab lets you practice spotting parse-ready responses.",
         "Anchors still matter: JSON with wrong semantics is valid syntax but bad judgment. Structure and rubric clarity work together."
       ],
       "reveals": [
         {
           "prompt": "Judge output: ```json\\n{ \"scores\": [{ \"criterionId\": \"c1\", \"points\": 4 }] }\\n```",
-          "reveal": "Often fine — fences strip before parse, if the inner JSON is valid."
+          "reveal": "Often fine. Fences strip before parse, if the inner JSON is valid."
         },
         {
           "prompt": "Judge output: \"Accuracy: 4/5 because...\"",
-          "reveal": "Not parseable — no {{structuredOutput}}; automation needs JSON fields."
+          "reveal": "Not parseable. There is no {{structuredOutput}}; automation needs JSON fields."
         },
         {
           "prompt": "Judge output: JSON with criterionId \"accuracy\" but rubric id is \"c1\".",
-          "reveal": "Syntax passes, semantics fail — score may default or miss the row."
+          "reveal": "Syntax passes, but semantics fail. The score may default or miss the row."
         }
       ],
       "aside": {
         "title": "Try in AiEval",
-        "body": "Run automation, open Compare, and confirm each {{criterion}} row has points plus {{judge}} notes — evidence the {{structuredOutput}} parsed.",
+        "body": "Run automation, open Compare and confirm each {{criterion}} row has points plus {{judge}} notes. That is evidence the {{structuredOutput}} parsed.",
         "route": "/evaluations/new?from=learn",
         "actionLabel": "New evaluation"
       },
@@ -70,8 +70,8 @@
       "title": "From judges to retrieval",
       "paragraphs": [
         "Structured judge output completes the scoring half of an {{evaluation}} harness. The next lessons shift to knowledge: storing facts outside the {{contextWindow}} and fetching them with {{retrieval}}.",
-        "Keep the habit: any automated step — generate, judge, or later retrieve — needs explicit input/output contracts. Ambiguity at boundaries becomes silent data loss.",
-        "Next up: Semantic memory — durable knowledge you search by meaning instead of pasting into every {{prompt}}."
+        "Keep the habit: any automated step (generate, judge or later retrieve) needs explicit input/output contracts. Ambiguity at boundaries becomes silent data loss.",
+        "Next up: Semantic memory. It is durable knowledge you search by meaning instead of pasting into every {{prompt}}."
       ],
       "bullets": [
         "Parseable {{judge}} JSON unlocks batch scoring.",
@@ -87,7 +87,17 @@
           "pipeline can read scores",
           "parse criterion points"
         ],
-        "explanation": "{{structuredOutput}} lets the harness map each {{criterion}} to points without human transcription."
+        "explanation": "{{structuredOutput}} lets the harness map each {{criterion}} to points without human transcription.",
+        "wordBank": [
+          "parse",
+          "automation",
+          "scores",
+          "can",
+          "so",
+          "humans",
+          "guess",
+          "prose"
+        ]
       }
     }
   ],
@@ -101,7 +111,16 @@
         "empty criterion rows",
         "scores not applied"
       ],
-      "explanation": "Syntax success is not semantic success — ids must match the rubric the parser expects."
+      "explanation": "Syntax success is not semantic success. Ids must match the rubric the parser expects.",
+      "wordBank": [
+        "default",
+        "missing",
+        "scores",
+        "or",
+        "perfect",
+        "extra",
+        "json"
+      ]
     },
     {
       "prompt": "A teammate wraps judge JSON in markdown fences. Is that always fatal?",
@@ -112,7 +131,17 @@
         "often fine",
         "parser may strip fences"
       ],
-      "explanation": "Many pipelines strip code fences before JSON parse — still better to ask the {{judge}} for raw JSON in production."
+      "explanation": "Many pipelines strip code fences before JSON parse. It is still better to ask the {{judge}} for raw JSON in production.",
+      "wordBank": [
+        "fences",
+        "strip",
+        "no",
+        "cleanly",
+        "if",
+        "yes",
+        "always",
+        "never"
+      ]
     }
   ]
 }

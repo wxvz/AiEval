@@ -4,3 +4,6 @@
 <main class="container app-shell py-4">
   <router-outlet />
 </main>
+@if (isLearnRoute()) {
+  <app-learn-chat-fab />
+}

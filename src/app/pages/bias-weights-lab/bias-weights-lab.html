@@ -1,0 +1,244 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+    <h1 class="h3 mb-3">Bias and weights</h1>
+    <p class="lead mb-3">
+      Nudge one
+      <app-nn-term-hint term="weights" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      and one
+      <app-nn-term-hint term="bias" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      so a single neuron’s sigmoid
+      <app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      flips high when the
+      <app-nn-term-hint term="input" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      is at least 0.5.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for
+        <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
+        : feel how weight sets the slope and bias shifts the decision boundary.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: one neuron, one feature (<code>score = w·x + b</code>, then sigmoid). Next, the
+      <a routerLink="/learn/lessons/activation-functions">Activation functions</a>
+      lesson compares sigmoid with ReLU and tanh; the
+      <a routerLink="/learn/labs/neural-network">Neural network lab</a>
+      stacks many units after that.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: aim for a boundary between 0.25 and 0.5. Try weight ≈ {{ tipWeight }} and bias ≈ {{ tipBias }},
+      or press <strong>Apply tip</strong>.
+    </p>
+
+    @if (solved()) {
+      <div class="alert alert-success mb-4" role="status">
+        Solved: every probe
+        <app-nn-term-hint
+          term="input"
+          hintId="input-success"
+          [activeId]="openTermId()"
+          (activeIdChange)="setOpenTermId($event)"
+        />
+        matches the target decision (high for x ≥ 0.5, low otherwise).
+      </div>
+    }
+
+    <div class="card mb-4">
+      <div class="card-body row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label" for="biasLabWeight">
+            <app-nn-term-hint
+              term="weights"
+              hintId="weights-slider"
+              [activeId]="openTermId()"
+              (activeIdChange)="setOpenTermId($event)"
+            />
+            (w): {{ weight() | number: '1.1-1' }}
+          </label>
+          <input
+            id="biasLabWeight"
+            type="range"
+            class="form-range"
+            min="-8"
+            max="8"
+            step="0.1"
+            [ngModel]="weight()"
+            (ngModelChange)="onWeightChange(+$event)"
+          />
+        </div>
+        <div class="col-md-5">
+          <label class="form-label" for="biasLabBias">
+            <app-nn-term-hint
+              term="bias"
+              hintId="bias-slider"
+              [activeId]="openTermId()"
+              (activeIdChange)="setOpenTermId($event)"
+            />
+            (b): {{ bias() | number: '1.1-1' }}
+          </label>
+          <input
+            id="biasLabBias"
+            type="range"
+            class="form-range"
+            min="-8"
+            max="8"
+            step="0.1"
+            [ngModel]="bias()"
+            (ngModelChange)="onBiasChange(+$event)"
+          />
+        </div>
+        <div class="col-md-2 d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="applyTip()">Apply tip</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetParams()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">Prediction vs input</h2>
+        <svg
+          class="learn-lab-plot"
+          viewBox="0 0 200 120"
+          role="img"
+          aria-label="Sigmoid prediction across input values from 0 to 1"
+        >
+          <rect x="20" y="10" width="160" height="90" fill="none" stroke="var(--bs-border-color)" />
+          <!-- Decision threshold y = 0.5 -->
+          <line
+            x1="20"
+            y1="55"
+            x2="180"
+            y2="55"
+            stroke="var(--bs-secondary-color)"
+            stroke-dasharray="3 2"
+            stroke-width="1"
+          />
+          <!-- Target boundary x = 0.5 -->
+          <line
+            x1="100"
+            y1="10"
+            x2="100"
+            y2="100"
+            stroke="var(--bs-border-color)"
+            stroke-dasharray="2 2"
+            stroke-width="1"
+          />
+          <polyline
+            [attr.points]="predictionPolyline()"
+            fill="none"
+            stroke="var(--bs-primary)"
+            stroke-width="1.5"
+          />
+          <text x="100" y="115" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">x</text>
+          <text
+            x="12"
+            y="55"
+            text-anchor="middle"
+            font-size="9"
+            fill="var(--bs-secondary-color)"
+            transform="rotate(-90 12 55)"
+          >
+            σ
+          </text>
+        </svg>
+        <p class="small text-muted mb-0">
+          Dashed lines mark x = 0.5 and prediction = 0.5. Goal: curve low on the left, high on the right.
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Probes (current w, b)</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th scope="col">
+                  <app-nn-term-hint
+                    term="input"
+                    hintId="input-table"
+                    [activeId]="openTermId()"
+                    (activeIdChange)="setOpenTermId($event)"
+                  />
+                  (x)
+                </th>
+                <th scope="col">Score (w·x + b)</th>
+                <th scope="col">
+                  <app-nn-term-hint
+                    term="output"
+                    hintId="output-table"
+                    [activeId]="openTermId()"
+                    (activeIdChange)="setOpenTermId($event)"
+                  />
+                </th>
+                <th scope="col">
+                  <app-nn-term-hint
+                    term="target"
+                    hintId="target-table"
+                    [activeId]="openTermId()"
+                    (activeIdChange)="setOpenTermId($event)"
+                  />
+                </th>
+                <th scope="col">Match?</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of rows(); track row.x) {
+                <tr>
+                  <td>{{ row.x }}</td>
+                  <td>{{ row.score | number: '1.2-2' }}</td>
+                  <td>{{ row.prediction | number: '1.3-3' }}</td>
+                  <td>{{ row.wantPositive ? '> 0.5' : '≤ 0.5' }}</td>
+                  <td>
+                    @if (row.correct) {
+                      <span class="text-success">✓</span>
+                    } @else {
+                      <span class="text-danger">✗</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">What does the weight control?</summary>
+        <p class="mb-0 text-muted">
+          Weight scales how strongly x pulls the score. A larger positive weight makes the sigmoid rise faster
+          as x increases: a steeper decision slope.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What does the bias control?</summary>
+        <p class="mb-0 text-muted">
+          Bias shifts the whole curve left or right. Negative bias pushes the flip point toward larger x;
+          positive bias flips earlier. Together, w and b place the boundary.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why is prediction 0.5 wrong for x = 0.5?</summary>
+        <p class="mb-0 text-muted">
+          This lab treats “high” as strictly greater than 0.5. Sitting exactly on the sigmoid midpoint means the
+          neuron has not committed to the positive class yet. Nudge bias or weight until the score is positive
+          at x = 0.5.
+        </p>
+      </details>
+    </section>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

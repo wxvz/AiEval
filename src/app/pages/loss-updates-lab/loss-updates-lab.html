@@ -11,7 +11,9 @@
       <app-nn-term-hint term="output" hintId="output-lead" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
     </p>
     <div class="alert alert-light border mb-3" role="note">
-      Teaching shortcut: fixed architecture and XOR rows. The full
+      Teaching shortcut: fixed architecture and XOR rows. After
+      <a routerLink="/learn/lessons/activation-functions">Activation functions</a>,
+      the full
       <a routerLink="/learn/labs/neural-network">Neural network lab</a> adds datasets and controls.
     </div>
     <p class="text-muted small mb-4">
@@ -107,7 +109,7 @@
       <details class="learn-lab-faq" open>
         <summary class="learn-lab-faq__question">Why does loss wiggle instead of falling smoothly?</summary>
         <p class="mb-0 text-muted">
-          Each epoch is one pass through four XOR rows. Small networks and a high learning rate can overshoot —
+          Each epoch is one pass through four XOR rows. Small networks and a high learning rate can overshoot;
           that is normal in the teaching sandbox.
         </p>
       </details>
