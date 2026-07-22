@@ -1,13 +1,19 @@
 .app-navbar {
   --bs-navbar-padding-y: 0.75rem;
-  backdrop-filter: blur(8px);
-  background-color: color-mix(in srgb, var(--bs-body-bg) 85%, transparent) !important;
+  position: sticky;
+  top: 0;
+  z-index: 1020;
+  backdrop-filter: none;
+  background-color: var(--aieval-surface) !important;
+  border-bottom: 1px solid var(--aieval-border);
+  box-shadow: none;
 }
 
 .navbar-brand {
-  font-size: 1.15rem;
-  letter-spacing: -0.02em;
-  color: var(--bs-body-color);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--aieval-ink);
 }
 
 .navbar-brand:hover {
@@ -15,21 +21,26 @@
 }
 
 .navbar .nav-link {
-  font-size: 0.95rem;
+  font-size: 0.925rem;
   font-weight: 500;
-  color: var(--bs-secondary-color);
+  color: var(--aieval-muted);
   border-radius: var(--bs-border-radius-sm);
+  padding-block: 0.4rem !important;
   padding-inline: 0.75rem !important;
-  transition: color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .navbar .nav-link:hover:not(.disabled) {
-  color: var(--bs-body-color);
+  color: var(--aieval-ink);
+  background-color: color-mix(in srgb, var(--aieval-page-bg) 80%, var(--aieval-border));
 }
 
 .navbar .nav-link.active {
   color: var(--aieval-primary) !important;
   font-weight: 600;
+  background-color: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
 }
 
 .settings-toggle {
@@ -41,16 +52,47 @@
   min-width: 2.25rem;
   min-height: 2.25rem;
   border-radius: var(--bs-border-radius-sm);
-  color: var(--bs-secondary-color);
+  color: var(--aieval-muted);
   text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .settings-toggle:hover:not(.disabled) {
+  color: var(--aieval-ink);
+  background-color: color-mix(in srgb, var(--aieval-page-bg) 80%, var(--aieval-border));
+}
+
+.settings-toggle.active {
   color: var(--aieval-primary);
-  background-color: color-mix(in srgb, var(--aieval-primary) 10%, transparent);
+  background-color: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
+}
+
+.navbar-toggler {
+  border-color: var(--aieval-border);
+  color: var(--aieval-ink);
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+  outline: 2px solid var(--aieval-primary);
+  outline-offset: 2px;
+}
+
+.navbar-toggler-icon {
+  filter: none;
+}
+
+[data-bs-theme='light'] .navbar-toggler-icon {
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%230f172a' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+[data-bs-theme='dark'] .navbar-toggler-icon {
+  --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23e8eef6' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 [data-bs-theme='dark'] .app-navbar {
-  backdrop-filter: none;
   background-color: var(--aieval-surface) !important;
+  border-bottom-color: var(--aieval-border);
 }
