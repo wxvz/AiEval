@@ -254,3 +254,5 @@ export function validateAllLessonContent(): LessonContentValidationIssue[] {
   }
   return issues;
 }
+
+export { loadWalkthroughContent, walkthroughHasSteps } from './walkthrough-content';
