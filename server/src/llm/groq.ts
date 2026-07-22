@@ -12,6 +12,28 @@ import {
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+/** Models that expose Groq reasoning controls (see https://console.groq.com/docs/reasoning). */
+function isGroqReasoningModel(model: string): boolean {
+  const id = model.toLowerCase();
+  return (
+    id.includes('qwen3.6') ||
+    id.includes('gpt-oss') ||
+    id.includes('minimax')
+  );
+}
+
+/**
+ * Keep reasoning off the stored answer text. Default/raw formats can put
+ * chain-of-thought (or truncated verification dumps) into message.content.
+ */
+function groqReasoningRequestFields(model: string): Record<string, string> {
+  if (!isGroqReasoningModel(model)) {
+    return {};
+  }
+
+  return { reasoning_format: 'hidden' };
+}
+
 async function openAiCompatibleComplete(
   url: string,
   apiKey: string,
@@ -31,6 +53,7 @@ async function openAiCompatibleComplete(
       messages,
       temperature: options?.temperature ?? DEFAULT_LLM_TEMPERATURE,
       ...(options?.json ? { response_format: { type: 'json_object' } } : {}),
+      ...groqReasoningRequestFields(model),
     }),
   });
 
@@ -39,7 +62,7 @@ async function openAiCompatibleComplete(
   }
 
   const body = (await response.json()) as {
-    choices?: { message?: { content?: string } }[];
+    choices?: { message?: { content?: string; reasoning?: string } }[];
     usage?: {
       prompt_tokens?: number;
       completion_tokens?: number;
@@ -47,6 +70,7 @@ async function openAiCompatibleComplete(
     };
   };
 
+  // Never surface message.reasoning — evaluation stores the final answer only.
   const text = body.choices?.[0]?.message?.content?.trim() ?? '';
   const usage = parseOpenAiCompatibleUsage(body);
 
@@ -65,3 +89,5 @@ export function createGroqProvider(): LlmProvider {
 export function hasGroqCredentials(): boolean {
   return config.groqApiKey.length > 0;
 }
+
+export { groqReasoningRequestFields, isGroqReasoningModel };

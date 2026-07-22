@@ -1,0 +1,244 @@
+<app-page-shell>
+  <main shellMain>
+    @if (labMeta) {
+      <p class="text-muted small mb-2">{{ trackLabel }} · Lab {{ labMeta.order }} of {{ trackLabCount }}</p>
+    }
+
+    <h1 class="h3 mb-3">RAG playground</h1>
+    <p class="lead mb-3">
+      Like a research assistant with notes on the desk,
+      <app-retrieval-term-hint term="rag" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      retrieves relevant chunks, packs them into the
+      <app-retrieval-term-hint term="contextWindow" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
+      then generates an answer grounded in that text.
+    </p>
+    @if (prereqMeta) {
+      <p class="text-muted small mb-3">
+        Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a> — you already ranked chunks by
+        <app-retrieval-term-hint term="cosineSimilarity" hintId="cosine-prereq" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: the stub answer below is <strong>extractive</strong> (pulls phrases from context), not
+      generative. Production systems send the prompt preview to an LLM.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: try the default question, then <strong>uncheck a retrieved chunk</strong> and watch the stub answer change.
+    </p>
+
+    <figure class="mb-4">
+      <svg class="learn-lab-diagram" viewBox="0 0 520 70" role="img" aria-label="RAG pipeline: question, top-k chunks, context, prompt, answer">
+        <rect x="5" y="15" width="80" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="45" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Question</text>
+        <line x1="85" y1="35" x2="110" y2="35" stroke="var(--bs-border-color)" marker-end="url(#rag-arrow)" />
+        <rect x="110" y="15" width="90" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="155" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Top-k</text>
+        <line x1="200" y1="35" x2="225" y2="35" stroke="var(--bs-border-color)" marker-end="url(#rag-arrow)" />
+        <rect x="225" y="15" width="90" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="270" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Context</text>
+        <line x1="315" y1="35" x2="340" y2="35" stroke="var(--bs-border-color)" marker-end="url(#rag-arrow)" />
+        <rect x="340" y="15" width="80" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="380" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Prompt</text>
+        <line x1="420" y1="35" x2="445" y2="35" stroke="var(--bs-border-color)" marker-end="url(#rag-arrow)" />
+        <rect x="445" y="15" width="70" height="40" rx="6" fill="none" stroke="var(--bs-border-color)" />
+        <text x="480" y="40" text-anchor="middle" font-size="10" fill="var(--bs-body-color)">Answer</text>
+        <defs>
+          <marker id="rag-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="var(--bs-border-color)" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption class="small text-muted mt-2 mb-0">
+        RAG pipeline: retrieve, assemble context, build a prompt, then generate.
+      </figcaption>
+    </figure>
+
+    <div class="card mb-4">
+      <div class="card-body row g-3">
+        <div class="col-md-8">
+          <label class="form-label" for="ragQuery">Question</label>
+          <input
+            id="ragQuery"
+            type="text"
+            class="form-control"
+            [ngModel]="query()"
+            (ngModelChange)="onQueryChange($event)"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="ragTopK">
+            Retrieve
+            <app-retrieval-term-hint term="topK" hintId="topK-rag" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+          </label>
+          <input
+            id="ragTopK"
+            type="number"
+            class="form-control"
+            min="1"
+            max="8"
+            [ngModel]="topK()"
+            (ngModelChange)="onTopKChange(+$event || 1)"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6">2D map (retrieval)</h2>
+        <svg class="learn-lab-plot" viewBox="0 0 200 200" role="img" aria-label="Query and retrieved chunks in 2D embedding space">
+          <rect x="10" y="10" width="180" height="180" fill="none" stroke="var(--bs-border-color)" />
+          <text x="100" y="198" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)">dim 1</text>
+          <text x="4" y="100" text-anchor="middle" font-size="9" fill="var(--bs-secondary-color)" transform="rotate(-90 4 100)">dim 2</text>
+          @for (point of plotPoints(); track point.id) {
+            <circle
+              [attr.cx]="plotX(point.x)"
+              [attr.cy]="plotY(point.y)"
+              [attr.r]="point.isQuery ? 6 : 4"
+              [attr.fill]="point.isQuery ? 'var(--bs-danger)' : point.isSelected ? 'var(--bs-primary)' : point.isMatch ? 'var(--bs-info)' : 'var(--bs-secondary)'"
+              [attr.opacity]="point.isQuery || point.isMatch ? 1 : 0.45"
+            />
+          }
+        </svg>
+        <p class="small text-muted mb-0">Red = question · Blue = selected · Cyan = retrieved but unchecked · Gray = other</p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6">Context budget</h2>
+        <p class="small text-muted mb-2">
+          {{ assembledContext().length }} / {{ maxChars() }} characters · ~{{ tokenEstimate() }} tokens estimated
+        </p>
+        <div class="progress rag-context-progress mb-2" role="progressbar" [attr.aria-valuenow]="contextUsedPercent()" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar" [class.bg-warning]="contextUsedPercent() >= 90" [style.width.%]="contextUsedPercent()"></div>
+        </div>
+        @if (rankings().length === 0) {
+          <p class="text-muted mb-0">Enter a question to see how retrieval fills the context window.</p>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th scope="col">In prompt?</th>
+                  <th scope="col">Score</th>
+                  <th scope="col">Chunk</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rankings(); track row.chunk.id) {
+                  <tr [class.table-active]="isSelected(row.chunk.id)">
+                    <td>{{ isSelected(row.chunk.id) ? 'Yes' : 'No' }}</td>
+                    <td>{{ row.score | number: '1.2-2' }}</td>
+                    <td>{{ row.chunk.text }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+
+    <section class="mb-4">
+      <h2 class="h6">1. Retrieve</h2>
+      @if (rankings().length === 0) {
+        <p class="text-muted">Enter a question to retrieve chunks.</p>
+      } @else {
+        <ul class="list-group">
+          @for (row of rankings(); track row.chunk.id) {
+            <li class="list-group-item">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [id]="'chunk-' + row.chunk.id"
+                  [checked]="isSelected(row.chunk.id)"
+                  (change)="toggleChunk(row.chunk.id)"
+                />
+                <label class="form-check-label" [for]="'chunk-' + row.chunk.id">
+                  <span class="badge text-bg-secondary me-2">{{ row.score | number: '1.2-2' }}</span>
+                  {{ row.chunk.text }}
+                </label>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h6">2. Assemble context</h2>
+      <label class="form-label" for="maxChars">Character budget</label>
+      <input
+        id="maxChars"
+        type="range"
+        class="form-range"
+        min="100"
+        max="800"
+        step="50"
+        [ngModel]="maxChars()"
+        (ngModelChange)="maxChars.set(+$event)"
+      />
+      <p class="small text-muted mb-2">
+        ~{{ tokenEstimate() }} tokens estimated (chars ÷ 4) · {{ assembledContext().length }} / {{ maxChars() }} chars used
+      </p>
+      <pre class="rag-context-preview">{{ assembledContext() || '(no chunks selected)' }}</pre>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h6">3. Prompt preview</h2>
+      <pre class="rag-prompt-preview">{{ promptPreview() }}</pre>
+    </section>
+
+    <section class="mb-4">
+      <h2 class="h6">4. Stub answer</h2>
+      <p class="mb-2">{{ stubAnswer() }}</p>
+    </section>
+
+    <p class="text-muted small mb-4">
+      Review: <a routerLink="/learn/labs/semantic-search">Semantic search lab</a> ·
+      Next: <a routerLink="/learn/lessons/faithfulness-and-hallucinations">Faithfulness and hallucinations</a> — score grounding before your first eval.
+    </p>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">What if retrieval returns the wrong chunks?</summary>
+        <p class="mb-0 text-muted">
+          Garbage in, garbage out — a wrong context leads to a wrong answer. Test retrieval quality with real
+          prompts in the First evaluation lab or AiEval.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why a character budget?</summary>
+        <p class="mb-0 text-muted">
+          Models have a fixed context window. You must rank, trim, or summarize chunks so the prompt fits — the
+          slider simulates that limit.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why a stub instead of calling a model?</summary>
+        <p class="mb-0 text-muted">
+          This lab isolates retrieval and prompt assembly without API keys or rate limits. You can see exactly
+          which text reaches the model step.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">How do I know if my RAG setup is good?</summary>
+        <p class="mb-0 text-muted">
+          Run evaluations in AiEval with questions your users actually ask. Compare answers with and without
+          retrieval, and inspect whether the winning answer used the right chunks.
+        </p>
+      </details>
+    </section>
+
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

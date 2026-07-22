@@ -1,0 +1,56 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Faithfulness lab</h1>
+    <p class="lead mb-3">
+      Which sentences are grounded in the retrieved context — and which look like
+      <app-learn-term-hint term="hallucination" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />?
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: token overlap heuristic, not a production entailment model. Real systems use stronger
+      <app-learn-term-hint term="faithfulness" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      checks.
+    </div>
+
+    <h2 class="h6">Context</h2>
+    <p class="bg-light border rounded p-3 small mb-4">{{ context }}</p>
+
+    <h2 class="h6">Answer sentences</h2>
+    <ol class="mb-3">
+      @for (row of rows(); track row.sentence) {
+        <li class="mb-2">{{ row.sentence }}</li>
+      }
+    </ol>
+
+    <button type="button" class="btn btn-outline-primary mb-3" (click)="reveal()">Check support</button>
+
+    @if (checked()) {
+      <ul class="list-unstyled mb-4">
+        @for (row of rows(); track row.sentence) {
+          <li class="mb-2">
+            <span [class]="labelClass(row.label)" class="fw-semibold text-uppercase small">{{ row.label }}</span>
+            — {{ row.sentence }}
+          </li>
+        }
+      </ul>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">Why flag the warranty sentence?</summary>
+      <p class="mb-0 text-muted">It adds specifics that never appear in the context — classic unfaithful detail even when tone sounds helpful.</p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

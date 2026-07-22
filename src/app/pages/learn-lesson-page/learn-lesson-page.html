@@ -1,0 +1,89 @@
+@if (meta(); as lesson) {
+  <app-page-shell>
+    <app-learn-lesson-rail
+      shellLeft
+      [lesson]="lesson"
+      [trackLabel]="track()?.title ?? ''"
+      [content]="content()"
+      [sectionsSolved]="displaySectionsSolved()"
+      [locked]="locked()"
+      [savedKeyTerms]="savedKeyTerms()"
+    />
+
+    <main shellMain>
+      @if (locked()) {
+        <div class="alert alert-secondary" role="status">Complete earlier lessons in this track first.</div>
+      } @else if (!hasContent()) {
+        <div class="alert alert-light border" role="status">Content coming soon.</div>
+      } @else if (content(); as lessonContent) {
+        @for (section of lessonContent.sections; track $index) {
+          <app-learn-lesson-section
+            [section]="section"
+            [sectionIndex]="$index"
+            [solved]="sectionSolved($index)"
+            [collapsed]="sectionCollapsed($index)"
+            [savedTerms]="savedKeyTerms()"
+            [primaryHintIds]="primaryHintIds()"
+            (termSelect)="selectKeyTerm($event)"
+            (solvedChange)="onSectionSolved($index, $event)"
+            (collapsedChange)="onSectionCollapsed($index, $event)"
+          />
+        }
+
+        @if (lessonContent.recapQuestions.length > 0) {
+          <section class="learn-lesson-recap mb-4">
+            <h2 class="h5 mb-3">Recap</h2>
+            <p class="text-muted small mb-3">A few more questions pulling the whole lesson together.</p>
+            @for (question of lessonContent.recapQuestions; track $index) {
+              <app-learn-check-question
+                [question]="question"
+                [hintIdPrefix]="'recap-' + $index"
+                [savedTerms]="savedKeyTerms()"
+                [primaryHintIds]="primaryHintIds()"
+                (termSelect)="selectKeyTerm($event)"
+                [solved]="recapSolved($index)"
+                [readonly]="recapSolved($index)"
+                [showExplanation]="recapSolved($index)"
+                (solvedChange)="onRecapSolved($index, $event)"
+              />
+            }
+          </section>
+        }
+      }
+
+      <div class="learn-lesson-footer mb-4">
+        @if (!markCompleteEnabled() && hasContent() && !completed() && !locked()) {
+          <p class="text-muted small mb-2">Answer all section checks and recap questions first.</p>
+        }
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!markCompleteEnabled()"
+          (click)="markComplete()"
+        >
+          @if (completed()) {
+            Completed
+          } @else {
+            Mark complete
+          }
+        </button>
+      </div>
+    </main>
+
+    <app-learn-lesson-aside
+      shellRight
+      [content]="content()"
+      [sectionsSolved]="displaySectionsSolved()"
+      [recapSolved]="displayRecapSolved()"
+      [recapCount]="recapCount()"
+      [optionalLab]="optionalLab() ?? null"
+      [optionalLabComplete]="optionalLabComplete()"
+      [adjacent]="adjacent()"
+      [locked]="locked()"
+      [activeAside]="activeAside()"
+      [savedKeyTerms]="savedKeyTerms()"
+      [primaryHintIds]="primaryHintIds()"
+      (termSelect)="selectKeyTerm($event)"
+    />
+  </app-page-shell>
+}

@@ -1,0 +1,98 @@
+<section class="learn-lesson-section mb-4">
+  @if (view() === 'collapsed') {
+    <button
+      type="button"
+      class="learn-lesson-section__collapsed card-elevated w-100 text-start"
+      (click)="toggleCollapsed()"
+      [attr.aria-expanded]="false"
+    >
+      <span class="learn-lesson-section__collapsed-title">{{ heading() }}</span>
+      <span class="badge text-bg-success learn-lesson-section__badge">Complete</span>
+      <span class="learn-lesson-section__chevron" aria-hidden="true">▸</span>
+    </button>
+  } @else {
+    @if (view() === 'solvedExpanded') {
+      <button
+        type="button"
+        class="learn-lesson-section__collapsed learn-lesson-section__collapsed--open card-elevated w-100 text-start mb-3"
+        (click)="toggleCollapsed()"
+        [attr.aria-expanded]="true"
+      >
+        <span class="learn-lesson-section__collapsed-title">{{ heading() }}</span>
+        <span class="badge text-bg-success learn-lesson-section__badge">Complete</span>
+        <span class="learn-lesson-section__chevron" aria-hidden="true">▾</span>
+      </button>
+    } @else if (heading(); as title) {
+      <h2 class="h5 mb-2">{{ title }}</h2>
+    }
+
+    <div class="learn-lesson-section__body">
+      @for (paragraph of section().paragraphs; track $index) {
+        <p class="mb-2">
+          <app-learn-lesson-text
+            [text]="paragraph"
+            [hintIdPrefix]="hintPrefix('p' + $index)"
+            [savedTerms]="savedTerms()"
+            [primaryHintIds]="primaryHintIds()"
+            (termSelect)="onTermSelect($event)"
+          />
+        </p>
+      }
+      @if (section().bullets?.length) {
+        <ul class="learn-lesson-bullets mb-2">
+          @for (item of section().bullets; track $index) {
+            <li>
+              <app-learn-lesson-text
+                [text]="item"
+                [hintIdPrefix]="hintPrefix('b' + $index)"
+                [savedTerms]="savedTerms()"
+                [primaryHintIds]="primaryHintIds()"
+                (termSelect)="onTermSelect($event)"
+              />
+            </li>
+          }
+        </ul>
+      }
+      @if (section().reveals?.length) {
+        <div class="learn-lesson-reveals">
+          @for (item of section().reveals; track $index) {
+            <details class="learn-lesson-reveal card-elevated mb-2">
+              <summary class="learn-lesson-reveal__summary">
+                <app-learn-lesson-text
+                  [text]="item.prompt"
+                  [hintIdPrefix]="hintPrefix('r-p' + $index)"
+                  [savedTerms]="savedTerms()"
+                  [primaryHintIds]="primaryHintIds()"
+                  (termSelect)="onTermSelect($event)"
+                />
+              </summary>
+              <p class="learn-lesson-reveal__body mb-0">
+                <app-learn-lesson-text
+                  [text]="item.reveal"
+                  [hintIdPrefix]="hintPrefix('r-b' + $index)"
+                  [savedTerms]="savedTerms()"
+                  [primaryHintIds]="primaryHintIds()"
+                  (termSelect)="onTermSelect($event)"
+                />
+              </p>
+            </details>
+          }
+        </div>
+      }
+
+      @if (section().check; as check) {
+        <app-learn-check-question
+          [question]="check"
+          [hintIdPrefix]="hintPrefix('check')"
+          [savedTerms]="savedTerms()"
+          [primaryHintIds]="primaryHintIds()"
+          (termSelect)="onTermSelect($event)"
+          [solved]="solved()"
+          [readonly]="solved()"
+          [showExplanation]="showExplanation()"
+          (solvedChange)="onSolved($event)"
+        />
+      }
+    </div>
+  }
+</section>

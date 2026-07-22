@@ -2,13 +2,20 @@ import { describe, expect, it } from 'vitest';
 
 import {
   isFallbackEligibleHttpStatus,
+  LlmHttpError,
   parseLlmHttpStatusFromError,
+  parseRetryAfterHeader,
+  parseTryAgainInMs,
   readLlmErrorMessage,
   throwLlmHttpError,
 } from './llm-http-error.js';
 
-function mockResponse(status: number, body: string): Response {
-  return new Response(body, { status });
+function mockResponse(
+  status: number,
+  body: string,
+  headers?: Record<string, string>,
+): Response {
+  return new Response(body, { status, headers });
 }
 
 describe('readLlmErrorMessage', () => {
@@ -35,6 +42,41 @@ describe('readLlmErrorMessage', () => {
   });
 });
 
+describe('parseRetryAfterHeader', () => {
+  it('parses delta-seconds', () => {
+    expect(parseRetryAfterHeader('4')).toBe(4000);
+    expect(parseRetryAfterHeader('3.7575')).toBe(3758);
+  });
+
+  it('parses HTTP-date relative to now', () => {
+    // HTTP-date is second-resolution; aim ~5s ahead so truncation still leaves headroom.
+    const when = new Date(Date.now() + 5_000).toUTCString();
+    const ms = parseRetryAfterHeader(when);
+    expect(ms).toBeGreaterThanOrEqual(3_500);
+    expect(ms).toBeLessThanOrEqual(5_500);
+  });
+
+  it('returns undefined for empty or invalid values', () => {
+    expect(parseRetryAfterHeader(null)).toBeUndefined();
+    expect(parseRetryAfterHeader('')).toBeUndefined();
+    expect(parseRetryAfterHeader('not-a-date')).toBeUndefined();
+  });
+});
+
+describe('parseTryAgainInMs', () => {
+  it('parses Groq TPM wait text', () => {
+    expect(
+      parseTryAgainInMs(
+        'Rate limit reached for model `openai/gpt-oss-120b`. Please try again in 3.7575s. Need more tokens?',
+      ),
+    ).toBe(3758);
+  });
+
+  it('returns undefined when no wait is present', () => {
+    expect(parseTryAgainInMs('Rate limit reached')).toBeUndefined();
+  });
+});
+
 describe('throwLlmHttpError', () => {
   it('includes status and provider message', async () => {
     const response = mockResponse(
@@ -48,9 +90,50 @@ describe('throwLlmHttpError', () => {
       'LLM request failed: 404 — The model `llama-3.2-3b` does not exist.',
     );
   });
+
+  it('attaches Retry-After header as retryAfterMs', async () => {
+    const response = mockResponse(
+      429,
+      JSON.stringify({ error: { message: 'Rate limited' } }),
+      { 'Retry-After': '4' },
+    );
+
+    try {
+      await throwLlmHttpError('LLM request failed', response);
+      expect.fail('expected throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(LlmHttpError);
+      expect((error as LlmHttpError).status).toBe(429);
+      expect((error as LlmHttpError).retryAfterMs).toBe(4000);
+    }
+  });
+
+  it('falls back to body try-again text when header is missing', async () => {
+    const response = mockResponse(
+      429,
+      JSON.stringify({
+        error: {
+          message:
+            'Rate limit reached for model `openai/gpt-oss-120b`. Please try again in 3.7575s.',
+        },
+      }),
+    );
+
+    try {
+      await throwLlmHttpError('LLM request failed', response);
+      expect.fail('expected throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(LlmHttpError);
+      expect((error as LlmHttpError).retryAfterMs).toBe(3758);
+    }
+  });
 });
 
 describe('parseLlmHttpStatusFromError', () => {
+  it('reads status from LlmHttpError', () => {
+    expect(parseLlmHttpStatusFromError(new LlmHttpError('x', 429, 1000))).toBe(429);
+  });
+
   it('parses Groq/OpenRouter em-dash format', () => {
     expect(
       parseLlmHttpStatusFromError(

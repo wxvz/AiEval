@@ -1,0 +1,116 @@
+{
+  "sections": [
+    {
+      "title": "Measuring wrongness",
+      "paragraphs": [
+        "You already know a {{model}} learns from {{input}}–{{target}} pairs. But how does it know when a {{prediction}} is good or bad? It needs a score — that score is called {{loss}}.",
+        "Think of {{loss}} like a distance between what the {{model}} guessed and what the {{target}} actually was. Bigger gap means worse; smaller gap means better. Zero would mean a perfect match on that example.",
+        "For a number prediction, a common choice is squared error: how far off was the guess? For picking one category among many, we use a different formula — the neural network lab will show both.",
+        "What matters now is the idea: every training step compares {{prediction}} to {{target}}, computes {{loss}}, and asks \"how can we do better next time?\"",
+        "Without {{loss}}, training would be guesswork. With it, the {{model}} has a clear signal for improvement — as long as the {{target}} is trustworthy."
+      ],
+      "bullets": [
+        "{{loss}} — a single number summarizing how wrong the {{prediction}} is.",
+        "Lower {{loss}} — {{prediction}}s closer to {{target}}s on average.",
+        "Different tasks — different {{loss}} formulas, same purpose."
+      ],
+      "check": {
+        "prompt": "A {{model}} predicts 0.9 but the {{target}} is 0.0. What does a high {{loss}} on that row tell you?",
+        "answer": "The prediction is far from the target and should improve",
+        "choices": [
+          "The model is already perfect on that example",
+          "The prediction is far from the target and should improve",
+          "Loss only applies to image models",
+          "High loss means you should delete the training row"
+        ],
+        "explanation": "{{loss}} measures error. A large gap between {{prediction}} and {{target}} produces high {{loss}} — exactly the signal that training should use to nudge {{weights}}."
+      }
+    },
+    {
+      "title": "Nudging weights after each mistake",
+      "paragraphs": [
+        "A {{model}}'s behavior is controlled by {{weights}} (and small constants called biases). Training does not rewrite the whole program by hand — it adjusts those numbers.",
+        "After computing {{loss}}, the training algorithm figures out which direction each weight should move to reduce error. That direction is the {{gradient}}.",
+        "The {{learningRate}} controls step size. A tiny rate makes safe but slow progress; a huge rate can overshoot and make {{loss}} bounce or explode.",
+        "One update might look like: read an example → forward pass → compute {{loss}} → adjust {{weights}} slightly along the {{gradient}}. Repeat thousands of times.",
+        "This is the loop you will run yourself in the neural network lab — press Train and watch {{loss}} fall as {{weights}} improve."
+      ],
+      "reveals": [
+        {
+          "prompt": "{{prediction}} = 0.2, {{target}} = 1.0 → {{loss}}?",
+          "reveal": "Fairly high — the {{model}} is under-confident. {{weights}} should move so the next {{prediction}} is closer to 1.0."
+        },
+        {
+          "prompt": "{{prediction}} = 0.95, {{target}} = 1.0 → {{loss}}?",
+          "reveal": "Low — almost right. A small {{gradient}} nudge may still help, but the error is already small."
+        },
+        {
+          "prompt": "{{learningRate}} set enormous → what often happens?",
+          "reveal": "{{loss}} jumps wildly — updates overshoot. Turn the rate down and training usually stabilizes."
+        }
+      ],
+      "check": {
+        "prompt": "Training looks stuck: {{loss}} barely moves after many steps. Which knob is the safest first try?",
+        "answer": "Adjust the learning rate",
+        "choices": [
+          "Delete half the dataset",
+          "Adjust the learning rate",
+          "Remove the test set",
+          "Stop comparing predictions to targets"
+        ],
+        "explanation": "The {{learningRate}} sets update size. Too small crawls; too large oscillates. It is a core {{hyperparameters}} you tune before rewriting the whole {{model}}."
+      }
+    },
+    {
+      "title": "Training over many passes",
+      "paragraphs": [
+        "One pass through every training row is one {{epoch}}. A single {{epoch}} is rarely enough for hard puzzles like XOR — the {{model}} needs many chances to refine {{weights}}.",
+        "In the lab you will see a {{loss}} chart over time. A healthy training run usually shows {{loss}} trending down, even if it wiggles step to step.",
+        "If {{loss}} hits zero on the training rows, the {{model}} may have memorized them — remember the {{trainSet}} vs {{testSet}} lesson when you interpret results.",
+        "The neural network lab lets you change hidden size, activation, dataset, and {{learningRate}}. Your goal is not magic numbers — it is to connect \"I changed a setting\" to \"{{loss}} and {{prediction}}s changed.\"",
+        "Try the optional **Loss and updates lab** from this lesson to watch {{loss}} fall as you train. Then open the **Neural network lab** for full controls on XOR and more datasets."
+      ],
+      "bullets": [
+        "{{epoch}} — one full sweep through the training data.",
+        "Watch {{loss}} — your main feedback while training.",
+        "Then try the lab — connect formulas to a network you control."
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is training trying to do to {{loss}}?",
+        "answer": "Reduce it",
+        "accept": [
+          "reduce it",
+          "make it smaller",
+          "minimize it",
+          "push it down",
+          "lower loss"
+        ],
+        "explanation": "Training adjusts {{weights}} to push {{loss}} down so {{prediction}}s match {{target}}s. That is the entire point of the update loop you are about to run in the lab."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Why must a {{model}} compute {{loss}} during training?",
+      "answer": "To know how wrong predictions are and how to update weights",
+      "choices": [
+        "To know how wrong predictions are and how to update weights",
+        "To replace the need for targets",
+        "To avoid using a train set",
+        "To make predictions random on purpose"
+      ],
+      "explanation": "{{loss}} compares {{prediction}} to {{target}} and drives {{gradient}} updates. Without it, the {{model}} would not know which direction to adjust {{weights}}."
+    },
+    {
+      "prompt": "You run 50 {{epoch}}s and training {{loss}} is still flat. Which pair of ideas from this lesson matter most?",
+      "answer": "Learning rate and whether loss can improve on this data",
+      "choices": [
+        "Delete labels and hope for the best",
+        "Learning rate and whether loss can improve on this data",
+        "Skip epochs entirely",
+        "Only measure loss on the test set while training"
+      ],
+      "explanation": "Flat {{loss}} often means updates are too small ({{learningRate}}) or the {{model}} lacks capacity for the task. You still need a training signal — never drop {{target}}s or leak the {{testSet}} into tuning."
+    }
+  ]
+}

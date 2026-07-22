@@ -77,4 +77,33 @@ describe('createOpenRouterProvider', () => {
 
     expect(result).toEqual({ text: 'no-model-field' });
   });
+
+  it('retries openrouter/free with a chat model when routed to content-safety', async () => {
+    vi.mocked(llmFetch)
+      .mockResolvedValueOnce(
+        mockOpenRouterResponse({
+          model: 'nvidia/nemotron-3.5-content-safety:free',
+          choices: [{ message: { content: 'User Safety: safe' } }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        mockOpenRouterResponse({
+          model: 'meta-llama/llama-3.2-3b-instruct:free',
+          choices: [{ message: { content: 'Here is a real answer.' } }],
+        }),
+      );
+
+    const provider = createOpenRouterProvider();
+    const result = await provider.complete('openrouter/free', [{ role: 'user', content: 'hi' }]);
+
+    expect(vi.mocked(llmFetch)).toHaveBeenCalledTimes(2);
+    const secondBody = JSON.parse(
+      String(vi.mocked(llmFetch).mock.calls[1]?.[1]?.body ?? '{}'),
+    ) as { model?: string };
+    expect(secondBody.model).toBe('meta-llama/llama-3.2-3b-instruct:free');
+    expect(result).toEqual({
+      text: 'Here is a real answer.',
+      resolvedModel: 'meta-llama/llama-3.2-3b-instruct:free',
+    });
+  });
 });

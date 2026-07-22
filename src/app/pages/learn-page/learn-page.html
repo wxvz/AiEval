@@ -1,29 +1,35 @@
-<div class="row justify-content-center">
-  <div class="col-lg-8">
+<app-page-shell>
+  <main shellMain>
     <header class="page-header text-center">
       <h1 class="page-header__title">Learn</h1>
-      <p class="page-header__subtitle text-muted mb-0">
-        Short, hands-on topics. Pick one to explore at your own pace.
-      </p>
+      <p class="page-header__subtitle text-muted mb-0">{{ hubCopy.subtitle }}</p>
     </header>
 
-    <div class="learn-topics">
-      @for (topic of topics; track topic.title) {
-        @if (topic.route) {
-          <a class="learn-topic card-elevated" [routerLink]="topic.route">
-            <span class="learn-topic__badge">{{ topic.badge }}</span>
-            <h2 class="learn-topic__title">{{ topic.title }}</h2>
-            <p class="learn-topic__description">{{ topic.description }}</p>
-            <span class="learn-topic__cta">Open topic →</span>
-          </a>
-        } @else {
-          <div class="learn-topic learn-topic--soon card-elevated" aria-disabled="true">
-            <span class="learn-topic__badge learn-topic__badge--muted">{{ topic.badge }}</span>
-            <h2 class="learn-topic__title">{{ topic.title }}</h2>
-            <p class="learn-topic__description">{{ topic.description }}</p>
-          </div>
-        }
-      }
+    <app-learn-roadmap />
+
+    <div class="learn-tracks row g-4 mb-4">
+      <div class="col-lg-6">
+        <app-learn-track-list trackId="foundation" />
+      </div>
+      <div class="col-lg-6">
+        <app-learn-track-list trackId="llm-systems" />
+      </div>
     </div>
-  </div>
-</div>
+
+    <section class="learn-tools card-elevated mb-4" aria-label="Tools">
+      <h2 class="h6 learn-tools__title">Tools</h2>
+      <a class="learn-tools__link" routerLink="/evaluations/new">{{ hubCopy.toolsLabel }} →</a>
+    </section>
+
+    <app-learn-track-list trackId="go-deeper" />
+  </main>
+
+  <nav shellRight class="learn-hub-nav card-elevated" aria-label="Learn shortcuts">
+    @if (nextLesson(); as next) {
+      <a class="btn btn-primary btn-sm" [routerLink]="next.route">Continue →</a>
+    } @else {
+      <span class="badge text-bg-success">Path complete</span>
+    }
+    <a class="btn btn-outline-secondary btn-sm" routerLink="/">Dashboard</a>
+  </nav>
+</app-page-shell>

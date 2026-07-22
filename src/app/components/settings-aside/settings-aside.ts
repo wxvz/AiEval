@@ -35,6 +35,7 @@ import {
   formatAutoDismiss,
   formatAutomationPreference,
   formatCriteriaMode,
+  formatLearnUnlockAll,
   formatLlmPreset,
   formatTheme,
   sanitizeProviderReason,
@@ -71,6 +72,7 @@ export class SettingsAside {
     this.settingsService.automationProviderPreference;
   protected readonly autoDismissAutomationStatus =
     this.settingsService.autoDismissAutomationStatus;
+  protected readonly learnUnlockAll = this.settingsService.learnUnlockAll;
 
   protected readonly serverLlmPreset = this.serverSettingsService.llmPreset;
   protected readonly envDefaultLlmPreset = this.serverSettingsService.envDefaultLlmPreset;
@@ -102,6 +104,7 @@ export class SettingsAside {
         value: formatAutomationPreference(this.automationProviderPreference()),
       },
       { label: 'Auto-dismiss', value: formatAutoDismiss(this.autoDismissAutomationStatus()) },
+      { label: 'Learn access', value: formatLearnUnlockAll(this.learnUnlockAll()) },
       {
         label: 'Server preset',
         value: preset ? formatLlmPreset(preset) : '—',
@@ -250,6 +253,17 @@ export class SettingsAside {
 
     this.settingsService.setAutoDismissAutomationStatus(enabled);
     this.feedback.success(`Auto-dismiss successful automation messages ${formatAutoDismiss(enabled)}.`);
+  }
+
+  protected setLearnUnlockAll(enabled: boolean): void {
+    if (this.learnUnlockAll() === enabled) {
+      return;
+    }
+
+    this.settingsService.setLearnUnlockAll(enabled);
+    this.feedback.success(
+      enabled ? 'All Learn lessons are now open.' : 'Learn lessons follow prerequisites again.',
+    );
   }
 
   protected async setLlmPreset(preset: LlmPreset): Promise<void> {

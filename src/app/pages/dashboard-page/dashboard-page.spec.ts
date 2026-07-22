@@ -1,0 +1,159 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { Evaluation } from '../../models';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { EvaluationService } from '../../services/evaluation.service';
+import { FeedbackService } from '../../services/feedback.service';
+import { DashboardPage } from './dashboard-page';
+
+function sampleEvaluation(id: string, updatedAt = new Date().toISOString()): Evaluation {
+  return {
+    id,
+    title: `Evaluation ${id}`,
+    prompt: 'Prompt text',
+    criteriaMode: 'default',
+    criteria: [],
+    answers: [],
+    createdAt: updatedAt,
+    updatedAt,
+  };
+}
+
+describe('DashboardPage', () => {
+  let fixture: ComponentFixture<DashboardPage>;
+  let evaluationService: EvaluationService;
+  let learnHandoff: LearnHandoffService;
+
+  beforeEach(async () => {
+    sessionStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [DashboardPage],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        EvaluationService,
+        FeedbackService,
+      ],
+    }).compileComponents();
+
+    evaluationService = TestBed.inject(EvaluationService);
+    learnHandoff = TestBed.inject(LearnHandoffService);
+    fixture = TestBed.createComponent(DashboardPage);
+  });
+
+  it('shows learn banner when handoff is active', () => {
+    learnHandoff.recordEvaluation('eval-learn');
+    evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-learn')]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Learn lab');
+    expect(el.textContent).toContain('Compare answers');
+  });
+
+  it('hides learn banner after dismiss', () => {
+    learnHandoff.recordEvaluation('eval-learn');
+    evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-learn')]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['dismissLearnBanner']();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).not.toContain('Your evaluation from the First evaluation lab');
+  });
+
+  it('highlights evaluation card from learn handoff', () => {
+    learnHandoff.recordEvaluation('eval-highlight');
+    evaluationService['evaluationsSignal'].set([
+      sampleEvaluation('other'),
+      sampleEvaluation('eval-highlight'),
+    ]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    const highlighted = fixture.nativeElement.querySelector('.evaluation-card--highlighted');
+    expect(highlighted).toBeTruthy();
+    expect(highlighted?.textContent).toContain('From Learn lab');
+  });
+
+  it('defaults to the highlighted Learn evaluation day when it is available', () => {
+    const newest = sampleEvaluation('newest', new Date(2025, 5, 20, 12).toISOString());
+    const highlighted = sampleEvaluation('eval-highlight', new Date(2025, 4, 10, 12).toISOString());
+    learnHandoff.recordEvaluation(highlighted.id);
+    evaluationService['evaluationsSignal'].set([newest, highlighted]);
+    evaluationService['loadingSignal'].set(false);
+
+    fixture.detectChanges();
+
+    const cards = fixture.nativeElement.querySelectorAll('app-evaluation-card');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain(highlighted.title);
+  });
+
+  it('defaults to the newest day without a Learn handoff', () => {
+    const newest = sampleEvaluation('newest', new Date(2025, 5, 20, 12).toISOString());
+    const older = sampleEvaluation('older', new Date(2025, 4, 10, 12).toISOString());
+    evaluationService['evaluationsSignal'].set([older, newest]);
+    evaluationService['loadingSignal'].set(false);
+
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('app-evaluation-card').textContent).toContain(
+      newest.title,
+    );
+  });
+
+  it('shows only evaluations from the selected day and reconciles a removed day', () => {
+    const newest = sampleEvaluation('newest', new Date(2025, 5, 20, 12).toISOString());
+    const older = sampleEvaluation('older', new Date(2025, 4, 10, 12).toISOString());
+    evaluationService['evaluationsSignal'].set([newest, older]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['selectDay']('2025-05-10');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('app-evaluation-card').textContent).toContain(
+      older.title,
+    );
+
+    evaluationService['evaluationsSignal'].set([newest]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance['selectedDayKey']()).toBe('2025-06-20');
+    expect(fixture.nativeElement.querySelector('app-evaluation-card').textContent).toContain(
+      newest.title,
+    );
+  });
+
+  it('keeps a separate pagination index for each selected day', () => {
+    const firstDay = Array.from({ length: 7 }, (_, index) =>
+      sampleEvaluation(`first-${index}`, new Date(2025, 5, 20, 12, index).toISOString()),
+    );
+    const secondDay = Array.from({ length: 7 }, (_, index) =>
+      sampleEvaluation(`second-${index}`, new Date(2025, 5, 19, 12, index).toISOString()),
+    );
+    evaluationService['evaluationsSignal'].set([...firstDay, ...secondDay]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['setDayPage']('2025-06-20', 1, 7);
+    fixture.componentInstance['selectDay']('2025-06-19');
+    fixture.componentInstance['setDayPage']('2025-06-19', 1, 7);
+    fixture.componentInstance['selectDay']('2025-06-20');
+    fixture.detectChanges();
+
+    expect(
+      fixture.componentInstance['dayPageIndex'](fixture.componentInstance['selectedDayGroup']()!),
+    ).toBe(1);
+    const cards = fixture.nativeElement.querySelectorAll('app-evaluation-card');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain('Evaluation first-6');
+  });
+});

@@ -1,5 +1,5 @@
 import { Component, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
 import {
@@ -10,6 +10,8 @@ import { LeaveDuringAutomationComponent } from '../../components/leave-during-au
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { Evaluation } from '../../models';
 import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
+import { loadWalkthroughContent } from '../../learn/learn-content';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
 
@@ -28,6 +30,8 @@ import { useAutomationPageContext } from '../../utils/automation-page-context';
 export class CreateEvaluationPage {
   private readonly evaluationService = inject(EvaluationService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly learnHandoff = inject(LearnHandoffService);
 
   private readonly evaluationForm = viewChild(EvaluationForm);
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
@@ -40,6 +44,10 @@ export class CreateEvaluationPage {
   protected readonly generatingPrompt = signal(false);
   protected readonly creating = signal(false);
   private readonly formFieldsVersion = signal(0);
+  protected readonly fromLearn = signal(
+    this.learnHandoff.isLearnContext(this.route.snapshot.queryParamMap.get('from')),
+  );
+  protected readonly learnHint = loadWalkthroughContent().handoffCopy?.createPageHint ?? null;
 
   protected readonly automating = this.automationPage.automating;
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
@@ -189,6 +197,7 @@ export class CreateEvaluationPage {
   protected onSubmit(value: EvaluationFormValue): void {
     void this.createEvaluation(value)
       .then((created) => {
+        this.recordLearnHandoff(created.id);
         void this.router.navigate(['/evaluations', created.id, 'edit']);
       })
       .catch(() => undefined);
@@ -274,6 +283,7 @@ export class CreateEvaluationPage {
 
   private applyAutomationResult(evaluation: Evaluation): void {
     this.rememberCompletedEvaluation(evaluation.id);
+    this.recordLearnHandoff(evaluation.id);
     this.syncFormFromEvaluation(evaluation);
   }
 
@@ -298,6 +308,7 @@ export class CreateEvaluationPage {
       .then((created) => {
         this.automationSessionKey.update((key) => key + 1);
         this.createdEvaluationId.set(created.id);
+        this.recordLearnHandoff(created.id);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -366,5 +377,12 @@ export class CreateEvaluationPage {
     if (prompt && prompt !== AUTOMATION_METADATA_STUB_PROMPT  ) {
       form.setPrompt(prompt);
     }
+  }
+
+  private recordLearnHandoff(evaluationId: string): void {
+    if (!this.fromLearn()) {
+      return;
+    }
+    this.learnHandoff.recordEvaluation(evaluationId);
   }
 }

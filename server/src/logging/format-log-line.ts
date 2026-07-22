@@ -85,6 +85,17 @@ function eventBody(event: string, payload: Record<string, unknown>): string | un
       return `Generating answers (${ctx['provider']}/${ctx['model']})`;
     case 'automation.answer_generated':
       return `Answer generated (${ctx['resolvedModel'] ?? ctx['model']}, ${ctx['durationMs']}ms)`;
+    case 'automation.answer_rejected': {
+      const model = ctx['resolvedModel'] ?? ctx['model'] ?? 'unknown';
+      const reason = ctx['reason'] ?? 'failed';
+      const detail =
+        typeof ctx['detail'] === 'string' && ctx['detail'].length > 0
+          ? `: ${ctx['detail']}`
+          : '';
+      return `Answer rejected (${model}, ${reason})${detail}`;
+    }
+    case 'automation.model_fallback':
+      return `Model fallback [${ctx['step'] ?? 'automation'}]: ${ctx['fromModel']} → ${ctx['toModel']}`;
     case 'automation.scoring':
       return `Scoring answer ${shortId(ctx['answerId'])}`;
     case 'automation.scored':

@@ -1,0 +1,68 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Judge JSON lab</h1>
+    <p class="lead mb-3">
+      Automation needs
+      <app-learn-term-hint term="structuredOutput" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      from the
+      <app-learn-term-hint term="judge" hintId="judge-lead" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
+      Pick a sample response and see whether the parser extracts
+      <app-learn-term-hint term="criterion" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      scores.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: client-side JSON parse only — mirrors AiEval judge shape (`scores` array with `criterionId` and `points`).
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      @for (sample of samples; track sample.id) {
+        <button
+          type="button"
+          class="btn btn-sm"
+          [class.btn-primary]="selectedId() === sample.id"
+          [class.btn-outline-secondary]="selectedId() !== sample.id"
+          (click)="selectSample(sample.id)"
+        >
+          {{ sample.label }}
+        </button>
+      }
+    </div>
+
+    @if (selectedSample(); as sample) {
+      <pre class="bg-light border rounded p-3 small mb-3">{{ sample.raw }}</pre>
+      @if (parseResult(); as result) {
+        @if (result.ok) {
+          <p class="text-success mb-2">Parse succeeded — {{ result.scores.length }} score row(s).</p>
+          <ul class="mb-4">
+            @for (row of result.scores; track row.criterionId) {
+              <li>{{ row.criterionId }}: {{ row.points }} @if (row.notes) { — {{ row.notes }} }</li>
+            }
+          </ul>
+        } @else {
+          <p class="text-danger mb-4">Parse failed: {{ result.error }}</p>
+        }
+      }
+    } @else {
+      <p class="text-muted mb-4">Select a sample judge output above.</p>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">Why reject prose scores?</summary>
+      <p class="mb-0 text-muted">Batch automation cannot reliably map free text to rubric rows — JSON fields are the contract.</p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

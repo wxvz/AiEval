@@ -1,9 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 
-import { AUTOMATION_METADATA_STUB } from '../../models';
+import {
+  AUTOMATION_METADATA_STUB_PROMPT,
+  AUTOMATION_METADATA_STUB_TITLE,
+} from '../../../../server/src/automation/constants';
+import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
 import { CreateEvaluationPage } from './create-evaluation-page';
@@ -12,9 +16,11 @@ describe('CreateEvaluationPage', () => {
   let page: CreateEvaluationPage;
   let fixture: import('@angular/core/testing').ComponentFixture<CreateEvaluationPage>;
   let evaluationService: EvaluationService;
+  let learnHandoff: LearnHandoffService;
   let routerNavigate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    sessionStorage.clear();
     routerNavigate = vi.fn().mockResolvedValue(true);
 
     TestBed.configureTestingModule({
@@ -25,10 +31,15 @@ describe('CreateEvaluationPage', () => {
         EvaluationService,
         FeedbackService,
         { provide: Router, useValue: { navigate: routerNavigate } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+        },
       ],
     });
 
     evaluationService = TestBed.inject(EvaluationService);
+    learnHandoff = TestBed.inject(LearnHandoffService);
     fixture = TestBed.createComponent(CreateEvaluationPage);
     page = fixture.componentInstance;
     fixture.detectChanges();
@@ -37,8 +48,8 @@ describe('CreateEvaluationPage', () => {
   it('onRunFullAutomation creates stub evaluation when form is empty', async () => {
     const created = {
       id: 'eval-new',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -52,8 +63,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -240,8 +251,8 @@ describe('CreateEvaluationPage', () => {
       ...list,
       {
         id: 'eval-live',
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
         criteriaMode: 'default',
         criteria: [],
         answers: [],
@@ -331,8 +342,8 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -350,8 +361,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -378,8 +389,8 @@ describe('CreateEvaluationPage', () => {
 
     const created = {
       id: 'eval-b',
-      title: AUTOMATION_METADATA_STUB,
-      prompt: AUTOMATION_METADATA_STUB,
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
       criteriaMode: 'default' as const,
       criteria: [],
       answers: [],
@@ -403,8 +414,8 @@ describe('CreateEvaluationPage', () => {
 
     expect(createSpy).toHaveBeenCalledWith(
       {
-        title: AUTOMATION_METADATA_STUB,
-        prompt: AUTOMATION_METADATA_STUB,
+        title: AUTOMATION_METADATA_STUB_TITLE,
+        prompt: AUTOMATION_METADATA_STUB_PROMPT,
       },
       {
         success: 'Evaluation created.',
@@ -508,5 +519,45 @@ describe('CreateEvaluationPage', () => {
       success: 'Prompt generated.',
       error: 'Could not generate prompt.',
     });
+  });
+
+  it('records learn handoff when creating from learn context', async () => {
+    page['fromLearn'].set(true);
+
+    const created = {
+      id: 'eval-learn',
+      title: 'Learn eval',
+      prompt: 'Learn prompt.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    await page['onRunFullAutomation']();
+
+    expect(learnHandoff.highlightedEvaluationId()).toBe('eval-learn');
+  });
+
+  it('does not record learn handoff without from=learn', async () => {
+    const created = {
+      id: 'eval-plain',
+      title: AUTOMATION_METADATA_STUB_TITLE,
+      prompt: AUTOMATION_METADATA_STUB_PROMPT,
+      criteriaMode: 'default' as const,
+      criteria: [],
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    await page['onRunFullAutomation']();
+
+    expect(learnHandoff.highlightedEvaluationId()).toBeNull();
   });
 });

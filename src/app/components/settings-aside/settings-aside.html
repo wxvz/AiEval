@@ -276,6 +276,21 @@
       }
     </section>
 
+    <section class="settings-aside__card" aria-labelledby="settingsLearnHeading">
+      <h3 class="settings-aside__heading h6" id="settingsLearnHeading">Learn</h3>
+      <p class="settings-aside__hint text-muted small mb-2">
+        Open any lesson on the Learn hub without completing earlier ones first.
+      </p>
+      <label class="settings-aside__checkbox">
+        <input
+          type="checkbox"
+          [checked]="learnUnlockAll()"
+          (change)="setLearnUnlockAll($any($event.target).checked)"
+        />
+        Unlock all lessons
+      </label>
+    </section>
+
     <section class="settings-aside__card" aria-labelledby="settingsDataHeading">
       <h3 class="settings-aside__heading h6" id="settingsDataHeading">Data</h3>
 

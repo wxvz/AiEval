@@ -1,0 +1,92 @@
+{
+  "sections": [
+    {
+      "title": "Tokens, not words",
+      "paragraphs": [
+        "{{largeLanguageModel}}s do not read words the way humans do. Before any text enters the {{model}}, it is split into {{token}}s — fragments that can be whole words, parts of words, or punctuation.",
+        "Tokenization is deterministic: the same text always yields the same {{token}} sequence. Common words like \"the\" are single {{token}}s; rare words or code may split across several. This is why {{contextWindow}} limits are measured in {{token}}s, not words or characters.",
+        "Once tokenized, each {{token}} becomes a vector of numbers — an {{embedding}}. The {{model}} processes these {{embedding}}s through layers of computation to predict what {{token}} comes next.",
+        "Understanding {{token}}s matters because {{prompt}} length, answer length, and cost are all measured in {{token}} counts. A 4,096-{{token}} {{contextWindow}} is roughly 3,000 English words, but that varies by language and domain.",
+        "Next: how transformers use {{attention}} to decide which {{token}}s matter most when predicting the next one."
+      ],
+      "bullets": [
+        "{{token}} — a fragment of text the {{model}} processes (word, subword, or character).",
+        "Tokenization: text → {{token}} IDs → {{embedding}} vectors.",
+        "{{contextWindow}} measured in {{token}}s, not words."
+      ],
+      "check": {
+        "prompt": "Your prompt is exactly 100 words. A colleague says: \"That is 100 {{token}}s, right?\" What is the accurate reply?",
+        "answer": "Probably more than 100 tokens — words can split into multiple tokens",
+        "choices": [
+          "Yes — words and tokens are always one-to-one.",
+          "Probably more than 100 tokens — words can split into multiple tokens",
+          "Probably fewer than 100 tokens — most words combine.",
+          "Impossible to say — tokens are random."
+        ],
+        "explanation": "Rare words, code, and punctuation often split into multiple {{token}}s. A 100-word prompt may be 120–150 {{token}}s depending on vocabulary."
+      }
+    },
+    {
+      "title": "Attention: which tokens matter",
+      "paragraphs": [
+        "The key idea behind transformers is {{attention}}: when predicting the next {{token}}, the {{model}} weighs which prior {{token}}s are most relevant. If the prompt says \"The capital of France is,\" the {{model}} focuses on \"France\" and \"capital\" more than \"The\" or \"is.\"",
+        "{{attention}} is learned during training. The {{model}}'s {{weights}} encode patterns like \"subjects and verbs agree,\" \"pronouns refer to recent nouns,\" and \"answer formats follow question wording.\" At inference the {{model}} applies these patterns to your specific {{prompt}}.",
+        "This mechanism is why transformers handle long context better than older architectures. Every {{token}} can attend to every other {{token}} in the {{contextWindow}}, so distant references (\"As I said 50 sentences ago...\") stay accessible.",
+        "Click each example below to see what {{attention}} highlights. Notice how the {{model}} prioritizes task-relevant {{token}}s over filler words."
+      ],
+      "reveals": [
+        {
+          "prompt": "Prompt: \"Translate 'hello' to Spanish.\" — which tokens get high attention?",
+          "reveal": "\"Translate,\" \"hello,\" and \"Spanish\" — the task verb and key nouns. \"To\" and the quotes are low-weight filler."
+        },
+        {
+          "prompt": "Prompt: \"Summarize the document. Focus on financial metrics.\" — which tokens matter?",
+          "reveal": "\"Summarize,\" \"financial,\" and \"metrics\" — the instruction and constraint. \"The\" and \"on\" are structural glue."
+        },
+        {
+          "prompt": "Prompt: \"Answer yes or no: Is Paris in Germany?\" — which tokens guide the answer?",
+          "reveal": "\"Paris,\" \"Germany,\" and the question structure. The model attends to geography facts learned during training."
+        }
+      ],
+      "check": {
+        "prompt": "In one short phrase: what is {{attention}} in a transformer {{model}}?",
+        "answer": "Weighing which prior tokens are most relevant",
+        "accept": [
+          "weighing token relevance",
+          "focusing on relevant tokens",
+          "selecting important tokens",
+          "deciding which tokens matter",
+          "weighting token importance"
+        ],
+        "explanation": "{{attention}} lets the {{model}} prioritize certain {{token}}s over others when predicting the next {{token}}, based on learned patterns."
+      }
+    },
+    {
+      "title": "Next-token prediction at scale",
+      "paragraphs": [
+        "Training a {{largeLanguageModel}} is fundamentally a giant {{supervisedLearning}} task: predict the next {{token}} given all prior {{token}}s. The training data is text from books, web pages, code repos — billions of examples where the {{target}} is simply the next word.",
+        "The {{model}} starts with random {{weights}}, makes terrible {{prediction}}s, measures error ({{loss}}), and updates {{weights}} to do better. Repeat that trillions of times on trillions of {{token}}s, and the {{model}} learns grammar, facts, reasoning patterns, and even some coding ability.",
+        "Once trained, you do not retrain for every new task. You write a {{prompt}} that conditions the {{model}}'s existing knowledge: \"Translate this,\" \"Summarize that,\" \"Score this answer.\" The {{model}} predicts {{token}}s that fit your instruction.",
+        "This is why transformers are called \"foundation models\" — they learn broad patterns once, then adapt to thousands of tasks via prompting or light fine-tuning.",
+        "Next: production concerns — cost, latency, and safety when deploying at scale."
+      ],
+      "bullets": [
+        "Training: predict next {{token}} on billions of examples.",
+        "{{weights}} encode grammar, facts, reasoning from the training corpus.",
+        "Inference: condition via {{prompt}}, generate {{token}}s, no retraining."
+      ],
+      "check": {
+        "prompt": "A {{largeLanguageModel}} was trained to predict next {{token}}s on web text. Can it answer math questions it never saw during training?",
+        "answer": "Yes — if math patterns appeared in the training data, it can generalize to new problems",
+        "choices": [
+          "No — it can only repeat exact training examples.",
+          "Yes — if math patterns appeared in the training data, it can generalize to new problems",
+          "No — you must fine-tune on math problems first.",
+          "Yes — but only if you paste the answer into the prompt."
+        ],
+        "explanation": "Transformers learn patterns (e.g., \"addition works like this\") from diverse examples. They generalize to new instances of those patterns at inference time."
+      }
+    }
+  ],
+  "recapQuestions": []
+}

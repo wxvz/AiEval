@@ -1,0 +1,114 @@
+{
+  "sections": [
+    {
+      "title": "Same prompt, different rolls",
+      "paragraphs": [
+        "Imagine rolling dice to finish a sentence. A loaded die always lands on the same word; a fair die gives different endings each time. {{largeLanguageModel}}s sample the next {{token}} the same way — the prompt is fixed, but the path through possible words can vary.",
+        "{{temperature}} controls how adventurous that sampling is. Near zero, the {{model}} almost always picks the highest-probability wording. Higher {{temperature}} lets less likely phrases appear — creative, but harder to compare fairly.",
+        "That matters the moment you run an {{evaluation}}. If Model A wins on run 1 and Model B wins on run 2 with the same {{prompt}}, you may be measuring randomness — not quality.",
+        "Providers also expose {{topP}} (nucleus sampling) and {{maxTokens}} caps. Together they shape length and variety. Evaluation teams record these settings beside every run so results are reproducible.",
+        "Next: the knobs you should lock before comparing answers."
+      ],
+      "bullets": [
+        "{{temperature}} — low = predictable, high = varied wording.",
+        "{{topP}} — limits which next tokens are even considered.",
+        "{{maxTokens}} — hard stop on answer length."
+      ],
+      "check": {
+        "prompt": "You compare two {{model}}s on the same {{prompt}}. Model A uses {{temperature}} 0; Model B uses {{temperature}} 0.9. A teammate says the winner is obvious after one run. What is the risk?",
+        "answer": "High temperature adds randomness so one run may not reflect true quality",
+        "choices": [
+          "No risk — temperature only affects speed.",
+          "High temperature adds randomness so one run may not reflect true quality",
+          "Low temperature always produces wrong answers",
+          "Temperature changes the rubric automatically"
+        ],
+        "explanation": "High {{temperature}} makes answers vary run to run. Fair comparison needs matched sampling settings and often multiple runs or temperature 0 for stability."
+      }
+    },
+    {
+      "title": "Knobs that matter for evals",
+      "paragraphs": [
+        "{{maxTokens}} prevents runaway essays — but set it too low and answers truncate mid-thought. When scoring completeness, a truncated answer loses points for a setting problem, not model quality.",
+        "{{topP}} works with {{temperature}}: even at moderate temperature, a low {{topP}} keeps word choice focused. Teams often fix both when they need stable regression checks.",
+        "Click each scenario to see which setting likely caused the behavior. Notice that \"better\" is meaningless if generation settings differ between contestants.",
+        "In AiEval, document provider defaults in your notes. If one {{model}} ignores temperature (some APIs treat 0 and 0.1 similarly), say so when you interpret scores."
+      ],
+      "reveals": [
+        {
+          "prompt": "Same prompt, answers differ wildly between runs of one {{model}}.",
+          "reveal": "Likely high {{temperature}} or high {{topP}} — increase repeatability by lowering them."
+        },
+        {
+          "prompt": "Answers stop mid-sentence with no error.",
+          "reveal": "Check {{maxTokens}} — the cap may be shorter than the task needs."
+        },
+        {
+          "prompt": "Two {{model}}s compared; one always writes twice as long.",
+          "reveal": "Compare {{maxTokens}} and {{prompt}} length instructions — may be settings, not capability."
+        }
+      ],
+      "aside": {
+        "title": "Try in AiEval",
+        "body": "Create one {{evaluation}} and run automation twice. Note whether scores shift when generation settings differ between {{model}}s.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "New evaluation"
+      },
+      "check": {
+        "prompt": "Your regression suite needs stable scores week to week. Which setting pair is the best starting point?",
+        "answer": "Low temperature and documented max tokens",
+        "choices": [
+          "High temperature and no max tokens",
+          "Low temperature and documented max tokens",
+          "Random temperature each run for variety",
+          "Max tokens set to 10 for every task"
+        ],
+        "explanation": "Low {{temperature}} reduces sampling noise; explicit {{maxTokens}} prevents length drift. Document both so {{regressionEval}} reruns stay comparable."
+      }
+    },
+    {
+      "title": "Lock settings, then compare",
+      "paragraphs": [
+        "Fair {{evaluation}} flow: write a clear {{prompt}}, fix generation settings, then compare {{model}}s on the same footing. Changing wording and {{temperature}} at once makes root-cause analysis impossible.",
+        "Optional practice: the Generation variance lab simulates how {{temperature}} spreads answers — a teaching shortcut, not a live API, but the lesson carries.",
+        "Next up: Comparing answers — same {{prompt}}, matched settings, measurable quality across {{model}}s."
+      ],
+      "bullets": [
+        "Fix {{temperature}}, {{topP}}, and {{maxTokens}} before judging quality.",
+        "Record settings with every {{evaluation}} run.",
+        "Separate prompt changes from sampling changes when debugging."
+      ],
+      "check": {
+        "prompt": "In one short phrase: why lock {{temperature}} before comparing {{model}}s?",
+        "answer": "To separate quality from randomness",
+        "accept": [
+          "separate quality from randomness",
+          "reduce random variation",
+          "fair comparison",
+          "avoid measuring luck",
+          "so results are reproducible"
+        ],
+        "explanation": "Matched sampling settings ensure score differences reflect {{model}} capability and {{prompt}} following — not dice-roll luck."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which knob most directly limits how long an answer can grow?",
+      "answer": "max tokens",
+      "accept": ["max tokens", "maxTokens", "maximum tokens"],
+      "explanation": "{{maxTokens}} caps generated length. {{temperature}} and {{topP}} affect word choice, not the hard length ceiling."
+    },
+    {
+      "prompt": "Your nightly {{regressionEval}} shows a new winner after you only changed {{temperature}}. What should you suspect first?",
+      "answer": "Randomness not model upgrade",
+      "accept": [
+        "randomness",
+        "sampling noise",
+        "temperature change",
+        "settings change not quality"
+      ],
+      "explanation": "A {{temperature}} change alters sampling — re-run with matched settings before declaring a true quality shift."
+    }
+  ]
+}

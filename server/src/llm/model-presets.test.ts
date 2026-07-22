@@ -52,7 +52,7 @@ describe('resolveModelsForProvider', () => {
     const { answerModels, judgeModel } = resolveModelsForProvider('groq');
 
     expect(answerModels.map((entry) => entry.model)).toContain('llama-3.1-8b-instant');
-    expect(judgeModel.model).toBe('llama-3.3-70b-versatile');
+    expect(judgeModel.model).toBe('openai/gpt-oss-120b');
   });
 });
 
