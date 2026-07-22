@@ -18,9 +18,59 @@
   min-width: 0;
 }
 
+.page-shell--wide-main .page-shell__left {
+  display: none;
+}
+
+.page-shell--wide-main .page-shell__main {
+  grid-column: 1 / 3;
+}
+
+.page-shell--span-right .page-shell__right {
+  display: none;
+}
+
+.page-shell--span-right .page-shell__main {
+  grid-column: 2 / 4;
+}
+
+/*
+ * Both flags: left rail stays visible; main uses the remaining width and
+ * centers its content (dashboard: month groups + evaluations).
+ */
+.page-shell--wide-main.page-shell--span-right {
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+}
+
+.page-shell--wide-main.page-shell--span-right .page-shell__left {
+  display: block;
+  grid-column: 1;
+}
+
+.page-shell--wide-main.page-shell--span-right .page-shell__main {
+  grid-column: 2;
+  justify-self: center;
+  width: 100%;
+  max-width: min(72rem, 100%);
+}
+
+.page-shell--wide-main.page-shell--span-right .page-shell__right {
+  display: none;
+}
+
 @media (max-width: 991.98px) {
-  .page-shell {
+  .page-shell,
+  .page-shell--wide-main.page-shell--span-right {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-shell--wide-main .page-shell__main,
+  .page-shell--span-right .page-shell__main,
+  .page-shell--wide-main.page-shell--span-right .page-shell__main,
+  .page-shell--wide-main.page-shell--span-right .page-shell__left {
+    grid-column: auto;
+    max-width: none;
+    justify-self: stretch;
   }
 
   .page-shell__left:empty,
