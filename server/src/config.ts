@@ -86,6 +86,19 @@ export const config = {
   logFile: process.env['LOG_FILE'] ?? '',
   logPrompts: process.env['LOG_PROMPTS'] === 'true',
   startupPreflight: process.env['STARTUP_PREFLIGHT'] !== 'false',
+  /** n8n Learn tutor webhook (production URL). Empty disables /api/learn-chat. */
+  learnChatWebhookUrl: process.env['LEARN_CHAT_WEBHOOK_URL']?.trim() ?? '',
+  /**
+   * Shared secret sent as X-Learn-Chat-Secret to the n8n webhook.
+   * Required whenever LEARN_CHAT_WEBHOOK_URL is set (fail closed).
+   */
+  learnChatWebhookSecret: process.env['LEARN_CHAT_WEBHOOK_SECRET']?.trim() ?? '',
+  /** Soft per-IP (or session) ceiling for /api/learn-chat within a rolling minute. */
+  learnChatRateLimitPerMinute: parseIntEnv(
+    process.env['LEARN_CHAT_RATE_LIMIT_PER_MINUTE'],
+    30,
+    { min: 1, max: 1000 },
+  ),
 } as const;
 
 export function assertConfig(): void {

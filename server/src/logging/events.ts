@@ -29,6 +29,8 @@ export const LogEvents = {
   llmRateLimit: 'llm.rate_limit',
   llmSlowFallback: 'llm.slow_fallback',
   sseEvent: 'sse.event',
+  learnChatTruncated: 'learn_chat.truncated',
+  learnChatRateLimited: 'learn_chat.rate_limited',
 } as const;
 
 export type LogEventName = (typeof LogEvents)[keyof typeof LogEvents];

@@ -18,7 +18,7 @@
       </p>
     }
     <div class="alert alert-light border mb-3" role="note">
-      Teaching shortcut: client-side JSON parse only — mirrors AiEval judge shape (`scores` array with `criterionId` and `points`).
+      Teaching shortcut: client-side JSON parse only. It mirrors AiEval judge shape (`scores` array with `criterionId` and `points`).
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-3">
@@ -39,10 +39,10 @@
       <pre class="bg-light border rounded p-3 small mb-3">{{ sample.raw }}</pre>
       @if (parseResult(); as result) {
         @if (result.ok) {
-          <p class="text-success mb-2">Parse succeeded — {{ result.scores.length }} score row(s).</p>
+          <p class="text-success mb-2">Parse succeeded: {{ result.scores.length }} score row(s).</p>
           <ul class="mb-4">
             @for (row of result.scores; track row.criterionId) {
-              <li>{{ row.criterionId }}: {{ row.points }} @if (row.notes) { — {{ row.notes }} }</li>
+              <li>{{ row.criterionId }}: {{ row.points }} @if (row.notes) { ({{ row.notes }}) }</li>
             }
           </ul>
         } @else {
@@ -55,7 +55,7 @@
 
     <details class="learn-lab-faq">
       <summary class="learn-lab-faq__question">Why reject prose scores?</summary>
-      <p class="mb-0 text-muted">Batch automation cannot reliably map free text to rubric rows — JSON fields are the contract.</p>
+      <p class="mb-0 text-muted">Batch automation cannot reliably map free text to rubric rows; JSON fields are the contract.</p>
     </details>
   </main>
   <app-learn-lab-nav

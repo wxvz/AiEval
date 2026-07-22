@@ -4,14 +4,14 @@
       "title": "Open-book, not open-imagination",
       "paragraphs": [
         "In an open-book exam you may only use pages provided. Anything else is cheating. RAG systems face the same rule: answers should come from retrieved {{chunk}}s, not whatever the {{largeLanguageModel}} remembers from training.",
-        "{{faithfulness}} means staying grounded — citing supplied context, qualifying uncertainty, or refusing when evidence is thin. The opposite is {{hallucination}}: confident facts that never appeared in the {{prompt}} or {{retrieval}} results.",
+        "{{faithfulness}} means staying grounded: citing supplied context, qualifying uncertainty or refusing when evidence is thin. The opposite is {{hallucination}}: confident facts that never appeared in the {{prompt}} or {{retrieval}} results.",
         "Users forgive awkward wording; they do not forgive invented refund policies or fake citations. Faithfulness criteria belong in your {{rubric}} beside clarity and tone.",
-        "The RAG playground showed extractive stub answers. Real {{model}}s still invent details if the {{prompt}} does not forbid it — evaluation must catch that.",
+        "The RAG playground showed extractive stub answers. Real {{model}}s still invent details if the {{prompt}} does not forbid it, so evaluation must catch that.",
         "Next: how to score grounding in practice."
       ],
       "bullets": [
-        "{{faithfulness}} — answer tracks provided sources.",
-        "{{hallucination}} — unsupported confident claims.",
+        "{{faithfulness}}: answer tracks provided sources.",
+        "{{hallucination}}: unsupported confident claims.",
         "Grounding is a {{criterion}}, not an afterthought."
       ],
       "check": {
@@ -23,29 +23,29 @@
           "Low temperature issue",
           "Too many tokens in the query"
         ],
-        "explanation": "Contradicting retrieved text is unfaithful — often a {{hallucination}} even if the tone sounds authoritative."
+        "explanation": "Contradicting retrieved text is unfaithful. It is often a {{hallucination}} even if the tone sounds authoritative."
       }
     },
     {
       "title": "Score grounding in evals",
       "paragraphs": [
         "Add a {{criterion}} row such as \"Grounded in context\" with anchors: 5 = every claim supported, 3 = minor unsupported detail, 1 = major invented fact. {{judge}}s can apply it when the retrieved {{chunk}}s are included in the judge {{prompt}}.",
-        "Human spot-checks still matter for subtle hallucinations — statistics in footnotes, wrong dates, merged entities. Automation catches obvious drift; experts catch nuance.",
+        "Human spot-checks still matter for subtle hallucinations: statistics in footnotes, wrong dates, merged entities. Automation catches obvious drift; experts catch nuance.",
         "Click each answer snippet to see faithfulness risk. The optional Faithfulness lab lets you mark sentences supported by a fixed context block.",
-        "When context is empty or irrelevant, the faithful answer may be \"I don't have enough information\" — penalizing refusal when {{retrieval}} failed is a common rubric mistake."
+        "When context is empty or irrelevant, the faithful answer may be \"I don't have enough information.\" Penalizing refusal when {{retrieval}} failed is a common rubric mistake."
       ],
       "reveals": [
         {
           "prompt": "Context mentions Plan Basic at $9/mo. Answer: \"Plan Basic costs $9 per month.\"",
-          "reveal": "Faithful — price appears in context."
+          "reveal": "Faithful: price appears in context."
         },
         {
           "prompt": "Context silent on EU shipping. Answer: \"We ship to all EU countries within 2 days.\"",
-          "reveal": "{{hallucination}} risk — adds specifics with no support."
+          "reveal": "{{hallucination}} risk: adds specifics with no support."
         },
         {
           "prompt": "Context has two conflicting dates. Answer picks one without noting conflict.",
-          "reveal": "Partial faithfulness failure — should qualify uncertainty."
+          "reveal": "Partial faithfulness failure: should qualify uncertainty."
         }
       ],
       "aside": {
@@ -60,18 +60,18 @@
         "choices": [
           "Here is a detailed answer with specific numbers",
           "I do not have enough information in the provided context",
-          "The policy surely allows returns — most companies do",
+          "The policy surely allows returns; most companies do",
           "Ignore the question and change topic"
         ],
-        "explanation": "Refusal beats invention when {{retrieval}} fails — scoring should reward honest limits, not fluent {{hallucination}}."
+        "explanation": "Refusal beats invention when {{retrieval}} fails. Scoring should reward honest limits, not fluent {{hallucination}}."
       }
     },
     {
       "title": "Bridge to hands-on evaluation",
       "paragraphs": [
-        "You now have prompts, rubrics, retrieval, and grounding vocabulary. The First evaluation lab walks through creating a real {{evaluation}} in AiEval — generate answers, score with a {{judge}}, and compare winners.",
+        "You now have prompts, rubrics, retrieval and grounding vocabulary. The First evaluation lab walks through creating a real {{evaluation}} in AiEval. You generate answers, score with a {{judge}} and compare winners.",
         "Carry faithfulness forward: include at least one {{testCase}} where the correct behavior depends on supplied context, not general knowledge.",
-        "Next: First evaluation lab — run full automation on your own golden prompts."
+        "Next: First evaluation lab, where you run full automation on your own golden prompts."
       ],
       "bullets": [
         "Faithful answers respect retrieved {{chunk}}s.",
@@ -87,7 +87,15 @@
           "unsupported details",
           "made up information"
         ],
-        "explanation": "{{hallucination}} is stating specifics absent from the {{prompt}} or retrieved context — a critical failure for knowledge apps."
+        "explanation": "{{hallucination}} is stating specifics absent from the {{prompt}} or retrieved context. That is a critical failure for knowledge apps.",
+        "wordBank": [
+          "facts",
+          "unsupported",
+          "invented",
+          "grounded",
+          "retrieved",
+          "cited"
+        ]
       }
     }
   ],
@@ -101,7 +109,18 @@
         "compare answer to sources",
         "see if supported"
       ],
-      "explanation": "Without sources, the {{judge}} cannot tell supported facts from fluent invention."
+      "explanation": "Without sources, the {{judge}} cannot tell supported facts from fluent invention.",
+      "wordBank": [
+        "verify",
+        "judge",
+        "claims",
+        "can",
+        "so",
+        "the",
+        "generate",
+        "ignore",
+        "score"
+      ]
     },
     {
       "prompt": "A {{model}} writes beautifully but adds an unsupported statistic. Which {{criterion}} row fires?",
@@ -112,7 +131,15 @@
         "grounded in context",
         "factual grounding"
       ],
-      "explanation": "Polish does not excuse {{hallucination}} — grounding {{criterion}} rows exist to catch exactly this."
+      "explanation": "Polish does not excuse {{hallucination}}. Grounding {{criterion}} rows exist to catch exactly this.",
+      "wordBank": [
+        "grounding",
+        "faithfulness",
+        "or",
+        "fluency",
+        "creativity",
+        "speed"
+      ]
     }
   ]
 }

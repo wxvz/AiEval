@@ -6,13 +6,13 @@
     <p class="lead mb-3">
       Hold one XOR corner out of the
       <app-learn-term-hint term="trainSet" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
-      and train only on the rest. The shaded map shows what the network learned — the table compares honest
+      and train only on the rest. The shaded map shows what the network learned; the table compares honest
       <app-learn-term-hint term="testSet" hintId="testSet-lead" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       scores.
     </p>
     @if (parentMeta) {
       <p class="text-muted small mb-3">
-        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a> — hold data out before
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>: hold data out before
         you report accuracy.
       </p>
     }
@@ -22,7 +22,7 @@
       <app-learn-term-hint term="generalization" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
     </div>
     <p class="text-muted small mb-4">
-      Tip: keep <strong>[1, 1]</strong> as the test point, press <strong>Train 200 epochs</strong>, and watch train
+      Tip: keep <strong>[1, 1]</strong> as the test point, press <strong>Train 200 epochs</strong> and watch train
       accuracy hit 100% while the held-out corner stays wrong.
     </p>
 
@@ -138,7 +138,7 @@
     </div>
 
     <p class="text-muted small mb-4">
-      Next: <a routerLink="/learn/lessons/loss-and-updates">Loss and updates</a> — how wrong guesses become weight
+      Next: <a routerLink="/learn/lessons/loss-and-updates">Loss and updates</a>: how wrong guesses become weight
       nudges, then the <a routerLink="/learn/labs/neural-network">Neural network lab</a>.
     </p>
 
@@ -149,7 +149,7 @@
         <summary class="learn-lab-faq__question">Why can train accuracy be 100% but test accuracy 0%?</summary>
         <p class="mb-0 text-muted">
           The network only learned from three corners. It can fit those perfectly while the held-out corner still
-          violates XOR — that is the memorization trap from the read lesson.
+          violates XOR. That is the memorization trap from the read lesson.
         </p>
       </details>
 

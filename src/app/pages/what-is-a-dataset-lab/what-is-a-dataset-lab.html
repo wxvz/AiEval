@@ -1,0 +1,107 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Build the XOR dataset</h1>
+    <p class="lead mb-3">
+      A <app-learn-term-hint term="dataset" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      is rows of
+      <app-learn-term-hint term="input" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />–<app-learn-term-hint term="target" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      pairs. Fill in the XOR target for each corner to build the dataset yourself.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: four rows you can hold in your head. The labeling discipline is the same at ten thousand rows.
+    </div>
+    <p class="text-muted small mb-3">Rule reminder: XOR outputs 1 when the two inputs differ, 0 when they match.</p>
+
+    <table class="table align-middle wiad-lab__table mb-3">
+      <thead>
+        <tr>
+          <th scope="col">Input</th>
+          <th scope="col">Target</th>
+          @if (checked()) {
+            <th scope="col">Result</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (corner of corners; track $index) {
+          <tr>
+            <td><code>({{ corner.input[0] }}, {{ corner.input[1] }})</code></td>
+            <td>
+              <div class="btn-group" role="group" [attr.aria-label]="'Target for corner ' + corner.input.join(',')">
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-primary]="labels()[$index] === 0"
+                  [class.btn-outline-secondary]="labels()[$index] !== 0"
+                  (click)="setLabel($index, 0)"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [class.btn-primary]="labels()[$index] === 1"
+                  [class.btn-outline-secondary]="labels()[$index] !== 1"
+                  (click)="setLabel($index, 1)"
+                >
+                  1
+                </button>
+              </div>
+            </td>
+            @if (checked()) {
+              <td>
+                <span [class.text-success]="isCorrect($index)" [class.text-danger]="!isCorrect($index)">
+                  {{ isCorrect($index) ? '✓' : '✗' }}
+                </span>
+                <span class="text-muted small ms-1">{{ corner.why }}</span>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mb-3">
+      <button type="button" class="btn btn-primary" [disabled]="!allLabeled()" (click)="check()">
+        Check dataset
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="reset()">Reset</button>
+    </div>
+
+    @if (checked()) {
+      <div
+        class="alert mb-4"
+        [class.alert-success]="correctCount() === corners.length"
+        [class.alert-warning]="correctCount() !== corners.length"
+        role="status"
+      >
+        {{ correctCount() }} of {{ corners.length }} rows labeled correctly.
+        @if (correctCount() === corners.length) {
+          This exact dataset is what the neural network lab trains on.
+        }
+      </div>
+    }
+
+    <details class="learn-lab-faq">
+      <summary class="learn-lab-faq__question">What happens if I label a row wrong?</summary>
+      <p class="mb-0 text-muted">
+        The model would learn the wrong rule; it trusts the targets completely. Bad labels are one of the most common
+        real-world dataset problems.
+      </p>
+    </details>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

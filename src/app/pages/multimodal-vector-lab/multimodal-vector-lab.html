@@ -1,0 +1,188 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+    <h1 class="h3 mb-3">Multimodal vector databases</h1>
+    <p class="lead mb-3">
+      Rank a tiny product catalog with text and image
+      <app-learn-term-hint
+        term="embedding"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />s in one shared
+      <app-learn-term-hint
+        term="multimodalEmbedding"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />
+      space, then narrow candidates with
+      <app-learn-term-hint
+        term="metadata"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />
+      filters: the same idea a
+      <app-learn-term-hint
+        term="vectorDatabase"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />
+      uses before a model answers.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for
+        <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
+        : retrieve the authorized waterproof match for a boot photo.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: five fixed products and three-number vectors stand in for a real index.
+      Production systems handle approximate search, model-version migrations and much higher
+      dimensions. The
+      <app-learn-term-hint
+        term="retrieval"
+        hintId="retrieval-honesty"
+        [activeId]="openTermId()"
+        (activeIdChange)="setOpenTermId($event)"
+      />
+      idea is the same.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: start with <strong>Photo: red hiking boot</strong>, then turn on
+      <strong>shop-a only</strong> and <strong>waterproof only</strong> until the scarlet waterproof
+      boot ranks first.
+    </p>
+
+    @if (solved()) {
+      <div class="alert alert-success mb-4" role="status">
+        Solved: filters kept the private tenant out and preferred the waterproof authorized match
+        over a dry lookalike.
+      </div>
+    }
+
+    <div class="card mb-4">
+      <div class="card-body row g-3">
+        <div class="col-12">
+          <p class="form-label mb-2">Query</p>
+          <div class="d-flex flex-wrap gap-2" role="group" aria-label="Choose query preset">
+            @for (preset of queryPresets; track preset.id) {
+              <button
+                type="button"
+                class="btn btn-sm"
+                [class.btn-primary]="queryId() === preset.id"
+                [class.btn-outline-secondary]="queryId() !== preset.id"
+                (click)="selectQuery(preset.id)"
+              >
+                {{ preset.label }}
+              </button>
+            }
+          </div>
+          <p class="small text-muted mb-0 mt-2">
+            {{ activeQuery().description }} · compares to
+            {{ activeQuery().modality === 'image' ? 'image' : 'text' }} vectors
+          </p>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="tenantFilter">Tenant filter</label>
+          <select
+            id="tenantFilter"
+            class="form-select"
+            [ngModel]="tenantFilter()"
+            (ngModelChange)="setTenantFilter($event)"
+          >
+            <option value="all">All tenants</option>
+            <option value="shop-a">shop-a only</option>
+          </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="form-check">
+            <input
+              id="waterproofOnly"
+              class="form-check-input"
+              type="checkbox"
+              [ngModel]="waterproofOnly()"
+              (ngModelChange)="setWaterproofOnly($event)"
+            />
+            <label class="form-check-label" for="waterproofOnly">Waterproof only</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="h6 mb-3">Ranked catalog</h2>
+    @if (rankings().length === 0) {
+      <p class="text-muted mb-4">No candidates match the current filters.</p>
+    } @else {
+      <div class="table-responsive mb-4">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Score</th>
+              <th scope="col">Product</th>
+              <th scope="col">Metadata</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rankings(); track row.item.id; let index = $index) {
+              <tr [class.table-success]="solved() && index === 0">
+                <td>{{ index + 1 }}</td>
+                <td>{{ row.score | number: '1.2-2' }}</td>
+                <td>
+                  <div class="fw-semibold">{{ row.item.title }}</div>
+                  <div class="small text-muted">{{ row.item.caption }}</div>
+                </td>
+                <td class="small">
+                  {{ row.item.tenant }} · {{ row.item.category }} ·
+                  {{ row.item.waterproof ? 'waterproof' : 'not waterproof' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">
+          Why can a private boot outrank the right product?
+        </summary>
+        <p class="mb-0 text-muted">
+          Similarity measures relatedness, not permission. Without a tenant filter, a visually
+          similar private record can beat an authorized match, so trusted metadata filters must run in
+          application code.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">
+          Why compare image queries to image vectors?
+        </summary>
+        <p class="mb-0 text-muted">
+          This lab uses one shared multimodal space, but still matches query modality to the stored
+          vector for that media. Mixing unrelated embedding models just because they share a length
+          would break ranking.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Is a high score enough to ship an answer?</summary>
+        <p class="mb-0 text-muted">
+          No. Score retrieval first (did the right evidence appear?), then judge whether a
+          generated answer stays faithful to those records. Fluency alone can hide a bad candidate
+          set.
+        </p>
+      </details>
+    </section>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

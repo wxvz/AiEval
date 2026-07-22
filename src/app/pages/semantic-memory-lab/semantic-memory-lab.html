@@ -4,20 +4,20 @@
 
     <h1 class="h3 mb-3">Semantic memory practice</h1>
     <p class="lead mb-3">
-      Rank teaching chunks by meaning — like looking up the right page in an indexed notebook before you answer a
+      Rank teaching chunks by meaning, like looking up the right page in an indexed notebook before you answer a
       question. Similar
       <app-retrieval-term-hint term="embedding" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       land closer even when the words differ.
     </p>
     @if (parentMeta) {
       <p class="text-muted small mb-3">
-        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a> — a quick retrieval drill before the full Semantic search lab on the track.
+        Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>: a quick retrieval drill before the full Semantic search lab on the track.
       </p>
     }
     <div class="alert alert-light border mb-3" role="note">
       Teaching shortcut: this lab uses bag-of-words vectors, not real high-dimensional
       <app-retrieval-term-hint term="embedding" hintId="embedding-honesty" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />s.
-      The ranking idea is the same — only the geometry is simplified.
+      The ranking idea is the same; only the geometry is simplified.
     </div>
     <p class="text-muted small mb-4">
       Tip: start with the <strong>evaluation rubric</strong> preset and see which chunks score highest.

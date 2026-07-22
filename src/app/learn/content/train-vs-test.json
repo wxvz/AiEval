@@ -4,15 +4,15 @@
       "title": "Why hold data back?",
       "paragraphs": [
         "Training updates a {{model}}'s {{weights}} using examples it studies. If you measure success on those same examples, you are grading an open-book exam.",
-        "The {{model}} might score perfectly on training rows by {{memorization}} — repeating answers it has seen — without learning a rule that works on new data. That gap is why we care about {{generalization}}.",
+        "The {{model}} might score perfectly on training rows by {{memorization}} (repeating answers it has seen) without learning a rule that works on new data. That gap is why we care about {{generalization}}.",
         "So we split data. Most rows go in the {{trainSet}}; the {{model}} is allowed to learn from these. A separate {{testSet}} stays locked away until evaluation time.",
         "Performance on the {{testSet}} estimates how the {{model}} will behave on new, unseen {{input}}s. It is the honest report card.",
-        "Getting this split right matters before you trust any accuracy number — including when you later evaluate language models in AiEval."
+        "Getting this split right matters before you trust any accuracy number, including when you later evaluate language models in AiEval."
       ],
       "bullets": [
-        "{{trainSet}} — examples used to update {{weights}}.",
-        "{{testSet}} — held-out examples for evaluation only.",
-        "High test performance — evidence of real {{generalization}}, not just {{memorization}}."
+        "{{trainSet}}: examples used to update {{weights}}.",
+        "{{testSet}}: held-out examples for evaluation only.",
+        "High test performance: evidence of real {{generalization}}, not just {{memorization}}."
       ],
       "check": {
         "prompt": "You train on all 1,000 customer reviews and report accuracy on those same 1,000 reviews. What is the main problem?",
@@ -23,13 +23,13 @@
           "Test sets are only for image models",
           "1,000 examples is always too few to train"
         ],
-        "explanation": "Training and testing on the same rows measures {{memorization}}, not {{generalization}}. New customers bring new wording — you need a {{testSet}} the {{model}} never trained on."
+        "explanation": "Training and testing on the same rows measures {{memorization}}, not {{generalization}}. New customers bring new wording. You need a {{testSet}} the {{model}} never trained on."
       }
     },
     {
       "title": "The memorization trap",
       "paragraphs": [
-        "Imagine studying for a quiz by copying only the ten practice questions. You might score 100% on those ten — and fail on question eleven.",
+        "Imagine studying for a quiz by copying only the ten practice questions. You might score 100% on those ten and fail on question eleven.",
         "{{model}}s do the same. A tiny network can memorize every XOR row and still fail on a slightly different layout.",
         "That is why we never trust training accuracy alone. We want performance on held-out data the {{model}} did not use to update {{weights}}.",
         "There is a second trap: peeking at the {{testSet}} while tuning {{hyperparameters}}. If you keep adjusting until the test score looks best, the test set stops being honest.",
@@ -38,23 +38,23 @@
       "reveals": [
         {
           "prompt": "Scenario: Train on all 1,000 reviews, report on same 1,000 → Result?",
-          "reveal": "Misleadingly high — you cannot tell if the {{model}} achieves real {{generalization}} on new customers."
+          "reveal": "Misleadingly high. You cannot tell if the {{model}} achieves real {{generalization}} on new customers."
         },
         {
           "prompt": "Scenario: Train on 800, evaluate on 200 never seen during training → Result?",
-          "reveal": "A fairer signal — the 200 test reviews simulate new data."
+          "reveal": "A fairer signal. The 200 test reviews simulate new data."
         },
         {
           "prompt": "Scenario: Peek at the {{testSet}}, tune {{hyperparameters}} until test score is best → Result?",
-          "reveal": "You leaked the {{testSet}} into your decisions — use a {{validationSet}} for tuning instead."
+          "reveal": "You leaked the {{testSet}} into your decisions. Use a {{validationSet}} for tuning instead."
         }
       ],
       "check": {
         "prompt": "You keep tweaking prompts until your eval hits 98% on the same 20 questions you practice on daily. What is the main risk?",
-        "answer": "You may have overfit those 20 — performance on new questions could be much worse.",
+        "answer": "You may have overfit those 20: performance on new questions could be much worse.",
         "choices": [
           "The model is definitely ready for production.",
-          "You may have overfit those 20 — performance on new questions could be much worse.",
+          "You may have overfit those 20: performance on new questions could be much worse.",
           "Test sets are only needed for image models.",
           "20 questions is always too small to learn anything."
         ],
@@ -64,10 +64,10 @@
     {
       "title": "How to split in practice",
       "paragraphs": [
-        "There is no magic ratio for every project, but the workflow is consistent: shuffle, hold out a chunk for testing, train only on the rest, and touch the {{testSet}} rarely for final reporting.",
+        "There is no magic ratio for every project but the workflow is consistent: shuffle, hold out a chunk for testing, train only on the rest and touch the {{testSet}} rarely for final reporting.",
         "A common starting point for small tabular datasets is roughly 80% {{trainSet}} and 20% {{testSet}}. Larger datasets may use smaller test fractions.",
-        "Never tune {{hyperparameters}} by watching {{testSet}} accuracy climb — that contaminates the test set and makes the score optimistic.",
-        "Try the optional **Train vs test lab** from this lesson if you want a hands-on split. The **Neural network lab** trains on every row later — a shortcut so you can focus on {{loss}} and {{weights}} first.",
+        "Never tune {{hyperparameters}} by watching {{testSet}} accuracy climb. That contaminates the test set and makes the score optimistic.",
+        "Try the optional **Train vs test lab** from this lesson if you want a hands-on split. The **Neural network lab** trains on every row later. That shortcut lets you focus on {{loss}} and {{weights}} first.",
         "In real projects and in AiEval evaluations, always ask: was this score computed on data the {{model}} never trained on?"
       ],
       "bullets": [
@@ -99,13 +99,23 @@
         "honest evaluation on held out data",
         "to see how well it generalizes"
       ],
-      "explanation": "The {{testSet}} is your honest estimate of {{generalization}}. It must stay separate from the {{trainSet}} so you measure pattern learning, not {{memorization}}."
+      "explanation": "The {{testSet}} is your honest estimate of {{generalization}}. It must stay separate from the {{trainSet}} so you measure pattern learning, not {{memorization}}.",
+      "wordBank": [
+        "generalization",
+        "unseen",
+        "measuring",
+        "data",
+        "on",
+        "memorization",
+        "training",
+        "speed"
+      ]
     },
     {
       "prompt": "Your team tunes prompt wording every day until 30 benchmark questions score perfectly. What should you do next before claiming production readiness?",
       "answer": "Evaluate on a fresh held-out question set never used during tuning",
       "choices": [
-        "Ship immediately — 100% on benchmarks is enough",
+        "Ship immediately: 100% on benchmarks is enough",
         "Evaluate on a fresh held-out question set never used during tuning",
         "Merge the benchmark into training data",
         "Stop using a test set to save time"

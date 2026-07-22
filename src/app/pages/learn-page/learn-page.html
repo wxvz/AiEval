@@ -8,11 +8,14 @@
     <app-learn-roadmap />
 
     <div class="learn-tracks row g-4 mb-4">
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <app-learn-track-list trackId="foundation" />
       </div>
-      <div class="col-lg-6">
+      <div class="col-lg-4">
         <app-learn-track-list trackId="llm-systems" />
+      </div>
+      <div class="col-lg-4">
+        <app-learn-track-list trackId="systems-production" />
       </div>
     </div>
 
@@ -20,15 +23,25 @@
       <h2 class="h6 learn-tools__title">Tools</h2>
       <a class="learn-tools__link" routerLink="/evaluations/new">{{ hubCopy.toolsLabel }} →</a>
     </section>
-
-    <app-learn-track-list trackId="go-deeper" />
   </main>
 
   <nav shellRight class="learn-hub-nav card-elevated" aria-label="Learn shortcuts">
     @if (nextLesson(); as next) {
-      <a class="btn btn-primary btn-sm" [routerLink]="next.route">Continue →</a>
+      <div class="learn-hub-nav__next">
+        <p class="learn-hub-nav__eyebrow text-muted small mb-1">{{ nextKindLabel() }}</p>
+        <h2 class="learn-hub-nav__title h6 mb-2">{{ next.title }}</h2>
+        <p class="learn-hub-nav__summary text-muted small mb-0">{{ next.summary }}</p>
+      </div>
+      <a class="btn btn-primary btn-sm learn-hub-nav__continue" [routerLink]="next.route">Continue →</a>
     } @else {
-      <span class="badge text-bg-success">Path complete</span>
+      <div class="learn-hub-nav__next">
+        <p class="learn-hub-nav__eyebrow text-muted small mb-1">Curriculum</p>
+        <h2 class="learn-hub-nav__title h6 mb-2">Path complete</h2>
+        <p class="learn-hub-nav__summary text-muted small mb-0">
+          You've finished every live lesson and lab on the path.
+        </p>
+      </div>
+      <span class="badge text-bg-success align-self-start">Path complete</span>
     }
     <a class="btn btn-outline-secondary btn-sm" routerLink="/">Dashboard</a>
   </nav>

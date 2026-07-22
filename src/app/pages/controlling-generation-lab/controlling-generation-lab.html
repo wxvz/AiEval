@@ -4,7 +4,7 @@
 
     <h1 class="h3 mb-3">Generation variance lab</h1>
     <p class="lead mb-3">
-      Same {{ teachingPrompt }} — different simulated endings when
+      Same {{ teachingPrompt }}. Different simulated endings when
       <app-learn-term-hint term="temperature" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       rises. Real APIs behave similarly: lock settings before you compare models.
     </p>
@@ -14,10 +14,10 @@
       </p>
     }
     <div class="alert alert-light border mb-3" role="note">
-      Teaching shortcut: canned answer variants and a seeded sampler — not a live LLM. The lesson is variance vs stability, not provider latency.
+      Teaching shortcut: canned answer variants and a seeded sampler, not a live LLM. The lesson is variance vs stability, not provider latency.
     </div>
     <p class="text-muted small mb-4">
-      Tip: run at <strong>temperature 0</strong>, then <strong>0.9</strong>, and compare unique phrasings.
+      Tip: run at <strong>temperature 0</strong>, then <strong>0.9</strong> and compare unique phrasings.
     </p>
 
     <div class="card mb-4">
@@ -58,7 +58,7 @@
 
     <details class="learn-lab-faq">
       <summary class="learn-lab-faq__question">Why simulate instead of calling a model?</summary>
-      <p class="mb-0 text-muted">No API keys or rate limits — you still see how sampling settings affect repeatability.</p>
+      <p class="mb-0 text-muted">No API keys or rate limits and you still see how sampling settings affect repeatability.</p>
     </details>
   </main>
   <app-learn-lab-nav

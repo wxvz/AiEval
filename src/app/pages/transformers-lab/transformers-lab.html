@@ -1,0 +1,189 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+
+    <h1 class="h3 mb-3">Transformers lab</h1>
+    <p class="lead mb-3">
+      Set
+      <app-learn-term-hint term="attention" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      weights over a fixed sentence, build a context vector and watch which next
+      <app-learn-term-hint term="token" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      ranks highest.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for
+        <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
+        : a tiny attention drill after the read lesson.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: this is a hand-tuned toy, not a real transformer. There are no learned query/key matrices;
+      you set the
+      <app-learn-term-hint term="attention" hintId="attention-honesty" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      weights yourself and we do a weighted sum of tiny fixed meaning vectors.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: raise attention on <strong>sat</strong> until the ranking becomes
+      <strong>{{ targetRanking.join(' → ') }}</strong>.
+    </p>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h2 class="h6 mb-3">
+          Sentence:
+          <span class="fw-normal">
+            @for (token of tokens; track token.id; let last = $last) {
+              <span class="font-monospace">{{ token.text }}</span>@if (!last) {
+                <span> </span>
+              }
+            }
+          </span>
+        </h2>
+
+        <div class="row g-3">
+          @for (token of tokens; track token.id; let i = $index) {
+            <div class="col-md-6">
+              <label class="form-label d-flex justify-content-between" [attr.for]="'attn-' + token.id">
+                <span>
+                  Attention on <span class="font-monospace">{{ token.text }}</span>
+                </span>
+                <span class="text-muted small">
+                  raw {{ rawWeights()[i] | number: '1.2-2' }} ·
+                  norm {{ result().weights[i] | number: '1.2-2' }}
+                </span>
+              </label>
+              <input
+                [id]="'attn-' + token.id"
+                type="range"
+                class="form-range"
+                min="0"
+                max="1"
+                step="0.05"
+                [ngModel]="rawWeights()[i]"
+                (ngModelChange)="onWeightChange(i, +$event)"
+              />
+            </div>
+          }
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            [disabled]="!needsNormalize()"
+            (click)="normalize()"
+          >
+            Normalize
+          </button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetWeights()">
+            Reset
+          </button>
+          <span class="small text-muted">
+            Weight sum: {{ weightSum() | number: '1.2-2' }}
+            @if (needsNormalize()) {
+              (normalize so weights sum to 1)
+            }
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-5">
+        <h2 class="h6 mb-2">Context vector</h2>
+        <p class="small text-muted mb-2">
+          Weighted sum of each
+          <app-learn-term-hint term="token" hintId="token-context" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />'s
+          meaning vector.
+        </p>
+        <p class="font-monospace mb-0 bg-light border rounded p-3">
+          [
+          @for (v of result().context; track $index; let last = $last) {
+            {{ v | number: '1.2-2' }}@if (!last) {
+              <span>, </span>
+            }
+          }
+          ]
+        </p>
+      </div>
+      <div class="col-lg-7">
+        <h2 class="h6 mb-2">Next-token scores</h2>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Candidate</th>
+                <th scope="col">Dot product</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of result().rankings; track row.id; let index = $index) {
+                <tr [class.table-success]="result().success && index === 0">
+                  <td>{{ index + 1 }}</td>
+                  <td class="font-monospace">{{ row.text }}</td>
+                  <td>{{ row.score | number: '1.3-3' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    @if (result().success) {
+      <div class="alert alert-success mb-4" role="status">
+        Target ranking achieved: <strong>{{ targetRanking.join(' → ') }}</strong>.
+        Focusing on <span class="font-monospace">sat</span> pulled the context toward the posture meaning, so
+        <span class="font-monospace">quietly</span> scored highest.
+      </div>
+    } @else {
+      <div class="alert alert-light border mb-4" role="status">
+        Goal: match ranking <strong>{{ targetRanking.join(' → ') }}</strong>.
+        Try raising attention on <span class="font-monospace">sat</span>.
+      </div>
+    }
+
+    <p class="learn-lab-footer text-muted small mb-4">
+      Review: <a routerLink="/learn/lessons/transformers-overview">Transformers</a> ·
+      Next: <a routerLink="/learn">Learn hub</a>: continue the systems track when ready.
+    </p>
+
+    <section class="mb-4">
+      <h2 class="h5 mb-3">Common questions</h2>
+
+      <details class="learn-lab-faq" open>
+        <summary class="learn-lab-faq__question">What is the context vector?</summary>
+        <p class="mb-0 text-muted">
+          It is a blend of the four token meaning vectors, weighted by your attention. Higher weight on a token
+          pulls the blend toward that token's numbers: the same idea as attention pooling, without learned keys and queries.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why does focusing on “sat” prefer “quietly”?</summary>
+        <p class="mb-0 text-muted">
+          In this toy, <span class="font-monospace">sat</span> and <span class="font-monospace">quietly</span> share a
+          strong dimension (posture / manner). Dot product scores that overlap, so attention on the verb boosts the
+          manner adverb.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Is this how production transformers work?</summary>
+        <p class="mb-0 text-muted">
+          No. Real models learn attention from data across many heads and layers. Here you set the weights by hand so
+          the ranking effect is visible in a few sliders.
+        </p>
+      </details>
+    </section>
+  </main>
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

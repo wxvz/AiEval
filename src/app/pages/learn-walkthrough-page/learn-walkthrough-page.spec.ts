@@ -43,4 +43,23 @@ describe('LearnWalkthroughPage', () => {
     expect(button?.textContent?.trim()).toBe('Mark lab complete');
     expect(button?.disabled).toBe(false);
   });
+
+  it('splits actionRoute query params for create and dashboard links', () => {
+    const el: HTMLElement = fixture.nativeElement;
+    const createLink = el.querySelector(
+      'a[href="/evaluations/new?from=learn"]',
+    ) as HTMLAnchorElement | null;
+    const dashboardLink = el.querySelector('a[href="/?from=learn"]') as HTMLAnchorElement | null;
+
+    expect(createLink).toBeTruthy();
+    expect(dashboardLink).toBeTruthy();
+    expect(el.querySelector('a[href*="%3Ffrom"]')).toBeNull();
+    expect(fixture.componentInstance.actionPath('/evaluations/new?from=learn')).toBe(
+      '/evaluations/new',
+    );
+    expect(fixture.componentInstance.actionQueryParams('/evaluations/new?from=learn')).toEqual({
+      from: 'learn',
+    });
+    expect(fixture.componentInstance.actionQueryParams('/?from=learn')).toEqual({ from: 'learn' });
+  });
 });

@@ -1,7 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 
 import { getKnownLessonIds, type LearnLessonMeta } from './curriculum';
-import { lessonHasBody, walkthroughHasSteps } from './learn-content';
+import { lessonHasBody } from './learn-content';
+import { walkthroughHasSteps } from './walkthrough-content';
 
 const STORAGE_KEY = 'aieval-learn-progress';
 
