@@ -238,7 +238,7 @@ function modelFallbackHandlers(
   onProgress: ProgressCallback,
   step: AutomationStep,
   slotIndex?: number,
-  pause?: { completed: number; pending: number },
+  pause?: { completed: number; pending: number; reason?: 'rate_limit' | 'empty_content' },
 ) {
   let pauseEmitted = false;
 
@@ -249,7 +249,7 @@ function modelFallbackHandlers(
         emit(onProgress, {
           type: 'step_paused',
           step,
-          reason: 'rate_limit',
+          reason: pause.reason ?? 'rate_limit',
           completed: pause.completed,
           pending: pause.pending,
         });
@@ -408,6 +408,8 @@ async function generateAnswers(
   const total = setup.answerModels.length;
   const slots = mapAnswersToSlots(options?.existingAnswers ?? [], setup);
   const attempted = new Set<string>();
+  /** Prefer rate_limit when mixed; empty_content only when that alone caused pending slots. */
+  let concurrentPauseReason: 'rate_limit' | 'empty_content' | null = null;
 
   for (const [index, slot] of slots.entries()) {
     if (slot) {
@@ -456,6 +458,12 @@ async function generateAnswers(
           throw error;
         }
 
+        if (isRateLimitExhausted(error)) {
+          concurrentPauseReason = 'rate_limit';
+        } else if (concurrentPauseReason !== 'rate_limit') {
+          concurrentPauseReason = 'empty_content';
+        }
+
         logAnswerRejected(
           {
             runId,
@@ -483,7 +491,7 @@ async function generateAnswers(
       emit(onProgress, {
         type: 'step_paused',
         step: 'generating',
-        reason: 'rate_limit',
+        reason: concurrentPauseReason ?? 'rate_limit',
         completed: checkpointAnswers.length,
         pending: pending.length,
       });
@@ -520,10 +528,11 @@ async function generateAnswers(
   const answers = answersFromSlots(slots);
 
   if (answers.length !== total) {
-    throw new AutomationError(
-      'Could not generate all model answers after rate-limit retries.',
-      'generating',
-    );
+    const detail =
+      concurrentPauseReason === 'empty_content'
+        ? 'after empty-content / unusable-model fallbacks.'
+        : 'after rate-limit retries.';
+    throw new AutomationError(`Could not generate all model answers ${detail}`, 'generating');
   }
 
   validateAnswersForScoring(answers, criteria, total);

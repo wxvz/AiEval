@@ -44,4 +44,26 @@ describe('automationProgressLabel', () => {
       }),
     ).toBe('llama-3.3-70b-versatile — Drafting improved answer');
   });
+
+  it('formats step_paused for rate limit and empty content', () => {
+    expect(
+      automationProgressLabel({
+        type: 'step_paused',
+        step: 'generating',
+        reason: 'rate_limit',
+        completed: 2,
+        pending: 1,
+      }),
+    ).toBe('Paused (2 done, 1 pending) — retrying after rate limit…');
+
+    expect(
+      automationProgressLabel({
+        type: 'step_paused',
+        step: 'generating',
+        reason: 'empty_content',
+        completed: 2,
+        pending: 1,
+      }),
+    ).toBe('Paused (2 done, 1 pending) — retrying after empty/unusable answers…');
+  });
 });
