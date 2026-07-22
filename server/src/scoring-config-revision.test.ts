@@ -4,7 +4,7 @@ import { computeScoringConfigRevision } from './scoring-config-revision.js';
 import { DEFAULT_EVALUATION_CONFIG } from './evaluation-config.js';
 
 describe('computeScoringConfigRevision', () => {
-  const criteria = [{ id: 'a', name: 'A', maxPoints: 5, weight: 1 }];
+  const criteria = [{ id: 'a', name: 'A', description: 'Accurate', maxPoints: 5, weight: 1 }];
 
   function base(overrides: { prompt?: string; evaluationConfig?: typeof DEFAULT_EVALUATION_CONFIG } = {}) {
     return {
@@ -35,5 +35,18 @@ describe('computeScoringConfigRevision', () => {
     const revised = computeScoringConfigRevision(base({ prompt: 'Prompt B' }), criteria);
 
     expect(original).not.toBe(revised);
+  });
+
+  it('changes when criterion name or description changes', () => {
+    const original = computeScoringConfigRevision(base(), criteria);
+    const renamed = computeScoringConfigRevision(base(), [
+      { ...criteria[0], name: 'Accuracy' },
+    ]);
+    const redacted = computeScoringConfigRevision(base(), [
+      { ...criteria[0], description: 'Updated anchor' },
+    ]);
+
+    expect(original).not.toBe(renamed);
+    expect(original).not.toBe(redacted);
   });
 });

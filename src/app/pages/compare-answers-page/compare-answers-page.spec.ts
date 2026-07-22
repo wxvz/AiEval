@@ -1,6 +1,7 @@
 import { RubricCriterion, Score, upsertCriterionScore } from '../../models';
 import {
   activeScoresForCriteria,
+  displayAnswerLabel,
   nextAnswerIndex,
   previousAnswerIndex,
 } from './compare-answers-page';
@@ -109,5 +110,19 @@ describe('focused compare helpers', () => {
     expect(activeScoresForCriteria([activeScore, inactiveScore], [activeCriterion])).toEqual([
       activeScore,
     ]);
+  });
+
+  it('keeps blind labels until a winner exists', () => {
+    const answer = { id: 'a1', evaluationId: 'e1', label: 'gpt-4o', content: 'x', scores: [] };
+
+    expect(
+      displayAnswerLabel(answer, 0, { blindJudging: true, hasWinner: false }),
+    ).toBe('Answer A');
+    expect(
+      displayAnswerLabel(answer, 0, { blindJudging: true, hasWinner: true }),
+    ).toBe('gpt-4o');
+    expect(
+      displayAnswerLabel(answer, 1, { blindJudging: false, hasWinner: false }),
+    ).toBe('gpt-4o');
   });
 });

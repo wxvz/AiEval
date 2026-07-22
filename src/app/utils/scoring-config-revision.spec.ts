@@ -1,7 +1,6 @@
-import { describe, expect, it } from 'vitest';
-
 import { DEFAULT_EVALUATION_CONFIG, type Evaluation, type RubricCriterion } from '../models';
 import {
+  computeLegacyCriteriaScoringConfigRevision,
   computeLegacyScoringConfigRevision,
   computeScoringConfigRevision,
   scoresMayBeStale,
@@ -9,7 +8,7 @@ import {
 
 describe('computeScoringConfigRevision', () => {
   const criteria: RubricCriterion[] = [
-    { id: 'a', name: 'A', description: '', maxPoints: 5, weight: 1 },
+    { id: 'a', name: 'A', description: 'Accurate', maxPoints: 5, weight: 1 },
   ];
 
   function evaluation(
@@ -37,6 +36,15 @@ describe('computeScoringConfigRevision', () => {
     expect(original).not.toBe(revised);
   });
 
+  it('changes when criterion description changes', () => {
+    const original = computeScoringConfigRevision(evaluation(), criteria);
+    const revised = computeScoringConfigRevision(evaluation(), [
+      { ...criteria[0], description: 'New meaning' },
+    ]);
+
+    expect(original).not.toBe(revised);
+  });
+
   it('marks scores stale after a prompt edit on a current revision', () => {
     const scored = evaluation({
       prompt: 'Prompt A',
@@ -52,6 +60,21 @@ describe('computeScoringConfigRevision', () => {
     expect(scoresMayBeStale(edited, criteria)).toBe(true);
   });
 
+  it('marks scores stale after a rubric description edit on a current revision', () => {
+    const scored = evaluation({
+      automatedAt: '2024-01-02T00:00:00.000Z',
+    });
+    const revision = computeScoringConfigRevision(scored, criteria);
+    const editedCriteria = [{ ...criteria[0], description: 'Changed' }];
+
+    expect(
+      scoresMayBeStale(
+        { ...scored, scoringConfigRevision: revision },
+        editedCriteria,
+      ),
+    ).toBe(true);
+  });
+
   it('grandfathers pre-prompt revisions so deploy does not mark every score stale', () => {
     const scored = evaluation({
       prompt: 'Prompt A',
@@ -59,6 +82,20 @@ describe('computeScoringConfigRevision', () => {
       scoringConfigRevision: computeLegacyScoringConfigRevision(
         evaluation({ prompt: 'Prompt A' }),
         criteria,
+      ),
+    });
+
+    expect(scoresMayBeStale(scored, criteria)).toBe(false);
+  });
+
+  it('grandfathers pre-rubric-text revisions so deploy does not mark every score stale', () => {
+    const scored = evaluation({
+      prompt: 'Prompt A',
+      automatedAt: '2024-01-02T00:00:00.000Z',
+      scoringConfigRevision: computeLegacyCriteriaScoringConfigRevision(
+        evaluation({ prompt: 'Prompt A' }),
+        criteria,
+        true,
       ),
     });
 

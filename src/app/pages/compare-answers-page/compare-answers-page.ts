@@ -40,6 +40,19 @@ export function activeScoresForCriteria(scores: Score[], criteria: RubricCriteri
   return scores.filter((score) => activeCriterionIds.has(score.criterionId));
 }
 
+/** Blind labels until a winner exists; then reveal model names. */
+export function displayAnswerLabel(
+  answer: Answer,
+  index: number,
+  options: { blindJudging: boolean; hasWinner: boolean },
+): string {
+  if (!options.blindJudging || options.hasWinner) {
+    return answer.label;
+  }
+
+  return `Answer ${String.fromCharCode(65 + index)}`;
+}
+
 @Component({
   selector: 'app-compare-answers-page',
   imports: [
@@ -99,6 +112,15 @@ export class CompareAnswersPage {
   protected readonly blindJudging = computed(
     () => this.evaluation()?.evaluationConfig.blindJudging ?? true,
   );
+  protected readonly hasWinner = computed(() => {
+    const current = this.evaluation();
+
+    if (!current) {
+      return false;
+    }
+
+    return !!current.winnerAnswerId || current.answers.some((answer) => !!answer.isWinner);
+  });
   protected readonly estimateLabel = computed(() => {
     const estimate = this.runEstimate();
     return estimate ? formatRunEstimateLabel(estimate) : null;
@@ -245,11 +267,10 @@ export class CompareAnswersPage {
   }
 
   protected displayLabel(answer: Answer, index: number): string {
-    if (!this.blindJudging()) {
-      return answer.label;
-    }
-
-    return `Answer ${String.fromCharCode(65 + index)}`;
+    return displayAnswerLabel(answer, index, {
+      blindJudging: this.blindJudging(),
+      hasWinner: this.hasWinner(),
+    });
   }
 
   protected isLowConfidence(answer: Answer, criterionId: string): boolean {

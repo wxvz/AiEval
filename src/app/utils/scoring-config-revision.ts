@@ -4,15 +4,22 @@ import {
   RubricCriterion,
 } from '../models';
 
+function criteriaKey(criteria: RubricCriterion[], includeRubricText: boolean): string {
+  return criteria
+    .map((criterion) =>
+      includeRubricText
+        ? `${criterion.id}:${criterion.name}:${criterion.description ?? ''}:${criterion.maxPoints}:${criterion.weight}`
+        : `${criterion.id}:${criterion.maxPoints}:${criterion.weight}`,
+    )
+    .join('|');
+}
+
 function scoringRevisionParts(
   evaluation: Pick<Evaluation, 'prompt' | 'evaluationConfig' | 'criteriaMode' | 'criteria'>,
   criteria: RubricCriterion[],
-  includePrompt: boolean,
+  options: { includePrompt: boolean; includeRubricText: boolean },
 ): string[] {
   const config = evaluation.evaluationConfig ?? DEFAULT_EVALUATION_CONFIG;
-  const criteriaKey = criteria
-    .map((criterion) => `${criterion.id}:${criterion.maxPoints}:${criterion.weight}`)
-    .join('|');
 
   const parts = [
     evaluation.criteriaMode,
@@ -28,17 +35,20 @@ function scoringRevisionParts(
     config.responseConstraints.requireCitations ? '1' : '0',
     config.responseConstraints.requireCode ? '1' : '0',
     config.responseConstraints.requireTests ? '1' : '0',
-    criteriaKey,
+    criteriaKey(criteria, options.includeRubricText),
   ];
 
-  return includePrompt ? [evaluation.prompt, ...parts] : parts;
+  return options.includePrompt ? [evaluation.prompt, ...parts] : parts;
 }
 
 export function computeScoringConfigRevision(
   evaluation: Pick<Evaluation, 'prompt' | 'evaluationConfig' | 'criteriaMode' | 'criteria'>,
   criteria: RubricCriterion[],
 ): string {
-  return scoringRevisionParts(evaluation, criteria, true).join('::');
+  return scoringRevisionParts(evaluation, criteria, {
+    includePrompt: true,
+    includeRubricText: true,
+  }).join('::');
 }
 
 /** Pre-prompt formula — used only to grandfather historical revisions after the prompt bump. */
@@ -49,8 +59,20 @@ export function computeLegacyScoringConfigRevision(
   return scoringRevisionParts(
     { ...evaluation, prompt: '' },
     criteria,
-    false,
+    { includePrompt: false, includeRubricText: true },
   ).join('::');
+}
+
+/** Pre-rubric-text formula — grandfathers hashes that omitted name/description. */
+export function computeLegacyCriteriaScoringConfigRevision(
+  evaluation: Pick<Evaluation, 'prompt' | 'evaluationConfig' | 'criteriaMode' | 'criteria'>,
+  criteria: RubricCriterion[],
+  includePrompt: boolean,
+): string {
+  return scoringRevisionParts(evaluation, criteria, {
+    includePrompt,
+    includeRubricText: false,
+  }).join('::');
 }
 
 export function scoresMayBeStale(evaluation: Evaluation, criteria: RubricCriterion[]): boolean {
@@ -58,15 +80,24 @@ export function scoresMayBeStale(evaluation: Evaluation, criteria: RubricCriteri
     return false;
   }
 
+  const stored = evaluation.scoringConfigRevision;
   const current = computeScoringConfigRevision(evaluation, criteria);
-  if (evaluation.scoringConfigRevision === current) {
+  if (stored === current) {
     return false;
   }
 
   // Avoid a one-time stale banner wave for scores written before prompt was hashed.
   // Prompt-only edits on those records stay grandfathered until the next automation run.
-  const legacy = computeLegacyScoringConfigRevision(evaluation, criteria);
-  if (evaluation.scoringConfigRevision === legacy) {
+  if (stored === computeLegacyScoringConfigRevision(evaluation, criteria)) {
+    return false;
+  }
+
+  // Same for scores written before criterion name/description entered the hash.
+  if (stored === computeLegacyCriteriaScoringConfigRevision(evaluation, criteria, true)) {
+    return false;
+  }
+
+  if (stored === computeLegacyCriteriaScoringConfigRevision(evaluation, criteria, false)) {
     return false;
   }
 

@@ -1,19 +1,26 @@
 import type { EvaluationRecord, RubricCriterion } from './types/evaluation.js';
 import { normalizeEvaluationConfig } from './evaluation-config.js';
 
+function criteriaKey(criteria: RubricCriterion[]): string {
+  return criteria
+    .map(
+      (criterion) =>
+        `${criterion.id}:${criterion.name}:${criterion.description ?? ''}:${criterion.maxPoints}:${criterion.weight}`,
+    )
+    .join('|');
+}
+
 /**
  * Hash of scoring-relevant fields. Includes `prompt` so prompt edits invalidate prior scores.
+ * Includes criterion name/description so rubric text edits invalidate prior scores.
  * New automation runs write this revision; the Angular `scoresMayBeStale` helper grandfathers
- * pre-prompt hashes so deploy does not mark every historical score stale.
+ * pre-prompt / pre-rubric-text hashes so deploy does not mark every historical score stale.
  */
 export function computeScoringConfigRevision(
   record: Pick<EvaluationRecord, 'prompt' | 'evaluationConfig' | 'criteriaMode' | 'criteria'>,
   criteria: RubricCriterion[],
 ): string {
   const config = normalizeEvaluationConfig(record.evaluationConfig);
-  const criteriaKey = criteria
-    .map((criterion) => `${criterion.id}:${criterion.maxPoints}:${criterion.weight}`)
-    .join('|');
 
   return [
     record.prompt,
@@ -30,6 +37,6 @@ export function computeScoringConfigRevision(
     config.responseConstraints.requireCitations ? '1' : '0',
     config.responseConstraints.requireCode ? '1' : '0',
     config.responseConstraints.requireTests ? '1' : '0',
-    criteriaKey,
+    criteriaKey(criteria),
   ].join('::');
 }

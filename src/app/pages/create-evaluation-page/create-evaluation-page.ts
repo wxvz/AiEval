@@ -8,13 +8,18 @@ import {
 } from '../../components/evaluation-form/evaluation-form';
 import { LeaveDuringAutomationComponent } from '../../components/leave-during-automation/leave-during-automation';
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
-import { Evaluation } from '../../models';
+import { Evaluation, CriteriaMode, RubricCriterion } from '../../models';
 import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
 import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { TemplateService } from '../../services/template.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
+
+type AppliedTemplateRubric = {
+  criteriaMode: CriteriaMode;
+  criteria: RubricCriterion[];
+};
 
 @Component({
   selector: 'app-create-evaluation-page',
@@ -51,6 +56,8 @@ export class CreateEvaluationPage {
   );
   protected readonly learnHint = loadWalkthroughContent().handoffCopy?.createPageHint ?? null;
   protected readonly templates = this.templateService.templates;
+  /** Rubric from last applied template — form DTO does not carry criteriaMode/criteria. */
+  private readonly appliedTemplateRubric = signal<AppliedTemplateRubric | null>(null);
 
   protected readonly automating = this.automationPage.automating;
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
@@ -270,6 +277,11 @@ export class CreateEvaluationPage {
       expectedAnswer: template.evaluationConfig.expectedAnswer ?? '',
       judgeModel: template.evaluationConfig.judgeProfile.model ?? '',
     });
+
+    this.appliedTemplateRubric.set({
+      criteriaMode: template.criteriaMode,
+      criteria: template.criteria.map((criterion) => ({ ...criterion })),
+    });
   }
 
   protected getEvaluation(id: string): Evaluation | undefined {
@@ -331,6 +343,7 @@ export class CreateEvaluationPage {
     if (options.clearForm && form) {
       form.setTitle('');
       form.setPrompt('');
+      this.appliedTemplateRubric.set(null);
     }
 
     const value = options.useFormValues
@@ -406,10 +419,23 @@ export class CreateEvaluationPage {
   }
 
   private createEvaluation(value: EvaluationFormValue): Promise<Evaluation> {
-    return this.evaluationService.create(value, {
-      success: 'Evaluation created.',
-      error: 'Could not create evaluation.',
-    });
+    const rubric = this.appliedTemplateRubric();
+
+    return this.evaluationService.create(
+      {
+        ...value,
+        ...(rubric
+          ? {
+              criteriaMode: rubric.criteriaMode,
+              ...(rubric.criteriaMode === 'custom' ? { criteria: rubric.criteria } : {}),
+            }
+          : {}),
+      },
+      {
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      },
+    );
   }
 
   private syncFormFromEvaluation(evaluation: Evaluation): void {
