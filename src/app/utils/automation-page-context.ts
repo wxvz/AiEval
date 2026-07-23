@@ -23,7 +23,7 @@ export function useAutomationPageContext(evaluationId: () => string | null) {
     const current = evaluationService.getById(id);
 
     if (automating()) {
-      return evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+      return evaluationService.getAutomationTokenUsage(id) ?? current?.tokenUsage;
     }
 
     return current?.tokenUsage;

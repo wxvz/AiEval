@@ -100,6 +100,20 @@ describe('POST /api/learn-chat', () => {
     });
   });
 
+  it('returns 503 as SSE error when webhook URL is missing and stream is requested', async () => {
+    configMock.learnChatWebhookUrl = '';
+
+    const { status, rawText, contentType } = await postLearnChat(
+      { message: 'What is a dataset?', sessionId: 's1-stream' },
+      { Accept: 'text/event-stream' },
+    );
+
+    expect(status).toBe(503);
+    expect(contentType).toContain('text/event-stream');
+    expect(rawText).toContain('event: error');
+    expect(rawText).toContain('LEARN_CHAT_WEBHOOK_URL');
+  });
+
   it('returns 503 when webhook secret is missing', async () => {
     configMock.learnChatWebhookSecret = '';
 
@@ -157,6 +171,9 @@ describe('POST /api/learn-chat', () => {
       termHints: [],
       excerpts: [{ text: 'A dataset is labeled rows.', heading: 'Intro' }],
       sources: [{ title: 'What is a dataset?', route: '/learn/lessons/what-is-a-dataset' }],
+      curriculumCatalog: [
+        { title: 'What is a dataset?', route: '/learn/lessons/what-is-a-dataset' },
+      ],
     });
 
     expect(status).toBe(200);
@@ -183,10 +200,39 @@ describe('POST /api/learn-chat', () => {
           termHints: [],
           excerpts: [{ text: 'A dataset is labeled rows.', heading: 'Intro' }],
           sources: [{ title: 'What is a dataset?', route: '/learn/lessons/what-is-a-dataset' }],
-          curriculumCatalog: [],
+          curriculumCatalog: [
+            { title: 'What is a dataset?', route: '/learn/lessons/what-is-a-dataset' },
+          ],
         }),
       }),
     );
+  });
+
+  it('drops all response sources when curriculum catalog is empty', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'ok',
+          sessionId: 's-empty-catalog',
+          sources: [{ title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const { status, body } = await postLearnChat({
+      message: 'What is bias?',
+      sessionId: 's-empty-catalog',
+      sources: [{ title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' }],
+      curriculumCatalog: [],
+    });
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      reply: 'ok',
+      sessionId: 's-empty-catalog',
+      sources: [],
+    });
   });
 
   it('strips invented sources that are not in the curriculum catalog', async () => {
@@ -391,6 +437,49 @@ describe('POST /api/learn-chat', () => {
       sessionId: 's-rate-unique',
       sources: [],
     });
+  });
+
+  it('does not charge rate limit for invalid chat messages', async () => {
+    configMock.learnChatRateLimitPerMinute = 1;
+    stubWebhookFetch(async () =>
+      new Response(JSON.stringify({ reply: 'ok', sessionId: 's-val', sources: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const invalid = await postLearnChat({ message: '   ', sessionId: 's-val' });
+    const valid = await postLearnChat({ message: 'hello', sessionId: 's-val' });
+
+    expect(invalid.status).toBe(400);
+    expect(valid.status).toBe(200);
+  });
+
+  it('keeps context and chat rate limits in separate buckets', async () => {
+    configMock.learnChatRateLimitPerMinute = 1;
+    stubWebhookFetch(async (_input, init) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { action?: string };
+      if (body.action === 'context') {
+        return new Response(JSON.stringify({ ok: true, sessionId: 's-sep' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response(JSON.stringify({ reply: 'ok', sessionId: 's-sep', sources: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    });
+
+    const context = await postLearnChat({
+      action: 'context',
+      sessionId: 's-sep',
+      route: '/learn',
+    });
+    const chat = await postLearnChat({ message: 'hello', sessionId: 's-sep' });
+
+    expect(context.status).toBe(200);
+    expect(chat.status).toBe(200);
   });
 
   it('aborts the n8n fetch when the client disconnects', async () => {

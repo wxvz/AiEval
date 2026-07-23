@@ -38,6 +38,7 @@ describe('chat slow fallback', () => {
     provider: slowProvider,
     answerModels: [{ model: 'llama3.2:3b', label: 'llama' }],
     judgeModel: { model: 'llama3.1:8b', label: 'judge' },
+    preset: 'balanced',
   };
 
   const groqSetup: ResolvedLlmSetup = {
@@ -45,6 +46,7 @@ describe('chat slow fallback', () => {
     provider: groqProvider,
     answerModels: [{ model: 'llama-3.1-8b-instant', label: 'groq' }],
     judgeModel: { model: 'llama-3.3-70b-versatile', label: 'judge' },
+    preset: 'balanced',
   };
 
   beforeEach(() => {
@@ -119,5 +121,36 @@ describe('chat slow fallback', () => {
     ).rejects.toMatchObject({ name: 'AbortError' });
 
     expect(complete).toHaveBeenCalled();
+  });
+
+  it('does not offer provider choice when the user aborts', async () => {
+    const abortController = new AbortController();
+    const requestProviderChoice = vi.fn();
+    const complete = vi.fn().mockImplementation(
+      (_model, _messages, options?: { signal?: AbortSignal }) => {
+        if (options?.signal?.aborted) {
+          return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'));
+        }
+
+        return new Promise((_, reject) => {
+          options?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          });
+        });
+      },
+    );
+    const provider: LlmProvider = { name: 'ollama', complete };
+
+    abortController.abort();
+
+    await expect(
+      chat(provider, 'llama3.2:3b', [{ role: 'user', content: 'hi' }], {
+        abortSignal: abortController.signal,
+        currentSetup: ollamaSetup,
+        requestProviderChoice,
+      }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+
+    expect(requestProviderChoice).not.toHaveBeenCalled();
   });
 });

@@ -156,4 +156,69 @@ describe('LearnChatFab', () => {
 
     expect(component.messages().some((m) => m.role === 'assistant' && !m.text.trim())).toBe(false);
   });
+
+  it('aborted send finally does not clobber a newer in-flight send', async () => {
+    const el: HTMLElement = fixture.nativeElement;
+    (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    let rejectFirst!: (reason?: unknown) => void;
+    let resolveSecond!: (value: Response) => void;
+    fetchMock
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            resolveSecond = resolve;
+          }),
+      );
+
+    const component = fixture.componentInstance;
+    component.draft = 'first';
+    const firstPending = component.send();
+    fixture.detectChanges();
+    expect(component.sending()).toBe(true);
+
+    // Abort the first turn, then start a second send before the first settles.
+    component.close();
+    (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    component.draft = 'second';
+    const secondPending = component.send();
+    fixture.detectChanges();
+    expect(component.sending()).toBe(true);
+    expect(component.messages().filter((m) => m.role === 'user').map((m) => m.text)).toEqual([
+      'first',
+      'second',
+    ]);
+
+    rejectFirst(new DOMException('Aborted', 'AbortError'));
+    await firstPending;
+    fixture.detectChanges();
+
+    // Stale finally must not clear the newer send's busy state.
+    expect(component.sending()).toBe(true);
+    expect(component.thinking()).toBe(true);
+
+    resolveSecond(
+      new Response(
+        [
+          'event: token\ndata: {"text":"Second reply."}\n\n',
+          'event: done\ndata: {"reply":"Second reply.","sessionId":"s3","sources":[]}\n\n',
+        ].join(''),
+        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
+      ),
+    );
+    await secondPending;
+    fixture.detectChanges();
+
+    expect(component.sending()).toBe(false);
+    expect(el.textContent).toContain('Second reply.');
+  });
 });

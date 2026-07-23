@@ -148,13 +148,53 @@ describe('CreateEvaluationPage', () => {
 
     await page['onGeneratePrompt']();
 
-    expect(generateTitleSpy).toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', DEFAULT_EVALUATION_CONFIG, {
-      success: 'Prompt generated.',
-      error: 'Could not generate prompt.',
-    });
+    expect(generateTitleSpy).toHaveBeenCalledWith(
+      DEFAULT_EVALUATION_CONFIG,
+      {
+        success: '',
+        error: 'Could not generate title.',
+      },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(generatePromptSpy).toHaveBeenCalledWith(
+      'Generated title',
+      DEFAULT_EVALUATION_CONFIG,
+      {
+        success: 'Prompt generated.',
+        error: 'Could not generate prompt.',
+      },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
     expect(form!.getValue().title).toBe('Generated title');
     expect(form!.getValue().prompt).toBe('Generated prompt text for evaluation.');
+  });
+
+  it('onGeneratePrompt does not set title when prompt generation fails after title', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    vi.spyOn(evaluationService, 'generateTitle').mockResolvedValue('Generated title');
+    vi.spyOn(evaluationService, 'generatePrompt').mockRejectedValue(new Error('prompt failed'));
+
+    await page['onGeneratePrompt']();
+
+    expect(form!.getValue().title).toBe('');
+    expect(form!.getValue().prompt).toBe('');
+  });
+
+  it('onGeneratePrompt does not mutate form when generated values are under min length', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    vi.spyOn(evaluationService, 'generateTitle').mockResolvedValue('ab');
+    vi.spyOn(evaluationService, 'generatePrompt').mockResolvedValue('short');
+
+    await page['onGeneratePrompt']();
+
+    expect(form!.getValue().title).toBe('');
+    expect(form!.getValue().prompt).toBe('');
   });
 
   it('onGeneratePrompt calls generateTitle when title is whitespace-only', async () => {
@@ -174,10 +214,36 @@ describe('CreateEvaluationPage', () => {
     await page['onGeneratePrompt']();
 
     expect(generateTitleSpy).toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('Generated title', DEFAULT_EVALUATION_CONFIG, {
-      success: 'Prompt generated.',
-      error: 'Could not generate prompt.',
-    });
+    expect(generatePromptSpy).toHaveBeenCalledWith(
+      'Generated title',
+      DEFAULT_EVALUATION_CONFIG,
+      {
+        success: 'Prompt generated.',
+        error: 'Could not generate prompt.',
+      },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('canDeactivate aborts an in-flight generate-prompt request', () => {
+    page['generatingPrompt'].set(true);
+    const abort = new AbortController();
+    page['generatePromptAbort'] = abort;
+
+    expect(page.canDeactivate()).toBe(true);
+    expect(abort.signal.aborted).toBe(true);
+    expect(page['generatingPrompt']()).toBe(false);
+  });
+
+  it('sets returnValue on beforeunload while generatingPrompt', () => {
+    page['generatingPrompt'].set(true);
+    const event = new Event('beforeunload') as BeforeUnloadEvent;
+    const preventDefault = vi.spyOn(event, 'preventDefault');
+
+    page.onBeforeUnload(event);
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(event.returnValue).toBeTruthy();
   });
 
   it('automationBlocksActions is false after automation completes', () => {
@@ -528,6 +594,8 @@ describe('CreateEvaluationPage', () => {
     expect(form).toBeTruthy();
 
     form!.form.controls.title.setValue('My existing title');
+    form!.form.controls.prompt.setValue('Existing prompt text that would be replaced.');
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     const generateTitleSpy = vi.spyOn(evaluationService, 'generateTitle');
     const generatePromptSpy = vi
@@ -536,11 +604,34 @@ describe('CreateEvaluationPage', () => {
 
     await page['onGeneratePrompt']();
 
+    expect(confirmSpy).toHaveBeenCalled();
     expect(generateTitleSpy).not.toHaveBeenCalled();
-    expect(generatePromptSpy).toHaveBeenCalledWith('My existing title', DEFAULT_EVALUATION_CONFIG, {
-      success: 'Prompt generated.',
-      error: 'Could not generate prompt.',
-    });
+    expect(generatePromptSpy).toHaveBeenCalledWith(
+      'My existing title',
+      DEFAULT_EVALUATION_CONFIG,
+      {
+        success: 'Prompt generated.',
+        error: 'Could not generate prompt.',
+      },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it('onGeneratePrompt skips generation when overwrite confirm is cancelled', async () => {
+    const form = page['evaluationForm']();
+
+    expect(form).toBeTruthy();
+
+    form!.form.controls.title.setValue('My existing title');
+    form!.form.controls.prompt.setValue('Keep this prompt text as written.');
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    const generatePromptSpy = vi.spyOn(evaluationService, 'generatePrompt');
+
+    await page['onGeneratePrompt']();
+
+    expect(generatePromptSpy).not.toHaveBeenCalled();
+    expect(form!.getValue().prompt).toBe('Keep this prompt text as written.');
   });
 
   it('records learn handoff when creating from learn context', async () => {

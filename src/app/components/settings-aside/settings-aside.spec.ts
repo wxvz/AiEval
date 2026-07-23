@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { SettingsService } from '../../services/settings.service';
 import { SettingsAside } from './settings-aside';
@@ -51,7 +51,11 @@ describe('SettingsAside refreshStatus', () => {
       providers: [],
       activeProvider: null,
     });
-    settingsReq.flush({ llmPreset: 'balanced', envDefaultLlmPreset: 'balanced' });
+    settingsReq.flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
     fixture.detectChanges();
 
     expect(refreshButton?.hasAttribute('disabled')).toBe(false);
@@ -70,5 +74,29 @@ describe('SettingsAside refreshStatus', () => {
     (component as unknown as { refreshStatus: () => void }).refreshStatus();
 
     httpMock.expectNone('/api/status');
+  });
+
+  it('shows empty-state banner when apiTokenRequired and no stored token', async () => {
+    localStorage.removeItem('aieval-api-token');
+    const fixture = TestBed.createComponent(SettingsAside);
+
+    settingsService.open();
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/status').flush({
+      mongo: { ok: true, dbName: 'aieval' },
+      providers: [],
+      activeProvider: null,
+    });
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: true,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('No API token stored in this browser');
   });
 });

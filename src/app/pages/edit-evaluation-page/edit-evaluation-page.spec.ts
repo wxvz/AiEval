@@ -126,4 +126,17 @@ describe('EditEvaluationPage.canDeactivate', () => {
     expect(cancelSpy).toHaveBeenCalledWith('eval-1');
   });
 
+  it('ignores edit mutations while automating', () => {
+    evaluationService.automatingEvaluationId.set('eval-1');
+    const updateSpy = vi.spyOn(evaluationService, 'update');
+    const addAnswerSpy = vi.spyOn(evaluationService, 'addAnswer');
+
+    page['onEvaluationSubmit']({ title: 'Changed title', prompt: 'Changed prompt text.' });
+    page['onAnswerSubmit']({ label: 'Model', content: 'Some answer content' });
+    page['removeAnswer']('x');
+
+    expect(updateSpy).not.toHaveBeenCalled();
+    expect(addAnswerSpy).not.toHaveBeenCalled();
+  });
+
 });

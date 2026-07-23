@@ -348,12 +348,85 @@ describe('EvaluationService criteria modes', () => {
     );
 
     const put = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    expect(put.request.body.updatedAt).toBe(evaluation.updatedAt);
     put.flush({ message: 'title and prompt are required' }, { status: 400, statusText: 'Bad Request' });
 
     expect(feedback.feedback()).toEqual({
       type: 'danger',
       message: 'title and prompt are required',
     });
+  });
+
+  it('blocks answer mutations while automation is running', async () => {
+    const evaluation = savedEvaluation({
+      answers: [
+        {
+          id: 'a1',
+          evaluationId: MONGO_ID,
+          label: 'Model A',
+          content: 'Answer content here',
+          scores: [],
+        },
+      ],
+    });
+    const service = await createService([evaluation]);
+    const feedback = TestBed.inject(FeedbackService);
+    service.automatingEvaluationId.set(evaluation.id);
+
+    const result = service.update(
+      evaluation.id,
+      { answers: [] },
+      {
+        success: 'Saved.',
+        error: 'Could not save.',
+      },
+    );
+
+    expect(result).toBeUndefined();
+    expect(service.getById(evaluation.id)?.answers).toHaveLength(1);
+    expect(feedback.feedback()?.type).toBe('danger');
+    httpMock.expectNone(`/api/evaluations/${evaluation.id}`);
+  });
+
+  it('does not roll back optimistic update when SSE replaced the evaluation first', async () => {
+    const evaluation = savedEvaluation();
+    const service = await createService([evaluation]);
+
+    service.update(evaluation.id, { title: 'Optimistic title' });
+
+    const put = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    const fromAutomation = savedEvaluation({
+      title: 'From automation checkpoint',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+    service['replaceEvaluation'](fromAutomation);
+
+    put.flush({ message: 'conflict' }, { status: 409, statusText: 'Conflict' });
+
+    expect(service.getById(evaluation.id)?.title).toBe('From automation checkpoint');
+  });
+
+  it('serializes concurrent PUTs for the same evaluation', async () => {
+    const evaluation = savedEvaluation();
+    const service = await createService([evaluation]);
+
+    service.update(evaluation.id, { title: 'First title xx' });
+    service.update(evaluation.id, { title: 'Second title x' });
+
+    const first = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    expect(first.request.body.title).toBe('First title xx');
+    httpMock.expectNone(`/api/evaluations/${evaluation.id}`);
+
+    first.flush(savedEvaluation({ title: 'First title xx', updatedAt: '2026-01-01T01:00:00.000Z' }));
+    // Queued PUT is chained via catch().then(); flush both microtask turns.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const second = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
+    expect(second.request.body.title).toBe('Second title x');
+    second.flush(savedEvaluation({ title: 'Second title x', updatedAt: '2026-01-01T02:00:00.000Z' }));
+
+    expect(service.getById(evaluation.id)?.title).toBe('Second title x');
   });
 });
 
@@ -382,6 +455,19 @@ describe('EvaluationService.generateTitle', () => {
     req.flush({ title: 'Remote work policy trade-offs' });
 
     await expect(promise).resolves.toBe('Remote work policy trade-offs');
+  });
+
+  it('rejects titles shorter than the minimum length', async () => {
+    const service = TestBed.inject(EvaluationService);
+    const feedback = TestBed.inject(FeedbackService);
+    const errorSpy = vi.spyOn(feedback, 'error');
+    const promise = service.generateTitle({ success: '', error: 'Could not generate title.' });
+
+    const req = httpMock.expectOne('/api/evaluations/generate-title');
+    req.flush({ title: 'ab' });
+
+    await expect(promise).rejects.toThrow(/too short/);
+    expect(errorSpy).toHaveBeenCalled();
   });
 });
 
@@ -413,5 +499,21 @@ describe('EvaluationService.generatePrompt', () => {
     req.flush({ prompt: 'Write a detailed explanation of the topic.' });
 
     await expect(promise).resolves.toBe('Write a detailed explanation of the topic.');
+  });
+
+  it('rejects prompts shorter than the minimum length', async () => {
+    const service = TestBed.inject(EvaluationService);
+    const feedback = TestBed.inject(FeedbackService);
+    const errorSpy = vi.spyOn(feedback, 'error');
+    const promise = service.generatePrompt('My evaluation title', {
+      success: 'Prompt generated.',
+      error: 'Could not generate prompt.',
+    });
+
+    const req = httpMock.expectOne('/api/evaluations/generate-prompt');
+    req.flush({ prompt: 'short' });
+
+    await expect(promise).rejects.toThrow(/too short/);
+    expect(errorSpy).toHaveBeenCalled();
   });
 });

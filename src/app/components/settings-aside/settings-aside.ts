@@ -76,11 +76,17 @@ export class SettingsAside {
 
   protected readonly serverLlmPreset = this.serverSettingsService.llmPreset;
   protected readonly envDefaultLlmPreset = this.serverSettingsService.envDefaultLlmPreset;
+  protected readonly apiTokenRequired = this.serverSettingsService.apiTokenRequired;
   protected readonly serverSettingsLoading = this.serverSettingsService.loading;
   protected readonly serverSettingsPatching = this.serverSettingsService.patching;
   protected readonly serverSettingsError = this.serverSettingsService.error;
-  protected readonly presetDisabled = this.serverSettingsService.presetDisabled;
+  protected readonly automating = computed(() => this.evaluationService.isAutomating());
+  protected readonly presetDisabled = computed(
+    () => this.serverSettingsService.presetDisabled() || this.automating(),
+  );
 
+  protected readonly apiTokenDraft = signal('');
+  protected readonly hasStoredApiToken = signal(false);
   protected readonly statusRefreshing = signal(false);
   protected readonly statusError = signal<string | null>(null);
   protected readonly status = signal<AppStatus | null>(null);
@@ -169,7 +175,11 @@ export class SettingsAside {
 
       untracked(() => {
         this.ensureEvaluationsLoaded();
-        void this.serverSettingsService.load();
+        void this.serverSettingsService.load().then(() => {
+          const stored = this.serverSettingsService.getApiToken() ?? '';
+          this.apiTokenDraft.set(stored);
+          this.hasStoredApiToken.set(!!stored);
+        });
         this.refreshStatus();
       });
     });
@@ -273,6 +283,20 @@ export class SettingsAside {
       this.feedback.success(`Performance preset set to ${formatLlmPreset(preset)}.`);
       this.refreshStatus();
     }
+  }
+
+  protected onApiTokenDraftInput(value: string): void {
+    this.apiTokenDraft.set(value);
+  }
+
+  protected saveApiToken(): void {
+    this.serverSettingsService.setApiToken(this.apiTokenDraft());
+    const stored = this.serverSettingsService.getApiToken() ?? '';
+    this.apiTokenDraft.set(stored);
+    this.hasStoredApiToken.set(!!stored);
+    this.feedback.success(
+      stored ? 'API token saved in this browser.' : 'API token cleared.',
+    );
   }
 
   protected refreshStatus(showToast = false): void {

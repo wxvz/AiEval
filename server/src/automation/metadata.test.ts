@@ -20,6 +20,7 @@ const setup = {
   provider: { name: 'groq', complete: vi.fn() },
   answerModels: [],
   judgeModel: { model: 'judge-model', label: 'Judge' },
+  preset: 'balanced',
 } as ResolvedLlmSetup;
 
 const handlers: ModelFallbackHandlers = {};

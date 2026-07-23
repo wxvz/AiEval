@@ -27,5 +27,5 @@
     <label class="form-label" for="criterion-weight">Weight</label>
     <input id="criterion-weight" type="number" class="form-control" formControlName="weight" min="0.01" max="100" step="0.1" />
   </div>
-  <button type="submit" class="btn btn-outline-primary btn-sm">{{ submitLabel() }}</button>
+  <button type="submit" class="btn btn-outline-primary btn-sm" [disabled]="disabled()">{{ submitLabel() }}</button>
 </form>

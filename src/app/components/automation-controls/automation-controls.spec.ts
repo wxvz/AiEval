@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { canRunAutomationPhase } from './automation-controls';
 
+const SLOTS = 3;
+
 const baseEvaluation = (): Evaluation => ({
   id: 'eval-1',
   title: 'Test',
@@ -17,9 +19,11 @@ const baseEvaluation = (): Evaluation => ({
 
 describe('canRunAutomationPhase', () => {
   it('requires prompt and criteria for generate', () => {
-    expect(canRunAutomationPhase(undefined, 'generate')).toBe(false);
-    expect(canRunAutomationPhase({ ...baseEvaluation(), prompt: '  ' }, 'generate')).toBe(false);
-    expect(canRunAutomationPhase(baseEvaluation(), 'generate')).toBe(true);
+    expect(canRunAutomationPhase(undefined, 'generate', SLOTS)).toBe(false);
+    expect(canRunAutomationPhase({ ...baseEvaluation(), prompt: '  ' }, 'generate', SLOTS)).toBe(
+      false,
+    );
+    expect(canRunAutomationPhase(baseEvaluation(), 'generate', SLOTS)).toBe(true);
   });
 
   it('blocks generate and full when custom mode has no criteria', () => {
@@ -29,12 +33,12 @@ describe('canRunAutomationPhase', () => {
       criteria: [],
     };
 
-    expect(canRunAutomationPhase(customWithoutCriteria, 'generate')).toBe(false);
-    expect(canRunAutomationPhase(customWithoutCriteria, 'full')).toBe(false);
+    expect(canRunAutomationPhase(customWithoutCriteria, 'generate', SLOTS)).toBe(false);
+    expect(canRunAutomationPhase(customWithoutCriteria, 'full', SLOTS)).toBe(false);
   });
 
-  it('requires answers and criteria for score', () => {
-    expect(canRunAutomationPhase(baseEvaluation(), 'score')).toBe(false);
+  it('requires a full answer set matching expectedAnswerCount for score', () => {
+    expect(canRunAutomationPhase(baseEvaluation(), 'score', SLOTS)).toBe(false);
     expect(
       canRunAutomationPhase(
         {
@@ -50,14 +54,47 @@ describe('canRunAutomationPhase', () => {
           ],
         },
         'score',
+        SLOTS,
+      ),
+    ).toBe(false);
+    expect(
+      canRunAutomationPhase(
+        {
+          ...baseEvaluation(),
+          answers: [1, 2].map((n) => ({
+            id: `a${n}`,
+            evaluationId: 'eval-1',
+            label: `M${n}`,
+            content: `Hi ${n}`,
+            scores: [],
+          })),
+        },
+        'score',
+        2,
+      ),
+    ).toBe(true);
+    expect(
+      canRunAutomationPhase(
+        {
+          ...baseEvaluation(),
+          answers: [1, 2, 3].map((n) => ({
+            id: `a${n}`,
+            evaluationId: 'eval-1',
+            label: `M${n}`,
+            content: `Hi ${n}`,
+            scores: [],
+          })),
+        },
+        'score',
+        SLOTS,
       ),
     ).toBe(true);
   });
 
   it('requires a winner for improved', () => {
-    expect(canRunAutomationPhase(baseEvaluation(), 'improved')).toBe(false);
+    expect(canRunAutomationPhase(baseEvaluation(), 'improved', SLOTS)).toBe(false);
     expect(
-      canRunAutomationPhase({ ...baseEvaluation(), winnerAnswerId: 'a1' }, 'improved'),
+      canRunAutomationPhase({ ...baseEvaluation(), winnerAnswerId: 'a1' }, 'improved', SLOTS),
     ).toBe(true);
   });
 });

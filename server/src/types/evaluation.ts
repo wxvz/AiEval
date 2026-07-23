@@ -85,6 +85,12 @@ export interface Answer {
   scores: Score[];
   isWinner?: boolean;
   notes?: string;
+  /** Provider that produced this answer (automation generate / resume). */
+  provider?: string;
+  /** Model id that produced this answer (may differ from preset after fallback). */
+  model?: string;
+  /** Intended answer slot index for checkpoint remapping. */
+  slotIndex?: number;
 }
 
 export interface Evaluation {
@@ -108,4 +114,11 @@ export interface Evaluation {
 
 export type EvaluationRecord = Omit<Evaluation, 'id'>;
 
-export type EvaluationDocument = EvaluationRecord & { _id: ObjectId };
+export type EvaluationDocument = EvaluationRecord & {
+  _id: ObjectId;
+  /**
+   * Server-only: run id allowed to mutate this document.
+   * Conditional Mongo writes filter on this field to close supersede TOCTOU.
+   */
+  automationRunId?: string;
+};

@@ -6,10 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../config.js', () => ({
   config: {
     llmPreset: 'fast',
+    apiToken: '',
   },
 }));
 
 import { getEnvDefaultLlmPreset, getLlmPreset, resetLlmPresetToEnvDefault } from '../runtime-settings.js';
+import { clearAutomationRun, registerAutomationRun } from '../automation/run-registry.js';
 import { createSettingsRouter } from './settings.js';
 
 async function requestSettings(
@@ -62,9 +64,17 @@ describe('GET/PATCH /api/settings', () => {
     expect(body).toEqual({
       llmPreset: 'fast',
       envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
     });
     expect(getEnvDefaultLlmPreset()).toBe('fast');
     expect(getLlmPreset()).toBe('fast');
+  });
+
+  it('includes apiTokenRequired on GET', async () => {
+    const { status, body } = await requestSettings('GET');
+
+    expect(status).toBe(200);
+    expect((body as { apiTokenRequired: boolean }).apiTokenRequired).toBe(false);
   });
 
   it('updates llmPreset on valid PATCH', async () => {
@@ -74,6 +84,7 @@ describe('GET/PATCH /api/settings', () => {
     expect(body).toEqual({
       llmPreset: 'balanced',
       envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
     });
     expect(getLlmPreset()).toBe('balanced');
   });
@@ -93,5 +104,19 @@ describe('GET/PATCH /api/settings', () => {
 
     expect((body as { envDefaultLlmPreset: string }).envDefaultLlmPreset).toBe('fast');
     expect(getEnvDefaultLlmPreset()).toBe('fast');
+  });
+
+  it('rejects PATCH with 409 while an automation run is active', async () => {
+    registerAutomationRun('eval-settings-lock', 'run-1');
+
+    try {
+      const { status, body } = await requestSettings('PATCH', { llmPreset: 'balanced' });
+
+      expect(status).toBe(409);
+      expect((body as { message: string }).message).toMatch(/automation run is active/i);
+      expect(getLlmPreset()).toBe('fast');
+    } finally {
+      clearAutomationRun('eval-settings-lock', 'run-1');
+    }
   });
 });

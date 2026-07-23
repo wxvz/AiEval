@@ -53,7 +53,9 @@ const LESSON_TERM_HINTS: Record<string, LearnGlossaryTerm[]> = {
 };
 
 const MAX_EXCERPTS = 5;
-const MAX_EXCERPT_CHARS = 1800;
+/** Per-excerpt cap — must match server `MAX_EXCERPT_TEXT` in learn-chat.ts. */
+const MAX_EXCERPT_TEXT = 600;
+const MAX_EXCERPT_CHARS = MAX_EXCERPTS * MAX_EXCERPT_TEXT;
 
 /** Resolve lab → parent read lesson when the lab has no contentFile. */
 export function resolveContentLessonId(lessonId: string | null): string | null {
@@ -302,11 +304,12 @@ function selectTopExcerpts(chunks: ScoredChunk[], query: string): {
     if (chunk.score <= 0 && selected.length > 0) {
       break;
     }
-    const nextLen = totalChars + chunk.text.length;
+    const text = chunk.text.slice(0, MAX_EXCERPT_TEXT);
+    const nextLen = totalChars + text.length;
     if (nextLen > MAX_EXCERPT_CHARS && selected.length > 0) {
       continue;
     }
-    selected.push({ text: chunk.text, heading: chunk.heading });
+    selected.push({ text, heading: chunk.heading });
     totalChars = nextLen;
     if (totalChars >= MAX_EXCERPT_CHARS) {
       break;
@@ -315,7 +318,10 @@ function selectTopExcerpts(chunks: ScoredChunk[], query: string): {
 
   // Guarantee at least the first paragraph when nothing scored.
   if (selected.length === 0 && chunks[0]) {
-    selected.push({ text: chunks[0].text, heading: chunks[0].heading });
+    selected.push({
+      text: chunks[0].text.slice(0, MAX_EXCERPT_TEXT),
+      heading: chunks[0].heading,
+    });
   }
 
   return { excerpts: selected, maxKeywordScore };

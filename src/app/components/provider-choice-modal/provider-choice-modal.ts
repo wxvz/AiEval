@@ -4,6 +4,7 @@ export interface ProviderChoiceDetails {
   currentProvider: string;
   cloudProvider: string | null;
   elapsedLabel: string;
+  choiceTimeoutLabel: string;
 }
 
 const PROVIDER_LABELS: Record<string, string> = {

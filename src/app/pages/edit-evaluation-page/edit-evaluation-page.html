@@ -35,6 +35,7 @@
       <h2 class="h5">Details</h2>
       <app-evaluation-form
         [evaluation]="evaluation()!"
+        [disabled]="automating()"
         submitLabel="Save changes"
         (submitted)="onEvaluationSubmit($event)"
       />
@@ -47,6 +48,7 @@
           name="criteria-mode"
           id="criteria-mode-default"
           [checked]="criteriaMode() === 'default'"
+          [disabled]="automating()"
           (change)="setCriteriaMode('default')"
         />
         <label class="btn btn-outline-primary" for="criteria-mode-default">Default criteria</label>
@@ -57,6 +59,7 @@
           name="criteria-mode"
           id="criteria-mode-custom"
           [checked]="criteriaMode() === 'custom'"
+          [disabled]="automating()"
           (change)="setCriteriaMode('custom')"
         />
         <label class="btn btn-outline-primary" for="criteria-mode-custom">Custom criteria</label>
@@ -69,12 +72,16 @@
         }
       } @else {
         <p class="text-muted small">Define what you will score each model answer on (e.g. accuracy, clarity).</p>
-        <app-criterion-form class="d-block mb-3" (submitted)="onCriterionSubmit($event)" />
+        <app-criterion-form class="d-block mb-3" [disabled]="automating()" (submitted)="onCriterionSubmit($event)" />
         @if (evaluation()!.criteria.length === 0) {
           <app-empty-state title="No criteria" message="Add at least one rubric criterion to compare answers." />
         } @else {
           @for (criterion of activeCriteria(); track criterion.id) {
-            <app-criterion-card [criterion]="criterion" (removeRequested)="removeCriterion($event)" />
+            <app-criterion-card
+              [criterion]="criterion"
+              [removable]="!automating()"
+              (removeRequested)="removeCriterion($event)"
+            />
           }
         }
       }
@@ -98,12 +105,17 @@
         </div>
       </div>
 
-      <app-answer-form class="d-block mb-3" (submitted)="onAnswerSubmit($event)" />
+      <app-answer-form class="d-block mb-3" [disabled]="automating()" (submitted)="onAnswerSubmit($event)" />
       @if (evaluation()!.answers.length === 0) {
         <app-empty-state title="No answers" message="Add at least one model answer or run automation." />
       } @else {
         @for (answer of evaluation()!.answers; track answer.id) {
-          <app-answer-card [answer]="answer" [criteria]="activeCriteria()" (removeRequested)="removeAnswer($event)" />
+          <app-answer-card
+            [answer]="answer"
+            [criteria]="activeCriteria()"
+            [removable]="!automating()"
+            (removeRequested)="removeAnswer($event)"
+          />
         }
       }
     </div>

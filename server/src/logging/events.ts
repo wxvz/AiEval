@@ -28,6 +28,8 @@ export const LogEvents = {
   llmRetry: 'llm.retry',
   llmRateLimit: 'llm.rate_limit',
   llmSlowFallback: 'llm.slow_fallback',
+  /** Live overlay differs from frozen setup.preset used for fallback chains. */
+  llmPresetMismatch: 'llm.preset_mismatch',
   sseEvent: 'sse.event',
   learnChatTruncated: 'learn_chat.truncated',
   learnChatRateLimited: 'learn_chat.rate_limited',

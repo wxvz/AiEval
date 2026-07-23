@@ -58,6 +58,10 @@ export class ImprovedAnswerPage {
   }
 
   protected onSave(improvedAnswer: ImprovedAnswer): void {
+    if (this.automating()) {
+      return;
+    }
+
     this.evaluationService.update(
       this.evaluationId,
       { improvedAnswer },

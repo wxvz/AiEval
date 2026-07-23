@@ -19,6 +19,7 @@ vi.mock('./provider.js', () => ({
     provider: { name: 'groq' },
     judgeModel: { model: 'judge-model', label: 'Judge' },
     answerModels: [],
+    preset: 'balanced',
   }),
 }));
 
@@ -84,6 +85,7 @@ describe('generateEvaluationTitle', () => {
       provider: { name: 'groq', complete: vi.fn() },
       judgeModel: { model: 'judge-model', label: 'Judge' },
       answerModels: [],
+      preset: 'balanced',
     } as ResolvedLlmSetup;
     const handlers = { onModelFallback: vi.fn() };
 

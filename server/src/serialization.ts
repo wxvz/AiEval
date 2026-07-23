@@ -1,11 +1,11 @@
 import { ObjectId } from 'mongodb';
 
 import { normalizeEvaluationConfig } from './evaluation-config.js';
-import type { Answer, Evaluation, EvaluationRecord } from './types/evaluation.js';
+import type { Answer, Evaluation, EvaluationDocument, EvaluationRecord } from './types/evaluation.js';
 
-export function toApiEvaluation(doc: EvaluationRecord & { _id: ObjectId }): Evaluation {
+export function toApiEvaluation(doc: EvaluationDocument): Evaluation {
   const evaluationId = doc._id.toString();
-  const { _id, ...rest } = doc;
+  const { _id, automationRunId: _automationRunId, ...rest } = doc;
 
   return {
     id: evaluationId,

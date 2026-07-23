@@ -242,12 +242,20 @@ export class CompareAnswersPage {
   }
 
   protected onNotesInput(answer: Answer, event: Event): void {
+    if (this.automating()) {
+      return;
+    }
+
     const value = (event.target as HTMLTextAreaElement).value;
 
     this.answerNotesDrafts.update((drafts) => ({ ...drafts, [answer.id]: value }));
   }
 
   protected onNotesBlur(answer: Answer, event: Event): void {
+    if (this.automating()) {
+      return;
+    }
+
     const value = (event.target as HTMLTextAreaElement).value;
     const persisted = answer.notes ?? '';
 
@@ -279,6 +287,10 @@ export class CompareAnswersPage {
   }
 
   protected onScoreInput(answer: Answer, criterion: RubricCriterion, event: Event): void {
+    if (this.automating()) {
+      return;
+    }
+
     const input = event.target as HTMLInputElement;
 
     if (!answer || this.automating()) {

@@ -7,5 +7,5 @@
     <label class="form-label" for="answer-content">Model answer</label>
     <textarea id="answer-content" class="form-control" rows="4" formControlName="content"></textarea>
   </div>
-  <button type="submit" class="btn btn-outline-primary btn-sm">{{ submitLabel() }}</button>
+  <button type="submit" class="btn btn-outline-primary btn-sm" [disabled]="disabled()">{{ submitLabel() }}</button>
 </form>

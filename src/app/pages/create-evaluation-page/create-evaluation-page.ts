@@ -1,4 +1,4 @@
-import { Component, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
@@ -12,7 +12,11 @@ import { Evaluation, CriteriaMode, RubricCriterion } from '../../models';
 import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
 import { loadWalkthroughContent } from '../../learn/walkthrough-content';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
-import { EvaluationService } from '../../services/evaluation.service';
+import {
+  EvaluationService,
+  MIN_GENERATED_PROMPT_LENGTH,
+  MIN_GENERATED_TITLE_LENGTH,
+} from '../../services/evaluation.service';
 import { TemplateService } from '../../services/template.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
 
@@ -39,6 +43,7 @@ export class CreateEvaluationPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly learnHandoff = inject(LearnHandoffService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly evaluationForm = viewChild(EvaluationForm);
   private readonly leaveDuringAutomation = viewChild(LeaveDuringAutomationComponent);
@@ -51,6 +56,7 @@ export class CreateEvaluationPage {
   protected readonly generatingPrompt = signal(false);
   protected readonly creating = signal(false);
   private readonly formFieldsVersion = signal(0);
+  private generatePromptAbort: AbortController | null = null;
   protected readonly fromLearn = signal(
     this.learnHandoff.isLearnContext(this.route.snapshot.queryParamMap.get('from')),
   );
@@ -93,6 +99,7 @@ export class CreateEvaluationPage {
 
   constructor() {
     void this.templateService.loadFromApi();
+    this.destroyRef.onDestroy(() => this.cancelGeneratePrompt());
 
     effect((onCleanup) => {
       const form = this.evaluationForm();
@@ -192,13 +199,18 @@ export class CreateEvaluationPage {
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent): void {
-    if (this.automating()) {
+    if (this.automating() || this.generatingPrompt()) {
       event.preventDefault();
       event.returnValue = '';
     }
   }
 
   canDeactivate(): boolean | Promise<boolean> {
+    if (this.generatingPrompt()) {
+      this.cancelGeneratePrompt();
+      return true;
+    }
+
     if (!this.automating()) {
       return true;
     }
@@ -226,30 +238,73 @@ export class CreateEvaluationPage {
       return Promise.resolve();
     }
 
+    const needsGeneratedTitle = !form.isTitleValid();
+
+    if (
+      !needsGeneratedTitle &&
+      form.getValue().prompt.trim().length > 0 &&
+      !window.confirm('Replace the current prompt with a newly generated one?')
+    ) {
+      return Promise.resolve();
+    }
+
+    this.cancelGeneratePrompt();
+    const abortController = new AbortController();
+    this.generatePromptAbort = abortController;
     this.generatingPrompt.set(true);
 
-    const titlePromise = form.isTitleValid()
-      ? Promise.resolve(form.getValue().title.trim())
-      : this.evaluationService.generateTitle(form.getValue().evaluationConfig);
+    const evaluationConfig = form.getValue().evaluationConfig;
+
+    const titlePromise = needsGeneratedTitle
+      ? this.evaluationService.generateTitle(
+          evaluationConfig,
+          {
+            success: '',
+            error: 'Could not generate title.',
+          },
+          { signal: abortController.signal },
+        )
+      : Promise.resolve(form.getValue().title.trim());
 
     return titlePromise
-      .then((title) => {
-        form.setTitle(title);
-        return this.evaluationService.generatePrompt(
-          title,
-          form.getValue().evaluationConfig,
-          {
-            success: 'Prompt generated.',
-            error: 'Could not generate prompt.',
-          },
-        );
-      })
-      .then((prompt) => {
-        form.setPrompt(prompt);
+      .then((title) =>
+        this.evaluationService
+          .generatePrompt(
+            title,
+            evaluationConfig,
+            {
+              success: 'Prompt generated.',
+              error: 'Could not generate prompt.',
+            },
+            { signal: abortController.signal },
+          )
+          .then((prompt) => ({ title, prompt })),
+      )
+      .then(({ title, prompt }) => {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
+        const trimmedTitle = title.trim();
+        const trimmedPrompt = prompt.trim();
+
+        // Do not mutate the form with under-length LLM responses (service also guards).
+        if (
+          trimmedTitle.length < MIN_GENERATED_TITLE_LENGTH ||
+          trimmedPrompt.length < MIN_GENERATED_PROMPT_LENGTH
+        ) {
+          return;
+        }
+
+        form.setTitle(trimmedTitle);
+        form.setPrompt(trimmedPrompt);
       })
       .catch(() => undefined)
       .finally(() => {
-        this.generatingPrompt.set(false);
+        if (this.generatePromptAbort === abortController) {
+          this.generatePromptAbort = null;
+          this.generatingPrompt.set(false);
+        }
       });
   }
 
@@ -282,6 +337,12 @@ export class CreateEvaluationPage {
       criteriaMode: template.criteriaMode,
       criteria: template.criteria.map((criterion) => ({ ...criterion })),
     });
+  }
+
+  private cancelGeneratePrompt(): void {
+    this.generatePromptAbort?.abort();
+    this.generatePromptAbort = null;
+    this.generatingPrompt.set(false);
   }
 
   protected getEvaluation(id: string): Evaluation | undefined {

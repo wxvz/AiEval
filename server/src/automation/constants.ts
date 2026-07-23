@@ -5,12 +5,7 @@ export const AUTOMATION_METADATA_STUB_PROMPT = '(if message persists, retry the 
 export function needsAutomationMetadataPrep(doc: {
   title: string;
   prompt: string;
-  answers: unknown[];
 }): boolean {
-  if (doc.answers.length > 0) {
-    return false;
-  }
-
   const title = doc.title.trim();
   const prompt = doc.prompt.trim();
 

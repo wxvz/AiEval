@@ -59,6 +59,7 @@ describe('learn-tutor-grounding', () => {
     expect(sources[0]?.route).toBe('/learn/lessons/bias-and-weights');
     expect(excerpts.length).toBeGreaterThan(0);
     expect(excerpts.some((excerpt) => /bias/i.test(excerpt.text))).toBe(true);
+    expect(excerpts.every((excerpt) => excerpt.text.length <= 600)).toBe(true);
   });
 
   it('uses parent content for labs without contentFile', () => {

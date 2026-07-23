@@ -217,14 +217,17 @@ function resolveJudgeModelForProvider(
   return coerceJudgeNotAnswerModel(judgeId, answerIds, providerName);
 }
 
-export function resolveModelsForProvider(providerName: ProviderName): {
+export function resolveModelsForProvider(
+  providerName: ProviderName,
+  preset: LlmPreset = getLlmPreset(),
+): {
   answerModels: ModelRef[];
   judgeModel: ModelRef;
 } {
-  const preset = PRESETS[providerName][getLlmPreset()];
+  const providerPreset = PRESETS[providerName][preset];
   const customAnswerEntries = parseModelEntries(config.llmAnswerModels);
-  const answerIds = resolveModelsFromEntries(customAnswerEntries, providerName, preset.answer);
-  const judgeId = resolveJudgeModelForProvider(providerName, getLlmPreset(), answerIds);
+  const answerIds = resolveModelsFromEntries(customAnswerEntries, providerName, providerPreset.answer);
+  const judgeId = resolveJudgeModelForProvider(providerName, preset, answerIds);
 
   return {
     answerModels: answerIds.map((model) => ({ model, label: modelIdToLabel(model) })),
