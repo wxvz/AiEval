@@ -6,13 +6,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { LearnChatFab } from './learn-chat-fab';
 
+function sseFetchResponse(events: string[]): Response {
+  const payload = events.join('');
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(payload));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    status: 200,
+    headers: { 'Content-Type': 'text/event-stream' },
+  });
+}
+
 describe('LearnChatFab', () => {
   let fixture: ComponentFixture<LearnChatFab>;
   let http: HttpTestingController;
   let fetchMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    // Guard against leaked fake timers from other suites (paced reveal uses setTimeout).
+    vi.useRealTimers();
     sessionStorage.clear();
+    localStorage.clear();
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     // Keep unit tests fast: skip thinking delay + paced reveal.
@@ -44,6 +61,7 @@ describe('LearnChatFab', () => {
   afterEach(() => {
     http.verify();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('opens the panel and streams a message to the learn chat API', async () => {
@@ -55,13 +73,10 @@ describe('LearnChatFab', () => {
     expect(el.querySelector('.learn-chat-fab__panel')).toBeTruthy();
 
     fetchMock.mockResolvedValue(
-      new Response(
-        [
-          'event: token\ndata: {"text":"Learning from **labeled** examples."}\n\n',
-          'event: done\ndata: {"reply":"Learning from **labeled** examples.","sessionId":"s1","sources":[]}\n\n',
-        ].join(''),
-        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
-      ),
+      sseFetchResponse([
+        'event: token\ndata: {"text":"Learning from **labeled** examples."}\n\n',
+        'event: done\ndata: {"reply":"Learning from **labeled** examples.","sessionId":"s1","sources":[]}\n\n',
+      ]),
     );
 
     const component = fixture.componentInstance;
@@ -106,13 +121,10 @@ describe('LearnChatFab', () => {
     expect(el.querySelector('.learn-chat-fab__dots')?.getAttribute('aria-label')).toBe('Thinking');
 
     resolveFetch(
-      new Response(
-        [
-          'event: token\ndata: {"text":"Bias is a shared baseline."}\n\n',
-          'event: done\ndata: {"reply":"Bias is a shared baseline.","sessionId":"s2","sources":[]}\n\n',
-        ].join(''),
-        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
-      ),
+      sseFetchResponse([
+        'event: token\ndata: {"text":"Bias is a shared baseline."}\n\n',
+        'event: done\ndata: {"reply":"Bias is a shared baseline.","sessionId":"s2","sources":[]}\n\n',
+      ]),
     );
     await pending;
     fixture.detectChanges();
@@ -207,13 +219,10 @@ describe('LearnChatFab', () => {
     expect(component.thinking()).toBe(true);
 
     resolveSecond(
-      new Response(
-        [
-          'event: token\ndata: {"text":"Second reply."}\n\n',
-          'event: done\ndata: {"reply":"Second reply.","sessionId":"s3","sources":[]}\n\n',
-        ].join(''),
-        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
-      ),
+      sseFetchResponse([
+        'event: token\ndata: {"text":"Second reply."}\n\n',
+        'event: done\ndata: {"reply":"Second reply.","sessionId":"s3","sources":[]}\n\n',
+      ]),
     );
     await secondPending;
     fixture.detectChanges();
