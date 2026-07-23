@@ -159,7 +159,7 @@ Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set 
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 22.12+ (see `.nvmrc`)
+- [Node.js](https://nodejs.org/) 24+ (see `.nvmrc`; Active LTS)
 - [npm](https://www.npmjs.com/) 11.12+ (use `corepack install` after cloning)
 - [MongoDB](https://www.mongodb.com/) running locally or a connection string to a hosted cluster
 

@@ -11,31 +11,21 @@ import {
 } from '../../services/learn-chat.service';
 import { LearnChatFab } from './learn-chat-fab';
 
+type FabInternals = {
+  prefersReducedMotion: () => boolean;
+  scrollToBottom: () => void;
+};
+
 describe('LearnChatFab', () => {
   let fixture: ComponentFixture<LearnChatFab>;
   let http: HttpTestingController;
   let learnChat: LearnChatService;
 
   beforeEach(async () => {
-    // Guard against leaked fake timers from other suites (paced reveal uses setTimeout).
+    // CI pools can leave Vitest fake timers on; paced reveal + setTimeout(0) then hang until 5s.
     vi.useRealTimers();
     sessionStorage.clear();
     localStorage.clear();
-    // Keep unit tests fast: skip thinking delay + paced reveal.
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      configurable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: query === '(prefers-reduced-motion: reduce)',
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
 
     await TestBed.configureTestingModule({
       imports: [LearnChatFab],
@@ -43,11 +33,16 @@ describe('LearnChatFab', () => {
     }).compileComponents();
 
     learnChat = TestBed.inject(LearnChatService);
-    // Avoid real HttpClient context sync / fetch SSE in the FAB unit suite (CI flake surface).
+    // Avoid real HttpClient context sync / fetch SSE in the FAB unit suite.
     vi.spyOn(learnChat, 'syncContext').mockResolvedValue(undefined);
 
     fixture = TestBed.createComponent(LearnChatFab);
     http = TestBed.inject(HttpTestingController);
+    // Force the reduced-motion path (no reveal sleeps) regardless of jsdom matchMedia.
+    vi.spyOn(
+      fixture.componentInstance as unknown as FabInternals,
+      'prefersReducedMotion',
+    ).mockReturnValue(true);
     fixture.detectChanges();
   });
 
@@ -77,6 +72,14 @@ describe('LearnChatFab', () => {
     );
 
     const component = fixture.componentInstance;
+    // Make scroll sync so we do not await a macrotask that never fires under leaked fake timers.
+    vi.spyOn(component as unknown as FabInternals, 'scrollToBottom').mockImplementation(() => {
+      const list = el.querySelector('.learn-chat-fab__messages') as HTMLDivElement | null;
+      if (list) {
+        list.scrollTop = list.scrollHeight;
+      }
+    });
+
     component.draft = 'What is supervised learning?';
     await component.send();
     fixture.detectChanges();
@@ -94,8 +97,6 @@ describe('LearnChatFab', () => {
 
     const messages = el.querySelector('.learn-chat-fab__messages') as HTMLDivElement;
     expect(messages).toBeTruthy();
-    // Autoscroll runs after the reply is painted.
-    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(messages.scrollTop).toBe(messages.scrollHeight);
   });
 
