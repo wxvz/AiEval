@@ -4,34 +4,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  LearnChatService,
+  type LearnChatAskOptions,
+  type LearnChatResponse,
+} from '../../services/learn-chat.service';
 import { LearnChatFab } from './learn-chat-fab';
-
-function sseFetchResponse(events: string[]): Response {
-  const payload = events.join('');
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(payload));
-      controller.close();
-    },
-  });
-  return new Response(stream, {
-    status: 200,
-    headers: { 'Content-Type': 'text/event-stream' },
-  });
-}
 
 describe('LearnChatFab', () => {
   let fixture: ComponentFixture<LearnChatFab>;
   let http: HttpTestingController;
-  let fetchMock: ReturnType<typeof vi.fn>;
+  let learnChat: LearnChatService;
 
   beforeEach(async () => {
     // Guard against leaked fake timers from other suites (paced reveal uses setTimeout).
     vi.useRealTimers();
     sessionStorage.clear();
     localStorage.clear();
-    fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
     // Keep unit tests fast: skip thinking delay + paced reveal.
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -53,6 +42,10 @@ describe('LearnChatFab', () => {
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
+    learnChat = TestBed.inject(LearnChatService);
+    // Avoid real HttpClient context sync / fetch SSE in the FAB unit suite (CI flake surface).
+    vi.spyOn(learnChat, 'syncContext').mockResolvedValue(undefined);
+
     fixture = TestBed.createComponent(LearnChatFab);
     http = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
@@ -60,7 +53,7 @@ describe('LearnChatFab', () => {
 
   afterEach(() => {
     http.verify();
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -72,19 +65,26 @@ describe('LearnChatFab', () => {
 
     expect(el.querySelector('.learn-chat-fab__panel')).toBeTruthy();
 
-    fetchMock.mockResolvedValue(
-      sseFetchResponse([
-        'event: token\ndata: {"text":"Learning from **labeled** examples."}\n\n',
-        'event: done\ndata: {"reply":"Learning from **labeled** examples.","sessionId":"s1","sources":[]}\n\n',
-      ]),
+    const ask = vi.spyOn(learnChat, 'ask').mockImplementation(
+      async (_message: string, options: LearnChatAskOptions = {}): Promise<LearnChatResponse> => {
+        options.onToken?.('Learning from **labeled** examples.');
+        return {
+          reply: 'Learning from **labeled** examples.',
+          sessionId: 's1',
+          sources: [],
+        };
+      },
     );
 
     const component = fixture.componentInstance;
     component.draft = 'What is supervised learning?';
-    const pending = component.send();
-    await pending;
+    await component.send();
     fixture.detectChanges();
 
+    expect(ask).toHaveBeenCalledWith(
+      'What is supervised learning?',
+      expect.objectContaining({ onToken: expect.any(Function) }),
+    );
     expect(el.textContent).toContain('What is supervised learning?');
     expect(el.textContent).toContain('Learning from labeled examples.');
     expect(el.textContent).not.toContain('**');
@@ -104,11 +104,15 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    let resolveFetch!: (value: Response) => void;
-    fetchMock.mockReturnValue(
-      new Promise<Response>((resolve) => {
-        resolveFetch = resolve;
-      }),
+    let resolveAsk!: (value: LearnChatResponse) => void;
+    vi.spyOn(learnChat, 'ask').mockImplementation(
+      (_message, options) =>
+        new Promise<LearnChatResponse>((resolve) => {
+          resolveAsk = (value) => {
+            options?.onToken?.(value.reply);
+            resolve(value);
+          };
+        }),
     );
 
     const component = fixture.componentInstance;
@@ -120,12 +124,11 @@ describe('LearnChatFab', () => {
     expect(el.querySelector('.learn-chat-fab__dots')).toBeTruthy();
     expect(el.querySelector('.learn-chat-fab__dots')?.getAttribute('aria-label')).toBe('Thinking');
 
-    resolveFetch(
-      sseFetchResponse([
-        'event: token\ndata: {"text":"Bias is a shared baseline."}\n\n',
-        'event: done\ndata: {"reply":"Bias is a shared baseline.","sessionId":"s2","sources":[]}\n\n',
-      ]),
-    );
+    resolveAsk({
+      reply: 'Bias is a shared baseline.',
+      sessionId: 's2',
+      sources: [],
+    });
     await pending;
     fixture.detectChanges();
 
@@ -139,11 +142,15 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    let rejectFetch!: (reason?: unknown) => void;
-    fetchMock.mockReturnValue(
-      new Promise<Response>((_resolve, reject) => {
-        rejectFetch = reject;
-      }),
+    let rejectAsk!: (reason?: unknown) => void;
+    const cancel = vi.spyOn(learnChat, 'cancel').mockImplementation(() => {
+      rejectAsk?.(new DOMException('Aborted', 'AbortError'));
+    });
+    vi.spyOn(learnChat, 'ask').mockImplementation(
+      () =>
+        new Promise<LearnChatResponse>((_resolve, reject) => {
+          rejectAsk = reject;
+        }),
     );
 
     const component = fixture.componentInstance;
@@ -158,11 +165,11 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
+    expect(cancel).toHaveBeenCalled();
     expect(component.open()).toBe(false);
     expect(component.sending()).toBe(false);
     expect(component.thinking()).toBe(false);
 
-    rejectFetch(new DOMException('Aborted', 'AbortError'));
     await pending;
     fixture.detectChanges();
 
@@ -175,20 +182,27 @@ describe('LearnChatFab', () => {
     fixture.detectChanges();
 
     let rejectFirst!: (reason?: unknown) => void;
-    let resolveSecond!: (value: Response) => void;
-    fetchMock
-      .mockImplementationOnce(
-        () =>
-          new Promise<Response>((_resolve, reject) => {
-            rejectFirst = reject;
-          }),
-      )
-      .mockImplementationOnce(
-        () =>
-          new Promise<Response>((resolve) => {
-            resolveSecond = resolve;
-          }),
-      );
+    let resolveSecond!: (value: LearnChatResponse) => void;
+    let askCount = 0;
+    vi.spyOn(learnChat, 'cancel').mockImplementation(() => {
+      if (askCount === 1) {
+        rejectFirst?.(new DOMException('Aborted', 'AbortError'));
+      }
+    });
+    vi.spyOn(learnChat, 'ask').mockImplementation((_message, options) => {
+      askCount += 1;
+      if (askCount === 1) {
+        return new Promise<LearnChatResponse>((_resolve, reject) => {
+          rejectFirst = reject;
+        });
+      }
+      return new Promise<LearnChatResponse>((resolve) => {
+        resolveSecond = (value) => {
+          options?.onToken?.(value.reply);
+          resolve(value);
+        };
+      });
+    });
 
     const component = fixture.componentInstance;
     component.draft = 'first';
@@ -210,7 +224,6 @@ describe('LearnChatFab', () => {
       'second',
     ]);
 
-    rejectFirst(new DOMException('Aborted', 'AbortError'));
     await firstPending;
     fixture.detectChanges();
 
@@ -218,12 +231,11 @@ describe('LearnChatFab', () => {
     expect(component.sending()).toBe(true);
     expect(component.thinking()).toBe(true);
 
-    resolveSecond(
-      sseFetchResponse([
-        'event: token\ndata: {"text":"Second reply."}\n\n',
-        'event: done\ndata: {"reply":"Second reply.","sessionId":"s3","sources":[]}\n\n',
-      ]),
-    );
+    resolveSecond({
+      reply: 'Second reply.',
+      sessionId: 's3',
+      sources: [],
+    });
     await secondPending;
     fixture.detectChanges();
 
