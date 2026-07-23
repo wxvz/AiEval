@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { Evaluation } from '../../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { EvaluationService } from '../../services/evaluation.service';
 import { FeedbackService } from '../../services/feedback.service';
@@ -17,6 +17,7 @@ function sampleEvaluation(id: string, updatedAt = new Date().toISOString()): Eva
     prompt: 'Prompt text',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: updatedAt,
     updatedAt,

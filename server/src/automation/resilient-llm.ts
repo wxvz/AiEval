@@ -343,6 +343,11 @@ export function mapAnswersToSlots(answers: Answer[], setup: ResolvedLlmSetup): (
   const usedSlots = new Set<number>();
 
   for (const answer of answers) {
+    // Empty/unusable leftovers from a prior run must stay pending so fallback can regenerate.
+    if (!answer.content.trim()) {
+      continue;
+    }
+
     let slotIndex = setup.answerModels.findIndex(
       (modelRef, index) => !usedSlots.has(index) && modelRef.label === answer.label,
     );

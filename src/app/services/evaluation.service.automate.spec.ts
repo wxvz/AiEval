@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { Evaluation } from '../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../models';
 import { EvaluationService } from './evaluation.service';
 import { FeedbackService } from './feedback.service';
 
@@ -16,6 +16,7 @@ describe('EvaluationService.automate', () => {
     prompt: 'Say hello',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

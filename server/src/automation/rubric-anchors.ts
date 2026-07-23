@@ -99,6 +99,7 @@ export function buildDefaultCriteriaFromAnchors(): RubricCriterion[] {
     id: criterion.id,
     name: criterion.name,
     maxPoints: 5,
+    weight: 1,
     description: formatAnchorDescription(criterion.anchors),
   }));
 }

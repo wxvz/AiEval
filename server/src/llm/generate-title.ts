@@ -5,6 +5,8 @@ import { resolveProvider } from './provider.js';
 import type { CompleteContext } from './rate-limit.js';
 import { stripModelArtifacts } from './sanitize-model-output.js';
 import type { ResolvedLlmSetup } from './types.js';
+import { DEFAULT_EVALUATION_CONFIG } from '../evaluation-config.js';
+import type { EvaluationConfig } from '../types/evaluation.js';
 
 const MIN_TITLE_LENGTH = 3;
 /** Higher than scoring/generation defaults so repeated title runs do not collapse to one phrase. */
@@ -18,11 +20,12 @@ export interface MetadataGenerationOptions {
 export async function generateEvaluationTitle(
   extraContext: Partial<CompleteContext> = {},
   options?: MetadataGenerationOptions,
+  evaluationConfig: EvaluationConfig = DEFAULT_EVALUATION_CONFIG,
 ): Promise<string> {
   const setup = options?.setup ?? (await resolveProvider());
   const messages = [
     { role: 'system' as const, content: TITLE_GENERATE_SYSTEM },
-    { role: 'user' as const, content: buildTitleGenerateUser() },
+    { role: 'user' as const, content: buildTitleGenerateUser(evaluationConfig) },
   ];
   const context: CompleteContext & { temperature?: number } = {
     step: 'generating',

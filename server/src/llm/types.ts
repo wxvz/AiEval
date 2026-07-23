@@ -79,7 +79,7 @@ export type AutomationProgressEvent =
   | {
       type: 'step_paused';
       step: AutomationStep;
-      reason: 'rate_limit';
+      reason: 'rate_limit' | 'empty_content';
       completed: number;
       pending: number;
     }

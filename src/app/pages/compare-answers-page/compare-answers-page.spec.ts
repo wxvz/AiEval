@@ -1,9 +1,9 @@
-import { RubricCriterion, Score } from '../../models';
+import { RubricCriterion, Score, upsertCriterionScore } from '../../models';
 import {
   activeScoresForCriteria,
+  displayAnswerLabel,
   nextAnswerIndex,
   previousAnswerIndex,
-  upsertCriterionScore,
 } from './compare-answers-page';
 
 describe('upsertCriterionScore', () => {
@@ -11,6 +11,7 @@ describe('upsertCriterionScore', () => {
     id: 'criterion-accuracy',
     name: 'Accuracy',
     maxPoints: 5,
+    weight: 1,
   };
 
   const inactiveScore: Score = {
@@ -91,6 +92,7 @@ describe('focused compare helpers', () => {
       id: 'criterion-active',
       name: 'Active criterion',
       maxPoints: 5,
+      weight: 1,
     };
     const activeScore: Score = {
       criterionId: activeCriterion.id,
@@ -108,5 +110,19 @@ describe('focused compare helpers', () => {
     expect(activeScoresForCriteria([activeScore, inactiveScore], [activeCriterion])).toEqual([
       activeScore,
     ]);
+  });
+
+  it('keeps blind labels until a winner exists', () => {
+    const answer = { id: 'a1', evaluationId: 'e1', label: 'gpt-4o', content: 'x', scores: [] };
+
+    expect(
+      displayAnswerLabel(answer, 0, { blindJudging: true, hasWinner: false }),
+    ).toBe('Answer A');
+    expect(
+      displayAnswerLabel(answer, 0, { blindJudging: true, hasWinner: true }),
+    ).toBe('gpt-4o');
+    expect(
+      displayAnswerLabel(answer, 1, { blindJudging: false, hasWinner: false }),
+    ).toBe('gpt-4o');
   });
 });

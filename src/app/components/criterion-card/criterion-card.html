@@ -1,7 +1,7 @@
 <div class="card mb-3">
   <div class="card-header d-flex justify-content-between align-items-center">
     <span class="fw-semibold">{{ criterion().name }}</span>
-    <span class="badge text-bg-secondary">Max {{ criterion().maxPoints }} pts</span>
+    <span class="badge text-bg-secondary">Max {{ criterion().maxPoints }} pts · {{ criterion().weight }}×</span>
   </div>
   <div class="card-body">
     @if (criterion().description) {

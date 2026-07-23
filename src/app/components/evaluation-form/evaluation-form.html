@@ -1,31 +1,256 @@
-<form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
-  <div class="mb-3">
-    <label class="form-label" for="evaluation-title">Title</label>
-    <input
-      id="evaluation-title"
-      type="text"
-      class="form-control"
-      formControlName="title"
-      [class.is-invalid]="form.controls.title.touched && form.controls.title.invalid"
-    />
-    @if (form.controls.title.touched && form.controls.title.hasError('minlength')) {
-      <div class="invalid-feedback">Title must be at least 3 characters.</div>
-    }
-  </div>
+<form
+  [formGroup]="form"
+  (ngSubmit)="onSubmit()"
+  novalidate
+  [class.evaluation-form--page-shell]="layout() === 'aside'"
+>
+  @if (layout() === 'aside') {
+    <app-page-shell [wideMain]="true">
+      <div shellMain>
+        <ng-content select="[evaluationFormBefore]" />
+        <div class="evaluation-form__main">
+          <div class="mb-3">
+            <label class="form-label" for="evaluation-title">Title</label>
+            <input
+              id="evaluation-title"
+              type="text"
+              class="form-control"
+              formControlName="title"
+              [class.is-invalid]="form.controls.title.touched && form.controls.title.invalid"
+            />
+            @if (form.controls.title.touched && form.controls.title.hasError('minlength')) {
+              <div class="invalid-feedback">Title must be at least 3 characters.</div>
+            }
+          </div>
 
-  <div class="mb-3">
-    <label class="form-label" for="evaluation-prompt">Prompt</label>
-    <textarea
-      id="evaluation-prompt"
-      class="form-control"
-      rows="5"
-      formControlName="prompt"
-      [class.is-invalid]="form.controls.prompt.touched && form.controls.prompt.invalid"
-    ></textarea>
-    @if (form.controls.prompt.touched && form.controls.prompt.hasError('required')) {
-      <div class="invalid-feedback">Prompt is required.</div>
-    }
-  </div>
+          <div class="mb-3">
+            <label class="form-label" for="evaluation-prompt">Prompt</label>
+            <textarea
+              id="evaluation-prompt"
+              class="form-control"
+              rows="5"
+              formControlName="prompt"
+              [class.is-invalid]="form.controls.prompt.touched && form.controls.prompt.invalid"
+            ></textarea>
+            @if (form.controls.prompt.touched && form.controls.prompt.hasError('required')) {
+              <div class="invalid-feedback">Prompt is required.</div>
+            }
+          </div>
+        </div>
+        <ng-content select="[evaluationFormAfter]" />
+      </div>
 
-  <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+      <aside shellRight class="evaluation-form__aside">
+        <fieldset class="evaluation-form__config border rounded p-3">
+          <legend class="float-none w-auto px-2 fs-6">Evaluation configuration</legend>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label" for="evaluation-goal">Goal</label>
+              <select id="evaluation-goal" class="form-select" formControlName="goal">
+                <option value="general">General quality</option>
+                <option value="coding">Coding</option>
+                <option value="reasoning">Reasoning</option>
+                <option value="grounded">Factual / grounded</option>
+                <option value="safety">Safety</option>
+                <option value="creative">Creative</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="evaluation-difficulty">Task difficulty</label>
+              <select id="evaluation-difficulty" class="form-select" formControlName="taskDifficulty">
+                <option value="easy">Easy</option>
+                <option value="balanced">Balanced</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label" for="evaluation-audience">Audience</label>
+              <select id="evaluation-audience" class="form-select" formControlName="audience">
+                <option value="general">General</option>
+                <option value="beginner">Beginner</option>
+                <option value="expert">Expert</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-check mt-3">
+            <input id="evaluation-blind" class="form-check-input" type="checkbox" formControlName="blindJudging" />
+            <label class="form-check-label" for="evaluation-blind">Blind model labels during judging</label>
+          </div>
+
+          <details class="mt-3">
+            <summary class="fw-semibold">Advanced</summary>
+            <div class="row g-3 mt-1">
+              <div class="col-12">
+                <label class="form-label" for="evaluation-format">Response format</label>
+                <select id="evaluation-format" class="form-select" formControlName="format">
+                  <option value="freeform">Freeform</option>
+                  <option value="paragraphs">Paragraphs</option>
+                  <option value="bullets">Bullets</option>
+                  <option value="json">JSON</option>
+                  <option value="code">Code</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="evaluation-max-words">Maximum words</label>
+                <input id="evaluation-max-words" class="form-control" type="number" min="1" formControlName="maxWords" />
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="evaluation-strictness">Judge strictness</label>
+                <select id="evaluation-strictness" class="form-select" formControlName="strictness">
+                  <option value="easy">Easy</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+              <div class="col-12 d-flex flex-wrap gap-3">
+                <div class="form-check">
+                  <input id="evaluation-citations" class="form-check-input" type="checkbox" formControlName="requireCitations" />
+                  <label class="form-check-label" for="evaluation-citations">Require citations</label>
+                </div>
+                <div class="form-check">
+                  <input id="evaluation-code" class="form-check-input" type="checkbox" formControlName="requireCode" />
+                  <label class="form-check-label" for="evaluation-code">Require code</label>
+                </div>
+                <div class="form-check">
+                  <input id="evaluation-tests" class="form-check-input" type="checkbox" formControlName="requireTests" />
+                  <label class="form-check-label" for="evaluation-tests">Require tests</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="evaluation-expected-answer">Expected answer / reference evidence</label>
+                <textarea id="evaluation-expected-answer" class="form-control" rows="3" formControlName="expectedAnswer"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="evaluation-judge-model">Judge model override</label>
+                <input id="evaluation-judge-model" class="form-control" type="text" formControlName="judgeModel" />
+              </div>
+            </div>
+          </details>
+        </fieldset>
+
+        <div class="evaluation-form__actions mt-3">
+          <button type="submit" class="btn btn-primary w-100">{{ submitLabel() }}</button>
+        </div>
+      </aside>
+    </app-page-shell>
+  } @else {
+    <div class="mb-3">
+      <label class="form-label" for="evaluation-title">Title</label>
+      <input
+        id="evaluation-title"
+        type="text"
+        class="form-control"
+        formControlName="title"
+        [class.is-invalid]="form.controls.title.touched && form.controls.title.invalid"
+      />
+      @if (form.controls.title.touched && form.controls.title.hasError('minlength')) {
+        <div class="invalid-feedback">Title must be at least 3 characters.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label" for="evaluation-prompt">Prompt</label>
+      <textarea
+        id="evaluation-prompt"
+        class="form-control"
+        rows="5"
+        formControlName="prompt"
+        [class.is-invalid]="form.controls.prompt.touched && form.controls.prompt.invalid"
+      ></textarea>
+      @if (form.controls.prompt.touched && form.controls.prompt.hasError('required')) {
+        <div class="invalid-feedback">Prompt is required.</div>
+      }
+    </div>
+
+    <fieldset class="border rounded p-3 mb-3">
+      <legend class="float-none w-auto px-2 fs-6">Evaluation configuration</legend>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label" for="evaluation-goal">Goal</label>
+          <select id="evaluation-goal" class="form-select" formControlName="goal">
+            <option value="general">General quality</option>
+            <option value="coding">Coding</option>
+            <option value="reasoning">Reasoning</option>
+            <option value="grounded">Factual / grounded</option>
+            <option value="safety">Safety</option>
+            <option value="creative">Creative</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="evaluation-difficulty">Task difficulty</label>
+          <select id="evaluation-difficulty" class="form-select" formControlName="taskDifficulty">
+            <option value="easy">Easy</option>
+            <option value="balanced">Balanced</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="evaluation-audience">Audience</label>
+          <select id="evaluation-audience" class="form-select" formControlName="audience">
+            <option value="general">General</option>
+            <option value="beginner">Beginner</option>
+            <option value="expert">Expert</option>
+            <option value="executive">Executive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-check mt-3">
+        <input id="evaluation-blind" class="form-check-input" type="checkbox" formControlName="blindJudging" />
+        <label class="form-check-label" for="evaluation-blind">Blind model labels during judging</label>
+      </div>
+
+      <details class="mt-3">
+        <summary class="fw-semibold">Advanced</summary>
+        <div class="row g-3 mt-1">
+          <div class="col-md-4">
+            <label class="form-label" for="evaluation-format">Response format</label>
+            <select id="evaluation-format" class="form-select" formControlName="format">
+              <option value="freeform">Freeform</option>
+              <option value="paragraphs">Paragraphs</option>
+              <option value="bullets">Bullets</option>
+              <option value="json">JSON</option>
+              <option value="code">Code</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="evaluation-max-words">Maximum words</label>
+            <input id="evaluation-max-words" class="form-control" type="number" min="1" formControlName="maxWords" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="evaluation-strictness">Judge strictness</label>
+            <select id="evaluation-strictness" class="form-select" formControlName="strictness">
+              <option value="easy">Easy</option>
+              <option value="balanced">Balanced</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          <div class="col-12 d-flex flex-wrap gap-3">
+            <div class="form-check">
+              <input id="evaluation-citations" class="form-check-input" type="checkbox" formControlName="requireCitations" />
+              <label class="form-check-label" for="evaluation-citations">Require citations</label>
+            </div>
+            <div class="form-check">
+              <input id="evaluation-code" class="form-check-input" type="checkbox" formControlName="requireCode" />
+              <label class="form-check-label" for="evaluation-code">Require code</label>
+            </div>
+            <div class="form-check">
+              <input id="evaluation-tests" class="form-check-input" type="checkbox" formControlName="requireTests" />
+              <label class="form-check-label" for="evaluation-tests">Require tests</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="evaluation-expected-answer">Expected answer / reference evidence</label>
+            <textarea id="evaluation-expected-answer" class="form-control" rows="3" formControlName="expectedAnswer"></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="evaluation-judge-model">Judge model override</label>
+            <input id="evaluation-judge-model" class="form-control" type="text" formControlName="judgeModel" />
+          </div>
+        </div>
+      </details>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+  }
 </form>

@@ -1,3 +1,4 @@
+export * from './evaluation-template.model';
 export * from './app-status.model';
 export * from './llm-preset.model';
 export * from './automation.model';

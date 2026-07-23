@@ -9,9 +9,63 @@ export interface RubricCriterion {
   name: string;
   description?: string;
   maxPoints: number;
+  weight: number;
 }
 
 export type CriteriaMode = 'default' | 'custom';
+export type TaskDifficulty = 'easy' | 'balanced' | 'hard';
+export type EvaluationGoal = 'general' | 'coding' | 'reasoning' | 'grounded' | 'safety' | 'creative';
+export type EvaluationAudience = 'general' | 'beginner' | 'expert' | 'executive';
+export type ResponseFormat = 'freeform' | 'paragraphs' | 'bullets' | 'json' | 'code';
+
+export interface EvaluationConfig {
+  taskDifficulty: TaskDifficulty;
+  goal: EvaluationGoal;
+  audience: EvaluationAudience;
+  responseConstraints: {
+    maxWords?: number;
+    format: ResponseFormat;
+    requireCitations: boolean;
+    requireCode: boolean;
+    requireTests: boolean;
+  };
+  expectedAnswer?: string;
+  blindJudging: boolean;
+  judgeProfile: {
+    strictness: TaskDifficulty;
+    model?: string;
+  };
+}
+
+export interface ManualOverrideRecord {
+  kind: 'winner' | 'score';
+  answerId: string;
+  criterionId?: string;
+  priorValue?: string;
+  newValue: string;
+  reason: string;
+  at: string;
+}
+
+export interface LastScoringRun {
+  at: string;
+  judgeModel?: string;
+  strictness: TaskDifficulty;
+}
+
+export const DEFAULT_EVALUATION_CONFIG: EvaluationConfig = {
+  taskDifficulty: 'balanced',
+  goal: 'general',
+  audience: 'general',
+  responseConstraints: {
+    format: 'freeform',
+    requireCitations: false,
+    requireCode: false,
+    requireTests: false,
+  },
+  blindJudging: true,
+  judgeProfile: { strictness: 'balanced' },
+};
 
 /** Placeholder title/prompt when starting full automation from the create page. */
 export const AUTOMATION_METADATA_STUB = '(automation pending)';
@@ -23,6 +77,7 @@ export const DEFAULT_CRITERIA: RubricCriterion[] = [
     description:
       '5 = Fully correct with no misleading claims; 4 = Mostly correct with minor missing precision; 3 = Generally correct but has some vague or incomplete points; 2 = Contains noticeable errors or confusion; 1 = Mostly incorrect or misleading.',
     maxPoints: 5,
+    weight: 1,
   },
   {
     id: 'default-clarity',
@@ -30,6 +85,7 @@ export const DEFAULT_CRITERIA: RubricCriterion[] = [
     description:
       '5 = Very easy to understand and well explained; 4 = Clear overall with minor confusing parts; 3 = Understandable but could be simpler or better explained; 2 = Hard to follow in several places; 1 = Confusing or unclear.',
     maxPoints: 5,
+    weight: 1,
   },
   {
     id: 'default-completeness',
@@ -37,6 +93,7 @@ export const DEFAULT_CRITERIA: RubricCriterion[] = [
     description:
       '5 = Answers all parts of the prompt fully; 4 = Answers most parts with only small gaps; 3 = Covers the main idea but misses some required details; 2 = Misses important parts of the prompt; 1 = Barely answers the prompt.',
     maxPoints: 5,
+    weight: 1,
   },
   {
     id: 'default-relevance',
@@ -44,6 +101,7 @@ export const DEFAULT_CRITERIA: RubricCriterion[] = [
     description:
       '5 = Fully focused on the prompt; 4 = Mostly focused with minor unnecessary content; 3 = Somewhat relevant but includes extra or weakly related points; 2 = Frequently off-topic; 1 = Mostly unrelated to the prompt.',
     maxPoints: 5,
+    weight: 1,
   },
   {
     id: 'default-safety',
@@ -51,6 +109,7 @@ export const DEFAULT_CRITERIA: RubricCriterion[] = [
     description:
       '5 = Responsible, cautious, and does not give harmful or risky advice; 4 = Safe overall with minor lack of caution; 3 = Mostly safe but could be clearer about risks or limits; 2 = Potentially risky, overconfident, or careless; 1 = Unsafe, harmful, or encourages bad decisions.',
     maxPoints: 5,
+    weight: 1,
   },
 ];
 
@@ -60,20 +119,24 @@ export interface Evaluation {
   prompt: string;
   criteriaMode: CriteriaMode;
   criteria: RubricCriterion[];
+  evaluationConfig: EvaluationConfig;
   answers: Answer[];
   improvedAnswer?: ImprovedAnswer;
   winnerAnswerId?: string;
   automatedAt?: string;
+  lastScoringRun?: LastScoringRun;
+  scoringConfigRevision?: string;
+  manualOverrides?: ManualOverrideRecord[];
   tokenUsage?: TokenUsageTotals;
   createdAt: string;
   updatedAt: string;
 }
 
-export type CreateCriterionDto = Pick<RubricCriterion, 'name' | 'maxPoints'> &
+export type CreateCriterionDto = Pick<RubricCriterion, 'name' | 'maxPoints' | 'weight'> &
   Partial<Pick<RubricCriterion, 'description'>>;
 
 export type CreateEvaluationDto = Pick<Evaluation, 'title' | 'prompt'> &
-  Partial<Pick<Evaluation, 'criteria' | 'criteriaMode'>>;
+  Partial<Pick<Evaluation, 'criteria' | 'criteriaMode' | 'evaluationConfig'>>;
 
 export type UpdateEvaluationDto = Partial<
   Pick<
@@ -82,8 +145,10 @@ export type UpdateEvaluationDto = Partial<
     | 'prompt'
     | 'criteriaMode'
     | 'criteria'
+    | 'evaluationConfig'
     | 'answers'
     | 'improvedAnswer'
     | 'winnerAnswerId'
+    | 'manualOverrides'
   >
 >;

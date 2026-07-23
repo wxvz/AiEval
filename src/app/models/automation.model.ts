@@ -37,7 +37,7 @@ export type AutomationProgressEvent =
   | {
       type: 'step_paused';
       step: string;
-      reason: 'rate_limit';
+      reason: 'rate_limit' | 'empty_content';
       completed: number;
       pending: number;
     }
@@ -82,7 +82,9 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
       return `${event.modelLabel} is generating answer${suffix}`;
     }
     case 'step_paused':
-      return `Paused (${event.completed} done, ${event.pending} pending) — retrying after rate limit…`;
+      return event.reason === 'empty_content'
+        ? `Paused (${event.completed} done, ${event.pending} pending) — retrying after empty/unusable answers…`
+        : `Paused (${event.completed} done, ${event.pending} pending) — retrying after rate limit…`;
     case 'model_fallback':
       return event.slotIndex !== undefined
         ? `Retrying slot ${event.slotIndex + 1} with ${event.toModel} (was ${event.fromModel})`

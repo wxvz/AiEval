@@ -1,4 +1,4 @@
-import { Evaluation } from '../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../models';
 
 import { groupEvaluationsByDay, localDayKey } from './group-evaluations-by-day';
 
@@ -8,6 +8,7 @@ function evaluation(overrides: Partial<Evaluation> & Pick<Evaluation, 'id' | 'up
     prompt: 'Prompt',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: overrides.updatedAt,
     ...overrides,

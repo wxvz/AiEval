@@ -6,6 +6,7 @@ interface JudgeScoreEntry {
   criterionId: string;
   points: unknown;
   notes?: unknown;
+  confidence?: unknown;
 }
 
 export interface ParsedJudgeScoreResponse {
@@ -58,6 +59,7 @@ export function parseJudgeScoreResponse(
     const anchorPoints = getDiscreteAnchorPoints(criterion, criteria);
     const points = parseJudgePointsValue(match?.points, criterion.maxPoints, anchorPoints);
     const notes = readJudgeNotes(match?.notes) ?? existingScore?.notes;
+    const confidence = parseConfidence(match?.confidence) ?? existingScore?.confidence;
 
     return {
       criterionId: criterion.id,
@@ -65,6 +67,7 @@ export function parseJudgeScoreResponse(
       points,
       maxPoints: criterion.maxPoints,
       ...(notes ? { notes } : {}),
+      ...(confidence !== undefined ? { confidence } : {}),
     };
   });
 
@@ -302,12 +305,32 @@ export function computeMaxPoints(scores: Score[]): number {
   return scores.reduce((sum, score) => sum + score.maxPoints, 0);
 }
 
-export function allAnswersHaveEqualTotals(answers: { scores: Score[] }[]): boolean {
+export function computeWeightedNormalizedScore(
+  scores: Score[],
+  criteria: RubricCriterion[],
+): number {
+  const scoreById = new Map(scores.map((score) => [score.criterionId, score]));
+
+  return criteria.reduce((sum, criterion) => {
+    const score = scoreById.get(criterion.id);
+    const normalized = score && score.maxPoints > 0 ? score.points / score.maxPoints : 0;
+    return sum + normalized * criterion.weight;
+  }, 0);
+}
+
+export function allAnswersHaveEqualTotals(
+  answers: { scores: Score[] }[],
+  criteria?: RubricCriterion[],
+): boolean {
   if (answers.length < 2) {
     return false;
   }
 
-  const [firstTotal, ...restTotals] = answers.map((answer) => computeTotalPoints(answer.scores));
+  const [firstTotal, ...restTotals] = answers.map((answer) =>
+    criteria
+      ? computeWeightedNormalizedScore(answer.scores, criteria)
+      : computeTotalPoints(answer.scores),
+  );
 
   return restTotals.every((total) => total === firstTotal);
 }
@@ -334,6 +357,7 @@ export interface WinnerResult {
 
 export function pickWinner(
   answers: { id: string; label: string; scores: Score[] }[],
+  criteria?: RubricCriterion[],
 ): WinnerResult | null {
   if (answers.length === 0) {
     return null;
@@ -341,28 +365,34 @@ export function pickWinner(
 
   let best = answers[0];
   let bestTotal = computeTotalPoints(best.scores);
+  let bestWeighted = criteria
+    ? computeWeightedNormalizedScore(best.scores, criteria)
+    : bestTotal;
   let bestMax = computeMaxPoints(best.scores);
   let bestPct = bestMax > 0 ? bestTotal / bestMax : 0;
 
   for (let index = 1; index < answers.length; index += 1) {
     const candidate = answers[index];
     const total = computeTotalPoints(candidate.scores);
+    const weighted = criteria ? computeWeightedNormalizedScore(candidate.scores, criteria) : total;
     const max = computeMaxPoints(candidate.scores);
     const pct = max > 0 ? total / max : 0;
 
-    if (total > bestTotal) {
+    if (weighted > bestWeighted) {
       best = candidate;
       bestTotal = total;
       bestMax = max;
       bestPct = pct;
+      bestWeighted = weighted;
       continue;
     }
 
-    if (total === bestTotal && pct > bestPct) {
+    if (weighted === bestWeighted && pct > bestPct) {
       best = candidate;
       bestTotal = total;
       bestMax = max;
       bestPct = pct;
+      bestWeighted = weighted;
     }
   }
 
@@ -371,4 +401,20 @@ export function pickWinner(
     label: best.label,
     totalPoints: bestTotal,
   };
+}
+
+function parseConfidence(value: unknown): number | undefined {
+  const numeric =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && value.trim()
+        ? Number(value)
+        : Number.NaN;
+
+  if (!Number.isFinite(numeric)) {
+    return undefined;
+  }
+
+  const normalized = numeric > 1 && numeric <= 100 ? numeric / 100 : numeric;
+  return Math.min(Math.max(normalized, 0), 1);
 }

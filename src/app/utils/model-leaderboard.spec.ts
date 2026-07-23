@@ -1,4 +1,4 @@
-import { Evaluation } from '../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../models';
 
 import { computeModelLeaderboard, winnerLabelForEvaluation } from './model-leaderboard';
 
@@ -8,6 +8,7 @@ function evaluation(overrides: Partial<Evaluation> & Pick<Evaluation, 'id'>): Ev
     prompt: 'Prompt',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: '2024-01-01',
     updatedAt: '2024-01-01',

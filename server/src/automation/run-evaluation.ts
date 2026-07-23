@@ -3,6 +3,8 @@ import { ObjectId } from 'mongodb';
 import { config } from '../config.js';
 import { getLlmPreset } from '../runtime-settings.js';
 import { getEvaluationsCollection } from '../db.js';
+import { computeScoringConfigRevision } from '../scoring-config-revision.js';
+import { normalizeEvaluationConfig } from '../evaluation-config.js';
 import { needsAutomationMetadataPrep } from './constants.js';
 import { getActiveCriteria } from './criteria.js';
 import {
@@ -23,7 +25,7 @@ import {
   buildBatchScorePrompt,
   buildComparativeRankPrompt,
   buildImprovedPrompt,
-  GENERATE_SYSTEM,
+  buildGenerateSystem,
   JUDGE_BATCH_SCORE_SYSTEM,
   JUDGE_IMPROVED_SYSTEM,
   JUDGE_RANK_SYSTEM,
@@ -64,11 +66,12 @@ import type {
 } from '../llm/types.js';
 
 export type { AutomationPhase };
-import { toApiEvaluation } from '../serialization.js';
+import { normalizeEvaluationRecord, toApiEvaluation } from '../serialization.js';
 import type {
   Answer,
   Evaluation,
   EvaluationDocument,
+  EvaluationConfig,
   ImprovedAnswer,
   RubricCriterion,
 } from '../types/evaluation.js';
@@ -235,7 +238,7 @@ function modelFallbackHandlers(
   onProgress: ProgressCallback,
   step: AutomationStep,
   slotIndex?: number,
-  pause?: { completed: number; pending: number },
+  pause?: { completed: number; pending: number; reason?: 'rate_limit' | 'empty_content' },
 ) {
   let pauseEmitted = false;
 
@@ -246,18 +249,11 @@ function modelFallbackHandlers(
         emit(onProgress, {
           type: 'step_paused',
           step,
-          reason: 'rate_limit',
+          reason: pause.reason ?? 'rate_limit',
           completed: pause.completed,
           pending: pause.pending,
         });
       }
-
-      logEvent('warn', LogEvents.automationModelFallback, {
-        step,
-        fromModel,
-        toModel,
-        ...(index !== undefined ? { slotIndex: index } : {}),
-      });
 
       emit(onProgress, {
         type: 'model_fallback',
@@ -272,6 +268,23 @@ function modelFallbackHandlers(
 
 function candidateKey(candidate: FallbackCandidate): string {
   return `${candidate.providerName}:${candidate.model}`;
+}
+
+async function buildJudgeCandidates(
+  setup: ResolvedLlmSetup,
+  evaluationConfig: EvaluationConfig,
+): Promise<FallbackCandidate[]> {
+  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const requested = evaluationConfig.judgeProfile.model;
+
+  if (!requested || candidates.some((candidate) => candidate.model === requested)) {
+    return candidates;
+  }
+
+  return [
+    { providerName: setup.providerName, model: requested, label: modelIdToLabel(requested) },
+    ...candidates,
+  ];
 }
 
 async function persistGenerateCheckpoint(
@@ -294,6 +307,7 @@ async function generateOneAnswerSlot(
   evaluationId: string,
   prompt: string,
   criteria: RubricCriterion[],
+  evaluationConfig: EvaluationConfig,
   slotIndex: number,
   runId: string,
   onProgress: ProgressCallback,
@@ -304,14 +318,17 @@ async function generateOneAnswerSlot(
   assertNotCancelled(signal, 'generating');
 
   const total = setup.answerModels.length;
+  const progressLabel = evaluationConfig.blindJudging
+    ? `Answer ${String.fromCharCode(65 + slotIndex)}`
+    : candidate.label;
   const generateMessages: ChatMessage[] = [
-    { role: 'system', content: GENERATE_SYSTEM },
+    { role: 'system', content: buildGenerateSystem(evaluationConfig) },
     { role: 'user', content: prompt },
   ];
 
   emit(onProgress, {
     type: 'generating',
-    modelLabel: candidate.label,
+    modelLabel: progressLabel,
     index: slotIndex + 1,
     total,
   });
@@ -370,7 +387,11 @@ async function generateOneAnswerSlot(
     durationMs: Date.now() - start,
     answerId: answer.id,
   });
-  emit(onProgress, { type: 'answer_generated', answerId: answer.id, label: answer.label });
+  emit(onProgress, {
+    type: 'answer_generated',
+    answerId: answer.id,
+    label: evaluationConfig.blindJudging ? progressLabel : answer.label,
+  });
 
   return answer;
 }
@@ -380,6 +401,7 @@ async function generateAnswers(
   evaluationId: string,
   prompt: string,
   criteria: RubricCriterion[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
@@ -393,6 +415,8 @@ async function generateAnswers(
   const total = setup.answerModels.length;
   const slots = mapAnswersToSlots(options?.existingAnswers ?? [], setup);
   const attempted = new Set<string>();
+  /** Prefer rate_limit when mixed; empty_content only when that alone caused pending slots. */
+  let concurrentPauseReason: 'rate_limit' | 'empty_content' | null = null;
 
   for (const [index, slot] of slots.entries()) {
     if (slot) {
@@ -418,6 +442,7 @@ async function generateAnswers(
           evaluationId,
           prompt,
           criteria,
+          evaluationConfig,
           slotIndex,
           runId,
           onProgress,
@@ -438,6 +463,12 @@ async function generateAnswers(
         // Leave the slot null so sequential fallback can try another model.
         if (!isRateLimitExhausted(error) && !emptyAfterSanitize) {
           throw error;
+        }
+
+        if (isRateLimitExhausted(error)) {
+          concurrentPauseReason = 'rate_limit';
+        } else if (concurrentPauseReason !== 'rate_limit') {
+          concurrentPauseReason = 'empty_content';
         }
 
         logAnswerRejected(
@@ -467,7 +498,7 @@ async function generateAnswers(
       emit(onProgress, {
         type: 'step_paused',
         step: 'generating',
-        reason: 'rate_limit',
+        reason: concurrentPauseReason ?? 'rate_limit',
         completed: checkpointAnswers.length,
         pending: pending.length,
       });
@@ -489,6 +520,7 @@ async function generateAnswers(
           evaluationId,
           prompt,
           criteria,
+          evaluationConfig,
           slotIndex,
           runId,
           onProgress,
@@ -503,10 +535,11 @@ async function generateAnswers(
   const answers = answersFromSlots(slots);
 
   if (answers.length !== total) {
-    throw new AutomationError(
-      'Could not generate all model answers after rate-limit retries.',
-      'generating',
-    );
+    const detail =
+      concurrentPauseReason === 'empty_content'
+        ? 'after empty-content / unusable-model fallbacks.'
+        : 'after rate-limit retries.';
+    throw new AutomationError(`Could not generate all model answers ${detail}`, 'generating');
   }
 
   validateAnswersForScoring(answers, criteria, total);
@@ -520,6 +553,7 @@ async function scoreAnswers(
   prompt: string,
   criteria: RubricCriterion[],
   answers: Answer[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
@@ -527,7 +561,7 @@ async function scoreAnswers(
 ): Promise<Answer[]> {
   assertNotCancelled(signal, 'scoring');
 
-  const candidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const candidates = await buildJudgeCandidates(setup, evaluationConfig);
 
   emit(onProgress, {
     type: 'scoring_batch',
@@ -549,7 +583,7 @@ async function scoreAnswers(
     content: JUDGE_BATCH_SCORE_SYSTEM,
   };
 
-  const userContent = buildBatchScorePrompt(prompt, criteria, answers);
+  const userContent = buildBatchScorePrompt(prompt, criteria, answers, evaluationConfig);
   const messages: ChatMessage[] = [judgeSystem, { role: 'user', content: userContent }];
 
   const rows = await callSingleModelWithFallback(
@@ -568,6 +602,7 @@ async function scoreAnswers(
         (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
       ),
   );
+  assertNotCancelled(signal, 'scoring');
 
   const scored = rows.map((row, index) => {
     const answer = answers[index]!;
@@ -600,6 +635,7 @@ async function scoreAnswers(
     prompt,
     criteria,
     scored,
+    evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -650,12 +686,13 @@ async function rebalanceTiedScores(
   prompt: string,
   criteria: RubricCriterion[],
   answers: Answer[],
+  evaluationConfig: EvaluationConfig,
   runId: string,
   onProgress: ProgressCallback,
   signal: AbortSignal,
   llmCtx: CompleteContext,
 ): Promise<Answer[]> {
-  if (!allAnswersHaveEqualTotals(answers)) {
+  if (!allAnswersHaveEqualTotals(answers, criteria)) {
     return answers;
   }
 
@@ -663,9 +700,12 @@ async function rebalanceTiedScores(
 
   const rankMessages: ChatMessage[] = [
     { role: 'system', content: JUDGE_RANK_SYSTEM },
-    { role: 'user', content: buildComparativeRankPrompt(prompt, criteria, answers) },
+    {
+      role: 'user',
+      content: buildComparativeRankPrompt(prompt, criteria, answers, evaluationConfig),
+    },
   ];
-  const rankCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const rankCandidates = await buildJudgeCandidates(setup, evaluationConfig);
 
   const rankings = await callSingleModelWithFallback(
     rankCandidates,
@@ -684,6 +724,7 @@ async function rebalanceTiedScores(
           ),
       ),
   );
+  assertNotCancelled(signal, 'scoring');
 
   const bestPercent = Math.max(...rankings.map((entry) => entry.qualityPercent));
 
@@ -837,11 +878,12 @@ function findWinnerAnswer(answers: Answer[], winnerAnswerId?: string): Answer | 
 
 async function applyWinner(
   scored: Answer[],
+  criteria: RubricCriterion[],
   runId: string,
   evaluationId: string,
   onProgress: ProgressCallback,
 ): Promise<{ answersWithWinner: Answer[]; winner: Answer; winnerAnswerId: string }> {
-  const winnerResult = pickWinner(scored);
+  const winnerResult = pickWinner(scored, criteria);
 
   if (!winnerResult) {
     throw new AutomationError('No winner could be determined.', 'scoring');
@@ -885,6 +927,7 @@ async function runGeneratePhase(
     evaluationId,
     prompt,
     criteria,
+    doc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -892,6 +935,7 @@ async function runGeneratePhase(
     { existingAnswers: doc.answers, docId: doc._id, accumulator },
   );
   logAutomationStepComplete('generating', runId, evaluationId);
+  assertNotCancelled(signal, 'generating');
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
@@ -926,6 +970,7 @@ async function runScorePhase(
     prompt,
     criteria,
     doc.answers,
+    doc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -933,14 +978,17 @@ async function runScorePhase(
   );
   validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
+  assertNotCancelled(signal, 'scoring');
 
   const { answersWithWinner, winnerAnswerId } = await applyWinner(
     scored,
+    criteria,
     runId,
     evaluationId,
     onProgress,
   );
   const now = new Date().toISOString();
+  const scoringConfigRevision = computeScoringConfigRevision(doc, criteria);
   const saved = await persistEvaluation(
     doc._id,
     {
@@ -948,6 +996,12 @@ async function runScorePhase(
       winnerAnswerId,
       automatedAt: now,
       updatedAt: now,
+      scoringConfigRevision,
+      lastScoringRun: {
+        at: now,
+        strictness: doc.evaluationConfig.judgeProfile.strictness,
+        judgeModel: doc.evaluationConfig.judgeProfile.model ?? setup.judgeModel.model,
+      },
       ...tokenUsageField(accumulator),
     },
     undefined,
@@ -987,6 +1041,7 @@ async function runImprovedPhase(
     llmCtx,
   );
   logAutomationStepComplete('improved', runId, evaluationId);
+  assertNotCancelled(signal, 'improved');
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
@@ -1016,12 +1071,26 @@ async function ensureAutomationMetadata(
   const evaluationId = doc._id.toString();
   assertNotCancelled(signal, 'generating');
 
-  const { title, prompt } = await generateEvaluationMetadata(setup, handlers, llmCtx);
+  const evaluationConfig = normalizeEvaluationConfig(doc.evaluationConfig);
+  const { title, prompt } = await generateEvaluationMetadata(
+    setup,
+    handlers,
+    llmCtx,
+    evaluationConfig,
+  );
   const now = new Date().toISOString();
 
+  // Persist normalized config so legacy docs missing evaluationConfig stay usable
+  // after metadata save (persistEvaluation returns raw Mongo, not the in-memory normalize).
   const saved = await persistEvaluation(
     doc._id,
-    { title, prompt, updatedAt: now, ...tokenUsageField(accumulator) },
+    {
+      title,
+      prompt,
+      evaluationConfig,
+      updatedAt: now,
+      ...tokenUsageField(accumulator),
+    },
     undefined,
     'generating',
   );
@@ -1034,13 +1103,18 @@ async function ensureAutomationMetadata(
     nextStep: 'generating',
   });
 
+  const normalized: EvaluationDocument = {
+    _id: saved._id,
+    ...normalizeEvaluationRecord(saved, evaluationId),
+  };
+
   emit(onProgress, {
     type: 'metadata_generated',
-    evaluation: toApiEvaluation(saved),
+    evaluation: toApiEvaluation(normalized),
   });
   emit(onProgress, { type: 'status', status: 'running', runId });
 
-  return saved;
+  return normalized;
 }
 
 async function runFullPipeline(
@@ -1070,6 +1144,7 @@ async function runFullPipeline(
     evaluationId,
     prompt,
     criteria,
+    preparedDoc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -1086,6 +1161,7 @@ async function runFullPipeline(
     prompt,
     criteria,
     answers,
+    preparedDoc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -1093,9 +1169,11 @@ async function runFullPipeline(
   );
   validateScoredAnswers(scored, criteria);
   logAutomationStepComplete('scoring', runId, evaluationId);
+  assertNotCancelled(signal, 'scoring');
 
   const { answersWithWinner, winner, winnerAnswerId } = await applyWinner(
     scored,
+    criteria,
     runId,
     evaluationId,
     onProgress,
@@ -1114,8 +1192,10 @@ async function runFullPipeline(
     llmCtx,
   );
   logAutomationStepComplete('improved', runId, evaluationId);
+  assertNotCancelled(signal, 'improved');
 
   const now = new Date().toISOString();
+  const scoringConfigRevision = computeScoringConfigRevision(preparedDoc, criteria);
   const saved = await persistEvaluation(
     preparedDoc._id,
     {
@@ -1124,6 +1204,13 @@ async function runFullPipeline(
       improvedAnswer,
       automatedAt: now,
       updatedAt: now,
+      scoringConfigRevision,
+      lastScoringRun: {
+        at: now,
+        strictness: preparedDoc.evaluationConfig.judgeProfile.strictness,
+        judgeModel:
+          preparedDoc.evaluationConfig.judgeProfile.model ?? setup.judgeModel.model,
+      },
       ...tokenUsageField(accumulator),
     },
     undefined,
@@ -1229,11 +1316,17 @@ export async function prepareDocForPhase(
           { _id: doc._id },
           {
             $set: { answers, updatedAt: now },
-            $unset: { winnerAnswerId: '', automatedAt: '' },
+            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
           },
         );
 
-        return { ...doc, answers, winnerAnswerId: undefined, automatedAt: undefined };
+        return {
+          ...doc,
+          answers,
+          winnerAnswerId: undefined,
+          improvedAnswer: undefined,
+          automatedAt: undefined,
+        };
       }
 
       return doc;
@@ -1272,11 +1365,15 @@ export async function runEvaluationAutomation(options: {
   const { evaluationObjectId, runId, force, onProgress } = options;
   const phase = options.phase ?? 'full';
   const collection = getEvaluationsCollection();
-  const doc = await collection.findOne({ _id: evaluationObjectId });
+  const storedDoc = await collection.findOne({ _id: evaluationObjectId });
 
-  if (!doc) {
+  if (!storedDoc) {
     throw new AutomationError('Evaluation not found.', initialFailureStep(phase));
   }
+  const doc: EvaluationDocument = {
+    _id: storedDoc._id,
+    ...normalizeEvaluationRecord(storedDoc, storedDoc._id.toString()),
+  };
 
   const evaluationId = doc._id.toString();
   const signal = registerAutomationRun(evaluationId, runId);

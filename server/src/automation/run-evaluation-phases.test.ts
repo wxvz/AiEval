@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getActiveCriteria } from './criteria.js';
 import { initialScoresForCriteria } from './scores.js';
 import type { EvaluationDocument } from '../types/evaluation.js';
+import { DEFAULT_EVALUATION_CONFIG } from '../evaluation-config.js';
 
 const { updateOne, resolveProvider } = vi.hoisted(() => ({
   updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
@@ -42,6 +43,7 @@ function baseDoc(overrides: Partial<EvaluationDocument> = {}): EvaluationDocumen
     prompt: 'Hello',
     criteriaMode: 'default',
     criteria: [],
+    evaluationConfig: DEFAULT_EVALUATION_CONFIG,
     answers: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -106,6 +108,34 @@ describe('prepareDocForPhase', () => {
     });
 
     await expect(prepareDocForPhase(doc, 'score', false)).rejects.toThrow(AutomationError);
+  });
+
+  it('clears stale improved output when scoring with force', async () => {
+    const doc = baseDoc({
+      automatedAt: '2020-01-01T00:00:00.000Z',
+      winnerAnswerId: 'a1',
+      improvedAnswer: { finalAnswer: 'Stale answer' },
+      answers: [
+        {
+          id: 'a1',
+          evaluationId: 'eval',
+          label: 'M1',
+          content: 'Hi',
+          scores: [],
+          isWinner: true,
+        },
+      ],
+    });
+
+    const result = await prepareDocForPhase(doc, 'score', true);
+
+    expect(result.improvedAnswer).toBeUndefined();
+    expect(updateOne).toHaveBeenCalledWith(
+      { _id: doc._id },
+      expect.objectContaining({
+        $unset: expect.objectContaining({ improvedAnswer: '' }),
+      }),
+    );
   });
 
   it('throws for improved when there is no winner', async () => {

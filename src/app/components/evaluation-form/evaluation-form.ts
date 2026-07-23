@@ -8,12 +8,22 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { Evaluation } from '../../models';
+import {
+  DEFAULT_EVALUATION_CONFIG,
+  Evaluation,
+  EvaluationAudience,
+  EvaluationConfig,
+  EvaluationGoal,
+  ResponseFormat,
+  TaskDifficulty,
+} from '../../models';
+import { PageShell } from '../page-shell/page-shell';
 import { FeedbackService } from '../../services/feedback.service';
 
 export interface EvaluationFormValue {
   title: string;
   prompt: string;
+  evaluationConfig: EvaluationConfig;
 }
 
 function trimmedMinLength(min: number): ValidatorFn {
@@ -32,7 +42,7 @@ function trimmedMinLength(min: number): ValidatorFn {
 
 @Component({
   selector: 'app-evaluation-form',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PageShell],
   templateUrl: './evaluation-form.html',
   styleUrl: './evaluation-form.css',
 })
@@ -40,6 +50,7 @@ export class EvaluationForm {
   private readonly feedback = inject(FeedbackService);
 
   readonly evaluation = input<Evaluation | null>(null);
+  readonly layout = input<'stacked' | 'aside'>('stacked');
   readonly submitLabel = input('Save');
 
   readonly submitted = output<EvaluationFormValue>();
@@ -47,6 +58,18 @@ export class EvaluationForm {
   readonly form = new FormGroup({
     title: new FormControl('', { nonNullable: true, validators: [trimmedMinLength(3)] }),
     prompt: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(10)] }),
+    taskDifficulty: new FormControl<TaskDifficulty>('balanced', { nonNullable: true }),
+    goal: new FormControl<EvaluationGoal>('general', { nonNullable: true }),
+    audience: new FormControl<EvaluationAudience>('general', { nonNullable: true }),
+    blindJudging: new FormControl(true, { nonNullable: true }),
+    strictness: new FormControl<TaskDifficulty>('balanced', { nonNullable: true }),
+    format: new FormControl<ResponseFormat>('freeform', { nonNullable: true }),
+    maxWords: new FormControl<number | null>(null, { validators: [Validators.min(1)] }),
+    requireCitations: new FormControl(false, { nonNullable: true }),
+    requireCode: new FormControl(false, { nonNullable: true }),
+    requireTests: new FormControl(false, { nonNullable: true }),
+    expectedAnswer: new FormControl('', { nonNullable: true }),
+    judgeModel: new FormControl('', { nonNullable: true }),
   });
 
   constructor() {
@@ -54,13 +77,54 @@ export class EvaluationForm {
       const current = this.evaluation();
 
       if (current) {
-        this.form.patchValue({ title: current.title, prompt: current.prompt });
+        const config = current.evaluationConfig ?? DEFAULT_EVALUATION_CONFIG;
+        this.form.patchValue({
+          title: current.title,
+          prompt: current.prompt,
+          taskDifficulty: config.taskDifficulty,
+          goal: config.goal,
+          audience: config.audience,
+          blindJudging: config.blindJudging,
+          strictness: config.judgeProfile.strictness,
+          format: config.responseConstraints.format,
+          maxWords: config.responseConstraints.maxWords ?? null,
+          requireCitations: config.responseConstraints.requireCitations,
+          requireCode: config.responseConstraints.requireCode,
+          requireTests: config.responseConstraints.requireTests,
+          expectedAnswer: config.expectedAnswer ?? '',
+          judgeModel: config.judgeProfile.model ?? '',
+        });
       }
     });
   }
 
   getValue(): EvaluationFormValue {
-    return this.form.getRawValue();
+    const value = this.form.getRawValue();
+    const expectedAnswer = value.expectedAnswer.trim();
+    const model = value.judgeModel.trim();
+
+    return {
+      title: value.title,
+      prompt: value.prompt,
+      evaluationConfig: {
+        taskDifficulty: value.taskDifficulty,
+        goal: value.goal,
+        audience: value.audience,
+        responseConstraints: {
+          ...(value.maxWords && value.maxWords > 0 ? { maxWords: value.maxWords } : {}),
+          format: value.format,
+          requireCitations: value.requireCitations,
+          requireCode: value.requireCode,
+          requireTests: value.requireTests,
+        },
+        ...(expectedAnswer ? { expectedAnswer } : {}),
+        blindJudging: value.blindJudging,
+        judgeProfile: {
+          strictness: value.strictness,
+          ...(model ? { model } : {}),
+        },
+      },
+    };
   }
 
   setTitle(title: string): void {
@@ -73,6 +137,28 @@ export class EvaluationForm {
     this.form.controls.prompt.setValue(prompt);
     this.form.controls.prompt.markAsDirty();
     this.form.controls.prompt.markAsTouched();
+  }
+
+  /** Clear title/prompt and restore default evaluation config (e.g. after “run new”). */
+  resetForNewAutomation(): void {
+    const config = DEFAULT_EVALUATION_CONFIG;
+
+    this.form.patchValue({
+      title: '',
+      prompt: '',
+      taskDifficulty: config.taskDifficulty,
+      goal: config.goal,
+      audience: config.audience,
+      blindJudging: config.blindJudging,
+      strictness: config.judgeProfile.strictness,
+      format: config.responseConstraints.format,
+      maxWords: config.responseConstraints.maxWords ?? null,
+      requireCitations: config.responseConstraints.requireCitations,
+      requireCode: config.responseConstraints.requireCode,
+      requireTests: config.responseConstraints.requireTests,
+      expectedAnswer: '',
+      judgeModel: '',
+    });
   }
 
   isTitleValid(): boolean {
@@ -94,6 +180,6 @@ export class EvaluationForm {
       return;
     }
 
-    this.submitted.emit(this.form.getRawValue());
+    this.submitted.emit(this.getValue());
   }
 }

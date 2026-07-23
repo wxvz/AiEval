@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { Evaluation } from '../../models';
+import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { canRunAutomationPhase } from './automation-controls';
 
 const baseEvaluation = (): Evaluation => ({
@@ -9,6 +9,7 @@ const baseEvaluation = (): Evaluation => ({
   prompt: 'Say hello',
   criteriaMode: 'default',
   criteria: [],
+  evaluationConfig: DEFAULT_EVALUATION_CONFIG,
   answers: [],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
