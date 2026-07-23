@@ -55,12 +55,13 @@ describe('toApiEvaluation', () => {
       updatedAt: 'now',
     } as unknown as EvaluationRecord;
 
-    const api = toApiEvaluation({ _id: objectId, ...record });
+    const api = toApiEvaluation({ _id: objectId, ...record, automationRunId: 'run-secret' });
 
     expect(api.id).toBe(objectId.toHexString());
     expect(api.answers[0]?.evaluationId).toBe(objectId.toHexString());
     expect(api.evaluationConfig.taskDifficulty).toBe('balanced');
     expect(api.evaluationConfig.goal).toBe('general');
     expect(api.criteria[0]?.weight).toBe(1);
+    expect(api).not.toHaveProperty('automationRunId');
   });
 });

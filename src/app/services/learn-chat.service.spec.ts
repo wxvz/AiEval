@@ -243,4 +243,60 @@ describe('LearnChatService', () => {
       'The tutor timed out. Try a shorter question.',
     );
   });
+
+  it('treats token-only SSE without done as an error', async () => {
+    sessionStorage.setItem('aieval-learn-chat-session-id', 's-incomplete');
+    fetchMock.mockResolvedValue(
+      sseResponse(['event: token\ndata: {"text":"Partial reply"}\n\n']),
+    );
+
+    await expect(service.ask('Hello')).rejects.toThrow('Could not reach the tutor. Try again.');
+  });
+
+  it('parses multi-line SSE error data payloads', async () => {
+    sessionStorage.setItem('aieval-learn-chat-session-id', 's-multiline');
+    fetchMock.mockResolvedValue(
+      new Response(
+        [
+          'event: error\n',
+          'data: {"reply":"Too many requests.",\n',
+          'data: "sessionId":"s-multiline","sources":[]}\n\n',
+        ].join(''),
+        { status: 429, headers: { 'Content-Type': 'text/event-stream' } },
+      ),
+    );
+
+    await expect(service.ask('Hello')).rejects.toThrow('Too many requests.');
+  });
+
+  it('does not mark lastSyncedKey from ask so context sync still runs', async () => {
+    sessionStorage.setItem('aieval-learn-chat-session-id', 's-ask-key');
+    routerStub.url = '/learn/lessons/bias-and-weights';
+
+    fetchMock.mockResolvedValue(
+      sseResponse([
+        'event: done\ndata: {"reply":"ok","sessionId":"s-ask-key","sources":[]}\n\n',
+      ]),
+    );
+    await service.ask('What is bias?');
+
+    const pending = service.syncContext();
+    const req = http.expectOne('/api/learn-chat');
+    expect(req.request.body.action).toBe('context');
+    req.flush({ ok: true, sessionId: 's-ask-key' });
+    await pending;
+    expect(service.lastSyncOk).toBe(true);
+  });
+
+  it('surfaces an API token Settings hint on 401', async () => {
+    sessionStorage.setItem('aieval-learn-chat-session-id', 's-401');
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    await expect(service.ask('hello')).rejects.toThrow(/API token in Settings/i);
+  });
 });

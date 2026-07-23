@@ -13,6 +13,7 @@ import {
   type TutorTermHint,
 } from '../learn/learn-tutor-grounding';
 import { messageFromHttpError } from './http-error-message';
+import { readStoredApiToken } from './api-token.storage';
 
 const API = '/api/learn-chat';
 const SESSION_KEY = 'aieval-learn-chat-session-id';
@@ -214,18 +215,32 @@ export class LearnChatService {
     const cancelSub = this.cancelInflight$.subscribe(() => controller.abort());
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      };
+      const apiToken = readStoredApiToken();
+      if (apiToken) {
+        headers['Authorization'] = `Bearer ${apiToken}`;
+      }
+
       const response = await fetch(API, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-        },
+        headers,
         body: JSON.stringify(body),
         signal: controller.signal,
       });
 
       if (!response.ok) {
         const fallback = await this.readErrorReply(response, sessionId);
+        if (response.status === 401) {
+          throw new Error(
+            messageFromHttpError(
+              { status: 401, error: { message: fallback } },
+              'Could not reach the tutor.',
+            ),
+          );
+        }
         throw new Error(fallback);
       }
 
@@ -235,7 +250,7 @@ export class LearnChatService {
         if (streamed.sessionId) {
           sessionStorage.setItem(SESSION_KEY, streamed.sessionId);
         }
-        this.lastSyncedKey = this.groundingSyncKey(streamed.sessionId || sessionId, ctx);
+        // Do not set lastSyncedKey here — only context sync owns that key.
         return streamed;
       }
 
@@ -248,7 +263,6 @@ export class LearnChatService {
       if (normalized.sessionId) {
         sessionStorage.setItem(SESSION_KEY, normalized.sessionId);
       }
-      this.lastSyncedKey = this.groundingSyncKey(normalized.sessionId, ctx);
       if (options.onToken && normalized.reply) {
         options.onToken(normalized.reply);
       }
@@ -278,25 +292,57 @@ export class LearnChatService {
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/event-stream')) {
         const text = await response.text();
-        const errorMatch = /event: error\ndata: ({.*})/.exec(text);
-        if (errorMatch?.[1]) {
-          const parsed = JSON.parse(errorMatch[1]) as LearnChatResponse;
-          if (parsed.reply?.trim()) {
-            return parsed.reply.trim();
-          }
+        const reply = this.parseSseErrorReply(text);
+        if (reply) {
+          return reply;
         }
-      }
-      const payload = (await response.json()) as LearnChatResponse & { message?: string };
-      if (typeof payload.reply === 'string' && payload.reply.trim()) {
-        return payload.reply.trim();
-      }
-      if (typeof payload.message === 'string' && payload.message.trim()) {
-        return payload.message.trim();
+      } else {
+        const payload = (await response.json()) as LearnChatResponse & { message?: string };
+        if (typeof payload.reply === 'string' && payload.reply.trim()) {
+          return payload.reply.trim();
+        }
+        if (typeof payload.message === 'string' && payload.message.trim()) {
+          return payload.message.trim();
+        }
       }
     } catch {
       // fall through
     }
     return `Could not reach the tutor (${response.status}). Try again.`;
+  }
+
+  /** Parse SSE error events, including multi-line `data:` payloads. */
+  private parseSseErrorReply(text: string): string | null {
+    for (const block of text.split('\n\n')) {
+      if (!block.trim()) {
+        continue;
+      }
+      const lines = block.split('\n');
+      let event = 'message';
+      const dataLines: string[] = [];
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          event = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trim());
+        }
+      }
+      if (event !== 'error' || dataLines.length === 0) {
+        continue;
+      }
+      try {
+        const parsed = JSON.parse(dataLines.join('\n')) as LearnChatResponse & { message?: string };
+        if (typeof parsed.reply === 'string' && parsed.reply.trim()) {
+          return parsed.reply.trim();
+        }
+        if (typeof parsed.message === 'string' && parsed.message.trim()) {
+          return parsed.message.trim();
+        }
+      } catch {
+        // try next block
+      }
+    }
+    return null;
   }
 
   private async consumeSse(
@@ -382,7 +428,8 @@ export class LearnChatService {
       throw new Error(errorReply);
     }
 
-    if (!sawDone && !reply) {
+    // Token-only streams without a done event are incomplete (abort/cut-off).
+    if (!sawDone) {
       throw new Error('Could not reach the tutor. Try again.');
     }
 

@@ -23,6 +23,10 @@
               No cloud API key is configured. Keep waiting on {{ formatProvider(prompt.currentProvider) }}?
             }
           </p>
+          <p class="text-muted small mt-2 mb-0">
+            You have up to {{ prompt.choiceTimeoutLabel }} to choose. The automation timer is paused while
+            this prompt is open.
+          </p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary" (click)="onUseLocal()">

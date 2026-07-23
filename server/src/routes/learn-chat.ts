@@ -52,8 +52,10 @@ interface NormalizeResult<T> {
   truncated: boolean;
 }
 
-/** Rolling-window counters keyed by client IP or sessionId. */
+/** Rolling-window counters keyed by action + client IP or sessionId. */
 const rateLimitHits = new Map<string, number[]>();
+/** Soft ceiling so idle keys are pruned even under sparse traffic. */
+const RATE_LIMIT_MAX_KEYS = 2_000;
 
 /** Test helper — clears the in-memory rate-limit window. */
 export function resetLearnChatRateLimitState(): void {
@@ -82,8 +84,33 @@ function clientRateKey(req: Request, sessionId: string): string {
   return ip ? `ip:${ip}` : `session:${sessionId}`;
 }
 
+/** Drop idle rate-limit keys whose stamps all fall outside the window. */
+function pruneRateLimitHits(now: number): void {
+  for (const [key, stamps] of rateLimitHits) {
+    const recent = stamps.filter((stamp) => now - stamp < RATE_LIMIT_WINDOW_MS);
+    if (recent.length === 0) {
+      rateLimitHits.delete(key);
+    } else if (recent.length !== stamps.length) {
+      rateLimitHits.set(key, recent);
+    }
+  }
+  // Emergency trim if the map grew too large (many unique IPs).
+  if (rateLimitHits.size > RATE_LIMIT_MAX_KEYS) {
+    const overflow = rateLimitHits.size - RATE_LIMIT_MAX_KEYS;
+    let removed = 0;
+    for (const key of rateLimitHits.keys()) {
+      rateLimitHits.delete(key);
+      removed += 1;
+      if (removed >= overflow) {
+        break;
+      }
+    }
+  }
+}
+
 function checkRateLimit(key: string, maxPerMinute: number): boolean {
   const now = Date.now();
+  pruneRateLimitHits(now);
   const recent = (rateLimitHits.get(key) ?? []).filter(
     (stamp) => now - stamp < RATE_LIMIT_WINDOW_MS,
   );
@@ -155,14 +182,15 @@ function normalizeCatalog(value: unknown): NormalizeResult<CatalogEntry> {
   return { items: catalog, truncated };
 }
 
-/** Drop invented source chips that are not in the curriculum catalog or request sources. */
+/** Drop invented source chips that are not in the curriculum catalog. */
 function filterSourcesToCatalog(
   sources: LearnChatSource[],
   catalog: CatalogEntry[],
   requestSources: LearnChatSource[],
 ): LearnChatSource[] {
-  if (catalog.length === 0 && requestSources.length === 0) {
-    return sources;
+  // Empty catalog = no allowlist; do not forward client/model-invented chips.
+  if (catalog.length === 0) {
+    return [];
   }
 
   const byRoute = new Map<string, CatalogEntry>();
@@ -241,6 +269,13 @@ function normalizeTermHints(value: unknown): NormalizeResult<TermHint> {
   return { items: hints, truncated };
 }
 
+function sanitizeExcerptText(text: string): string {
+  // Strip C0 controls (keep tab/newline) then cap to server budget.
+  return text
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+    .slice(0, MAX_EXCERPT_TEXT);
+}
+
 function normalizeExcerpts(value: unknown): NormalizeResult<Excerpt> {
   if (!Array.isArray(value)) {
     return { items: [], truncated: false };
@@ -253,17 +288,21 @@ function normalizeExcerpts(value: unknown): NormalizeResult<Excerpt> {
       continue;
     }
     const record = entry as Record<string, unknown>;
-    const text = asOptionalString(record['text']);
+    const rawText = asOptionalString(record['text']);
+    if (!rawText) {
+      continue;
+    }
+    if (rawText.length > MAX_EXCERPT_TEXT) {
+      truncated = true;
+    }
+    const text = sanitizeExcerptText(rawText);
     if (!text) {
       continue;
     }
-    if (text.length > MAX_EXCERPT_TEXT) {
-      truncated = true;
-    }
-    const excerpt: Excerpt = { text: text.slice(0, MAX_EXCERPT_TEXT) };
+    const excerpt: Excerpt = { text };
     const heading = asOptionalString(record['heading']);
     if (heading) {
-      excerpt.heading = heading;
+      excerpt.heading = heading.slice(0, 120);
     }
     excerpts.push(excerpt);
     if (excerpts.length >= MAX_EXCERPTS) {
@@ -323,6 +362,29 @@ function sendChatJson(res: Response, status: number, body: LearnChatResponse): v
   res.status(status).json(body);
 }
 
+function sendConfigError(
+  res: Response,
+  status: number,
+  message: string,
+  stream: boolean,
+): void {
+  if (!stream) {
+    res.status(status).json({ message });
+    return;
+  }
+  res.status(status);
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders?.();
+  writeSse(res, 'error', {
+    reply: message,
+    sessionId: '',
+    sources: [],
+  });
+  res.end();
+}
+
 function sendChatResult(
   res: Response,
   status: number,
@@ -347,7 +409,13 @@ function sendChatResult(
   }
 
   for (const token of chunkReply(body.reply)) {
+    if (res.destroyed || !res.writable) {
+      return;
+    }
     writeSse(res, 'token', { text: token });
+  }
+  if (res.destroyed || !res.writable) {
+    return;
   }
   writeSse(res, 'done', {
     reply: body.reply,
@@ -366,17 +434,22 @@ export function createLearnChatRouter(): Router {
     const stream = wantsStream(req);
 
     if (!webhookUrl) {
-      res.status(503).json({
-        message: 'Learn chat is not configured. Set LEARN_CHAT_WEBHOOK_URL.',
-      });
+      sendConfigError(
+        res,
+        503,
+        'Learn chat is not configured. Set LEARN_CHAT_WEBHOOK_URL.',
+        stream,
+      );
       return;
     }
 
     if (!webhookSecret) {
-      res.status(503).json({
-        message:
-          'Learn chat is not configured. Set LEARN_CHAT_WEBHOOK_SECRET (required with LEARN_CHAT_WEBHOOK_URL).',
-      });
+      sendConfigError(
+        res,
+        503,
+        'Learn chat is not configured. Set LEARN_CHAT_WEBHOOK_SECRET (required with LEARN_CHAT_WEBHOOK_URL).',
+        stream,
+      );
       return;
     }
 
@@ -422,30 +495,7 @@ export function createLearnChatRouter(): Router {
       });
     }
 
-    const rateKey = clientRateKey(req, sessionId);
-    if (!checkRateLimit(rateKey, config.learnChatRateLimitPerMinute)) {
-      logEvent('warn', LogEvents.learnChatRateLimited, {
-        message: 'Learn chat rate limit exceeded',
-        action,
-        rateKey,
-      });
-      if (action === 'context') {
-        res.status(429).json({ message: 'Too many requests. Try again shortly.', sessionId });
-        return;
-      }
-      sendChatResult(
-        res,
-        429,
-        {
-          reply: 'Too many requests. Try again shortly.',
-          sessionId,
-          sources: [],
-        },
-        stream,
-      );
-      return;
-    }
-
+    // Validate chat message before charging the rate-limit budget.
     if (action === 'chat') {
       if (!message) {
         sendChatResult(
@@ -474,6 +524,31 @@ export function createLearnChatRouter(): Router {
         );
         return;
       }
+    }
+
+    // Separate buckets so NavigationEnd context sync cannot exhaust chat budget.
+    const rateKey = `${action}:${clientRateKey(req, sessionId)}`;
+    if (!checkRateLimit(rateKey, config.learnChatRateLimitPerMinute)) {
+      logEvent('warn', LogEvents.learnChatRateLimited, {
+        message: 'Learn chat rate limit exceeded',
+        action,
+        rateKey,
+      });
+      if (action === 'context') {
+        res.status(429).json({ message: 'Too many requests. Try again shortly.', sessionId });
+        return;
+      }
+      sendChatResult(
+        res,
+        429,
+        {
+          reply: 'Too many requests. Try again shortly.',
+          sessionId,
+          sources: [],
+        },
+        stream,
+      );
+      return;
     }
 
     const controller = new AbortController();

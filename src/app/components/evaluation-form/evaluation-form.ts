@@ -52,6 +52,7 @@ export class EvaluationForm {
   readonly evaluation = input<Evaluation | null>(null);
   readonly layout = input<'stacked' | 'aside'>('stacked');
   readonly submitLabel = input('Save');
+  readonly disabled = input(false);
 
   readonly submitted = output<EvaluationFormValue>();
 
@@ -94,6 +95,14 @@ export class EvaluationForm {
           expectedAnswer: config.expectedAnswer ?? '',
           judgeModel: config.judgeProfile.model ?? '',
         });
+      }
+    });
+
+    effect(() => {
+      if (this.disabled()) {
+        this.form.disable({ emitEvent: false });
+      } else {
+        this.form.enable({ emitEvent: false });
       }
     });
   }
@@ -174,6 +183,10 @@ export class EvaluationForm {
   }
 
   onSubmit(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.feedback.error('Please enter a valid title and prompt.');

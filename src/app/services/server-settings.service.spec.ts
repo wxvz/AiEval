@@ -1,4 +1,3 @@
-import { HttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
@@ -12,6 +11,7 @@ describe('ServerSettingsService', () => {
   let feedback: FeedbackService;
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -23,6 +23,7 @@ describe('ServerSettingsService', () => {
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('loads settings from GET /api/settings', async () => {
@@ -30,13 +31,31 @@ describe('ServerSettingsService', () => {
 
     const req = httpMock.expectOne('/api/settings');
     expect(req.request.method).toBe('GET');
-    req.flush({ llmPreset: 'balanced', envDefaultLlmPreset: 'fast' });
+    req.flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'fast',
+      apiTokenRequired: true,
+    });
 
     await loadPromise;
 
     expect(service.llmPreset()).toBe('balanced');
     expect(service.envDefaultLlmPreset()).toBe('fast');
+    expect(service.apiTokenRequired()).toBe(true);
     expect(service.error()).toBeNull();
+  });
+
+  it('getApiToken / setApiToken round-trip via localStorage', () => {
+    localStorage.clear();
+    expect(service.getApiToken()).toBeNull();
+
+    service.setApiToken('  secret  ');
+    expect(service.getApiToken()).toBe('secret');
+    expect(localStorage.getItem('aieval-api-token')).toBe('secret');
+
+    service.setApiToken('');
+    expect(service.getApiToken()).toBeNull();
+    expect(localStorage.getItem('aieval-api-token')).toBeNull();
   });
 
   it('reverts preset on PATCH failure', async () => {
@@ -44,6 +63,7 @@ describe('ServerSettingsService', () => {
     httpMock.expectOne('/api/settings').flush({
       llmPreset: 'balanced',
       envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
     });
     await loadPromise;
 
@@ -65,13 +85,18 @@ describe('ServerSettingsService', () => {
     httpMock.expectOne('/api/settings').flush({
       llmPreset: 'balanced',
       envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
     });
     await loadPromise;
 
     const resetPromise = service.resetToEnvDefault();
     const patchReq = httpMock.expectOne('/api/settings');
     expect(patchReq.request.body).toEqual({ llmPreset: 'fast' });
-    patchReq.flush({ llmPreset: 'fast', envDefaultLlmPreset: 'fast' });
+    patchReq.flush({
+      llmPreset: 'fast',
+      envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
+    });
 
     const reset = await resetPromise;
 
@@ -85,6 +110,7 @@ describe('ServerSettingsService', () => {
     httpMock.expectOne('/api/settings').flush({
       llmPreset: 'fast',
       envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
     });
     await loadPromise;
 
@@ -99,6 +125,7 @@ describe('ServerSettingsService', () => {
     httpMock.expectOne('/api/settings').flush({
       llmPreset: 'balanced',
       envDefaultLlmPreset: 'fast',
+      apiTokenRequired: false,
     });
     await loadPromise;
 

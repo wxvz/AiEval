@@ -79,7 +79,7 @@ describe('useAutomationPageContext', () => {
 
     evaluationService['evaluationsSignal'].set([evaluation]);
     evaluationService.automatingEvaluationId.set('eval-live');
-    evaluationService.automationTokenUsage.set(live);
+    evaluationService.setAutomationTokenUsageForTests('eval-live', live);
 
     TestBed.runInInjectionContext(() => {
       const { displayTokenUsage } = useAutomationPageContext(() => 'eval-live');

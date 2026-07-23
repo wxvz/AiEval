@@ -98,7 +98,8 @@
     <section class="settings-aside__card" aria-labelledby="settingsModelsHeading">
       <h3 class="settings-aside__heading h6" id="settingsModelsHeading">Models</h3>
       <p class="settings-aside__hint text-muted small mb-2">
-        Fast uses all-small models when rate-limited. Applies immediately; restart restores the
+        Fast uses all-small models when rate-limited. New runs use the selected preset; in-flight
+        runs keep the preset they started with. Restart restores the
         <code>.env</code> default ({{ envDefaultPresetLabel() }}).
       </p>
       @if (serverSettingsError()) {
@@ -131,10 +132,43 @@
         />
         <label class="btn btn-outline-primary" for="settings-preset-fast">Fast</label>
       </div>
-      @if (serverSettingsLoading() || serverSettingsPatching()) {
+      @if (automating()) {
+        <p class="text-muted small mt-2 mb-0">Preset locked while automation is running.</p>
+      } @else if (serverSettingsLoading() || serverSettingsPatching()) {
         <p class="text-muted small mt-2 mb-0">Updating preset…</p>
       }
     </section>
+
+    @if (apiTokenRequired()) {
+      <section class="settings-aside__card" aria-labelledby="settingsApiTokenHeading">
+        <h3 class="settings-aside__heading h6" id="settingsApiTokenHeading">API token</h3>
+        <p class="settings-aside__hint text-muted small mb-2">
+          This server requires <code>AIEVAL_API_TOKEN</code>. Store the same token in this browser
+          so API calls and automation streams can authenticate.
+        </p>
+        @if (!hasStoredApiToken()) {
+          <div
+            class="settings-aside__banner settings-aside__banner--danger small mb-2"
+            role="status"
+          >
+            No API token stored in this browser. Paste the same value as
+            <code>AIEVAL_API_TOKEN</code> and save, or API calls and automation will return 401.
+          </div>
+        }
+        <label class="form-label small mb-1" for="settings-api-token">Token</label>
+        <input
+          id="settings-api-token"
+          type="password"
+          class="form-control form-control-sm mb-2"
+          autocomplete="off"
+          [value]="apiTokenDraft()"
+          (input)="onApiTokenDraftInput($any($event.target).value)"
+        />
+        <button type="button" class="btn btn-outline-primary btn-sm" (click)="saveApiToken()">
+          Save token
+        </button>
+      </section>
+    }
 
     <section class="settings-aside__card" aria-labelledby="settingsEvaluationsHeading">
       <h3 class="settings-aside__heading h6" id="settingsEvaluationsHeading">New evaluations</h3>

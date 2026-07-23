@@ -10,7 +10,7 @@
     "build:server": "tsc -p server/tsconfig.build.json",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test:server": "vitest run",
+    "test:server": "vitest run server/src",
     "ci": "npm run build && npm run build:server && npx vitest run server/src && npm test -- --no-watch"
   },
   "prettier": {
@@ -27,7 +27,7 @@
   },
   "private": true,
   "engines": {
-    "node": "^22.12.0 || >=24.0.0",
+    "node": "^24.0.0 || >=26.0.0",
     "npm": ">=11.12.0"
   },
   "packageManager": "npm@11.14.1",

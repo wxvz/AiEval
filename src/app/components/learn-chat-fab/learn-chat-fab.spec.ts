@@ -4,46 +4,52 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import {
+  LearnChatService,
+  type LearnChatAskOptions,
+  type LearnChatResponse,
+} from '../../services/learn-chat.service';
 import { LearnChatFab } from './learn-chat-fab';
+
+type FabInternals = {
+  prefersReducedMotion: () => boolean;
+  scrollToBottom: () => void;
+};
 
 describe('LearnChatFab', () => {
   let fixture: ComponentFixture<LearnChatFab>;
   let http: HttpTestingController;
-  let fetchMock: ReturnType<typeof vi.fn>;
+  let learnChat: LearnChatService;
 
   beforeEach(async () => {
+    // CI pools can leave Vitest fake timers on; paced reveal + setTimeout(0) then hang until 5s.
+    vi.useRealTimers();
     sessionStorage.clear();
-    fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
-    // Keep unit tests fast: skip thinking delay + paced reveal.
-    Object.defineProperty(window, 'matchMedia', {
-      writable: true,
-      configurable: true,
-      value: vi.fn().mockImplementation((query: string) => ({
-        matches: query === '(prefers-reduced-motion: reduce)',
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      })),
-    });
+    localStorage.clear();
 
     await TestBed.configureTestingModule({
       imports: [LearnChatFab],
       providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
+    learnChat = TestBed.inject(LearnChatService);
+    // Avoid real HttpClient context sync / fetch SSE in the FAB unit suite.
+    vi.spyOn(learnChat, 'syncContext').mockResolvedValue(undefined);
+
     fixture = TestBed.createComponent(LearnChatFab);
     http = TestBed.inject(HttpTestingController);
+    // Force the reduced-motion path (no reveal sleeps) regardless of jsdom matchMedia.
+    vi.spyOn(
+      fixture.componentInstance as unknown as FabInternals,
+      'prefersReducedMotion',
+    ).mockReturnValue(true);
     fixture.detectChanges();
   });
 
   afterEach(() => {
     http.verify();
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('opens the panel and streams a message to the learn chat API', async () => {
@@ -54,22 +60,34 @@ describe('LearnChatFab', () => {
 
     expect(el.querySelector('.learn-chat-fab__panel')).toBeTruthy();
 
-    fetchMock.mockResolvedValue(
-      new Response(
-        [
-          'event: token\ndata: {"text":"Learning from **labeled** examples."}\n\n',
-          'event: done\ndata: {"reply":"Learning from **labeled** examples.","sessionId":"s1","sources":[]}\n\n',
-        ].join(''),
-        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
-      ),
+    const ask = vi.spyOn(learnChat, 'ask').mockImplementation(
+      async (_message: string, options: LearnChatAskOptions = {}): Promise<LearnChatResponse> => {
+        options.onToken?.('Learning from **labeled** examples.');
+        return {
+          reply: 'Learning from **labeled** examples.',
+          sessionId: 's1',
+          sources: [],
+        };
+      },
     );
 
     const component = fixture.componentInstance;
+    // Make scroll sync so we do not await a macrotask that never fires under leaked fake timers.
+    vi.spyOn(component as unknown as FabInternals, 'scrollToBottom').mockImplementation(() => {
+      const list = el.querySelector('.learn-chat-fab__messages') as HTMLDivElement | null;
+      if (list) {
+        list.scrollTop = list.scrollHeight;
+      }
+    });
+
     component.draft = 'What is supervised learning?';
-    const pending = component.send();
-    await pending;
+    await component.send();
     fixture.detectChanges();
 
+    expect(ask).toHaveBeenCalledWith(
+      'What is supervised learning?',
+      expect.objectContaining({ onToken: expect.any(Function) }),
+    );
     expect(el.textContent).toContain('What is supervised learning?');
     expect(el.textContent).toContain('Learning from labeled examples.');
     expect(el.textContent).not.toContain('**');
@@ -79,8 +97,6 @@ describe('LearnChatFab', () => {
 
     const messages = el.querySelector('.learn-chat-fab__messages') as HTMLDivElement;
     expect(messages).toBeTruthy();
-    // Autoscroll runs after the reply is painted.
-    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(messages.scrollTop).toBe(messages.scrollHeight);
   });
 
@@ -89,11 +105,15 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    let resolveFetch!: (value: Response) => void;
-    fetchMock.mockReturnValue(
-      new Promise<Response>((resolve) => {
-        resolveFetch = resolve;
-      }),
+    let resolveAsk!: (value: LearnChatResponse) => void;
+    vi.spyOn(learnChat, 'ask').mockImplementation(
+      (_message, options) =>
+        new Promise<LearnChatResponse>((resolve) => {
+          resolveAsk = (value) => {
+            options?.onToken?.(value.reply);
+            resolve(value);
+          };
+        }),
     );
 
     const component = fixture.componentInstance;
@@ -105,15 +125,11 @@ describe('LearnChatFab', () => {
     expect(el.querySelector('.learn-chat-fab__dots')).toBeTruthy();
     expect(el.querySelector('.learn-chat-fab__dots')?.getAttribute('aria-label')).toBe('Thinking');
 
-    resolveFetch(
-      new Response(
-        [
-          'event: token\ndata: {"text":"Bias is a shared baseline."}\n\n',
-          'event: done\ndata: {"reply":"Bias is a shared baseline.","sessionId":"s2","sources":[]}\n\n',
-        ].join(''),
-        { status: 200, headers: { 'Content-Type': 'text/event-stream' } },
-      ),
-    );
+    resolveAsk({
+      reply: 'Bias is a shared baseline.',
+      sessionId: 's2',
+      sources: [],
+    });
     await pending;
     fixture.detectChanges();
 
@@ -127,11 +143,15 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
-    let rejectFetch!: (reason?: unknown) => void;
-    fetchMock.mockReturnValue(
-      new Promise<Response>((_resolve, reject) => {
-        rejectFetch = reject;
-      }),
+    let rejectAsk!: (reason?: unknown) => void;
+    const cancel = vi.spyOn(learnChat, 'cancel').mockImplementation(() => {
+      rejectAsk?.(new DOMException('Aborted', 'AbortError'));
+    });
+    vi.spyOn(learnChat, 'ask').mockImplementation(
+      () =>
+        new Promise<LearnChatResponse>((_resolve, reject) => {
+          rejectAsk = reject;
+        }),
     );
 
     const component = fixture.componentInstance;
@@ -146,14 +166,81 @@ describe('LearnChatFab', () => {
     (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
 
+    expect(cancel).toHaveBeenCalled();
     expect(component.open()).toBe(false);
     expect(component.sending()).toBe(false);
     expect(component.thinking()).toBe(false);
 
-    rejectFetch(new DOMException('Aborted', 'AbortError'));
     await pending;
     fixture.detectChanges();
 
     expect(component.messages().some((m) => m.role === 'assistant' && !m.text.trim())).toBe(false);
+  });
+
+  it('aborted send finally does not clobber a newer in-flight send', async () => {
+    const el: HTMLElement = fixture.nativeElement;
+    (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    let rejectFirst!: (reason?: unknown) => void;
+    let resolveSecond!: (value: LearnChatResponse) => void;
+    let askCount = 0;
+    vi.spyOn(learnChat, 'cancel').mockImplementation(() => {
+      if (askCount === 1) {
+        rejectFirst?.(new DOMException('Aborted', 'AbortError'));
+      }
+    });
+    vi.spyOn(learnChat, 'ask').mockImplementation((_message, options) => {
+      askCount += 1;
+      if (askCount === 1) {
+        return new Promise<LearnChatResponse>((_resolve, reject) => {
+          rejectFirst = reject;
+        });
+      }
+      return new Promise<LearnChatResponse>((resolve) => {
+        resolveSecond = (value) => {
+          options?.onToken?.(value.reply);
+          resolve(value);
+        };
+      });
+    });
+
+    const component = fixture.componentInstance;
+    component.draft = 'first';
+    const firstPending = component.send();
+    fixture.detectChanges();
+    expect(component.sending()).toBe(true);
+
+    // Abort the first turn, then start a second send before the first settles.
+    component.close();
+    (el.querySelector('.learn-chat-fab__toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    component.draft = 'second';
+    const secondPending = component.send();
+    fixture.detectChanges();
+    expect(component.sending()).toBe(true);
+    expect(component.messages().filter((m) => m.role === 'user').map((m) => m.text)).toEqual([
+      'first',
+      'second',
+    ]);
+
+    await firstPending;
+    fixture.detectChanges();
+
+    // Stale finally must not clear the newer send's busy state.
+    expect(component.sending()).toBe(true);
+    expect(component.thinking()).toBe(true);
+
+    resolveSecond({
+      reply: 'Second reply.',
+      sessionId: 's3',
+      sources: [],
+    });
+    await secondPending;
+    fixture.detectChanges();
+
+    expect(component.sending()).toBe(false);
+    expect(el.textContent).toContain('Second reply.');
   });
 });

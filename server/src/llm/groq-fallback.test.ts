@@ -13,6 +13,7 @@ function mockSetup(
     provider: { name: providerName, complete: async () => ({ text: '' }) },
     answerModels: answerModels.map((model) => ({ model, label: model })),
     judgeModel: { model: judgeModel, label: judgeModel },
+    preset: 'balanced',
   };
 }
 

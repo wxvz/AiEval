@@ -1,7 +1,12 @@
 import type { ResolvedLlmSetup } from './types.js';
 
-export function isSlowRequestError(error: unknown): boolean {
+export function isSlowRequestError(error: unknown, userAbortSignal?: AbortSignal): boolean {
   if (!(error instanceof Error)) {
+    return false;
+  }
+
+  // User cancel shares AbortError with slow-request timeouts — never treat cancel as slow.
+  if (userAbortSignal?.aborted) {
     return false;
   }
 

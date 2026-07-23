@@ -209,6 +209,7 @@
                   [max]="criterion.maxPoints"
                   [disabled]="automating()"
                   [value]="scoreFor(answer, criterion.id) ?? ''"
+                  [disabled]="automating()"
                   (input)="onScoreInput(answer, criterion, $event)"
                 />
                 @if (criterionNotesFor(answer, criterion.id); as criterionNotes) {
@@ -235,7 +236,7 @@
         <button
           type="button"
           class="btn btn-outline-success mt-3"
-          [disabled]="answer.isWinner || automating()"
+          [disabled]="automating() || answer.isWinner"
           (click)="setWinner(answer.id)"
         >
           Mark winner

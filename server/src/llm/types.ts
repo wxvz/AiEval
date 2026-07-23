@@ -1,3 +1,4 @@
+import type { LlmPreset } from '../runtime-settings.js';
 import type { Evaluation, TokenUsageTotals } from '../types/evaluation.js';
 
 export type { TokenUsageTotals };
@@ -50,13 +51,18 @@ export interface ResolvedLlmSetup {
   provider: LlmProvider;
   answerModels: ModelRef[];
   judgeModel: ModelRef;
+  /** Preset captured at resolve time; frozen for the lifetime of this setup/run. */
+  preset: LlmPreset;
 }
 
 export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
 
 export type AutomationStep = 'generating' | 'scoring' | 'improved' | 'provider';
 
-export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+/** Why generate/score paused before trying the next model candidate. */
+export type StepPausedReason = 'rate_limit' | 'empty_content' | 'unusable_model' | 'failed';
+
+export type AutomationRunStatus = 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled';
 
 export function automationStatusFromError(
   message: string,
@@ -64,7 +70,10 @@ export function automationStatusFromError(
   return message.toLowerCase().includes('cancelled') ? 'cancelled' : 'failed';
 }
 
-export type AutomationProgressEvent =
+export type AutomationProgressEvent = {
+  /** Present on all streamed events so clients can ignore stale runIds. */
+  runId?: string;
+} & (
   | { type: 'provider_resolved'; provider: string }
   | { type: 'provider_fallback'; from: string; to: string }
   | {
@@ -73,13 +82,14 @@ export type AutomationProgressEvent =
       currentProvider: string;
       cloudProvider: string | null;
       elapsedLabel: string;
+      choiceTimeoutLabel: string;
     }
   | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | {
       type: 'step_paused';
       step: AutomationStep;
-      reason: 'rate_limit' | 'empty_content';
+      reason: StepPausedReason;
       completed: number;
       pending: number;
     }
@@ -105,7 +115,8 @@ export type AutomationProgressEvent =
       message: string;
       step: AutomationStep;
       status: Extract<AutomationRunStatus, 'failed' | 'cancelled'>;
-    };
+    }
+);
 
 export type ProgressCallback = (event: AutomationProgressEvent) => void;
 

@@ -19,6 +19,7 @@ import {
   idleAutomationOutcome,
 } from '../../models';
 import { EvaluationService } from '../../services/evaluation.service';
+import { AppStatusService } from '../../services/app-status.service';
 import { SettingsService } from '../../services/settings.service';
 
 const AUTO_DISMISS_MS = 3000;
@@ -31,6 +32,7 @@ const AUTO_DISMISS_MS = 3000;
 export class AutomationControlsComponent {
   private readonly evaluationService = inject(EvaluationService);
   private readonly settingsService = inject(SettingsService);
+  private readonly appStatus = inject(AppStatusService);
 
   private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
   private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
@@ -71,9 +73,10 @@ export class AutomationControlsComponent {
 
   protected readonly displayTokenUsage = computed(() => {
     const current = this.evaluation();
+    const evaluationId = this.evaluationId();
 
     if (this.automating()) {
-      return this.evaluationService.automationTokenUsage() ?? current?.tokenUsage;
+      return this.evaluationService.getAutomationTokenUsage(evaluationId) ?? current?.tokenUsage;
     }
 
     return current?.tokenUsage;
@@ -82,11 +85,15 @@ export class AutomationControlsComponent {
   protected readonly canRun = computed(() => {
     const current = this.evaluation();
 
-    return !!current && !this.evaluationService.isAutomating();
+    return !!current && !this.evaluationService.isAutomating(this.evaluationId());
   });
 
   protected readonly canRunPhase = computed(() =>
-    canRunAutomationPhase(this.evaluation(), this.phase()),
+    canRunAutomationPhase(
+      this.evaluation(),
+      this.phase(),
+      this.appStatus.answerModelCount(),
+    ),
   );
 
   protected readonly confirmForceModalId = computed(
@@ -101,7 +108,7 @@ export class AutomationControlsComponent {
 
       const evaluation = this.evaluation();
 
-      if (!evaluation || !this.canRunPhase() || this.evaluationService.isAutomating()) {
+      if (!evaluation || !this.canRunPhase() || this.evaluationService.isAutomating(this.evaluationId())) {
         return;
       }
 
@@ -167,8 +174,9 @@ export class AutomationControlsComponent {
   }
 
   protected onStopAutomation(): void {
-    this.cancelProviderChoicePrompt();
+    // Cancel server/client first so provider-choice POST is skipped (avoids 404 race).
     this.evaluationService.cancelAutomation(this.evaluationId());
+    this.cancelProviderChoicePrompt();
     this.automationOutcome.set({ status: 'cancelled' });
     this.progressSteps.update((steps) => [...steps, 'Automation stopped.']);
   }
@@ -202,6 +210,7 @@ export class AutomationControlsComponent {
   }
 
   private async runAutomate(force: boolean): Promise<void> {
+    this.cancelProviderChoicePrompt();
     this.automationOutcome.set({ status: 'running' });
     this.progressSteps.set(['Starting automation…']);
 
@@ -210,7 +219,13 @@ export class AutomationControlsComponent {
         this.evaluationId(),
         { force, phase: this.phase() },
         {
-          onStatus: (status) => this.automationOutcome.set({ status }),
+          onStatus: (status) => {
+            this.automationOutcome.set({ status });
+
+            if (status === 'cancelled') {
+              this.cancelProviderChoicePrompt();
+            }
+          },
           onProgress: (event) => {
             const label = automationProgressLabel(event);
 
@@ -264,6 +279,7 @@ export class AutomationControlsComponent {
       currentProvider: event.currentProvider,
       cloudProvider: event.cloudProvider,
       elapsedLabel: event.elapsedLabel,
+      choiceTimeoutLabel: event.choiceTimeoutLabel,
     };
 
     return new Promise((resolve) => {
@@ -271,7 +287,8 @@ export class AutomationControlsComponent {
       const modal = this.providerChoiceModal();
 
       if (!modal) {
-        this.resolveProviderChoicePending(false);
+        // Do not silently keep-local — cancel so the server is not left waiting.
+        this.cancelAutomationForMissingProviderChoiceUi();
         return;
       }
 
@@ -281,9 +298,15 @@ export class AutomationControlsComponent {
       if (modalElement) {
         bootstrap.Modal.getOrCreateInstance(modalElement).show();
       } else {
-        this.resolveProviderChoicePending(false);
+        this.cancelAutomationForMissingProviderChoiceUi();
       }
     });
+  }
+
+  /** Missing modal host → cancel run (POST + clear UI); resolve pending so await unblocks. */
+  private cancelAutomationForMissingProviderChoiceUi(): void {
+    this.evaluationService.cancelAutomation(this.evaluationId());
+    this.resolveProviderChoicePending(false);
   }
 
   private resolveProviderChoicePending(useCloud: boolean): void {
@@ -311,9 +334,13 @@ export class AutomationControlsComponent {
   }
 }
 
+/** Re-export for callers/tests that still import the fallback constant from this module. */
+export { DEFAULT_ANSWER_SLOT_COUNT } from '../../services/app-status.service';
+
 export function canRunAutomationPhase(
   evaluation: Evaluation | undefined,
   phase: AutomationPhase,
+  expectedAnswerCount: number,
 ): boolean {
   if (!evaluation) {
     return false;
@@ -329,7 +356,8 @@ export function canRunAutomationPhase(
     case 'score':
       return (
         !!evaluation.prompt.trim() &&
-        evaluation.answers.length > 0 &&
+        expectedAnswerCount > 0 &&
+        evaluation.answers.length === expectedAnswerCount &&
         (evaluation.criteriaMode === 'default' || evaluation.criteria.length > 0)
       );
     case 'improved':

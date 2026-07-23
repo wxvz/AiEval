@@ -14,4 +14,16 @@ describe('messageFromHttpError', () => {
     expect(messageFromHttpError({ error: { message: '   ' } }, 'Fallback')).toBe('Fallback');
     expect(messageFromHttpError(null, 'Fallback')).toBe('Fallback');
   });
+
+  it('maps 401 to an API token / Settings hint', () => {
+    expect(messageFromHttpError({ status: 401, error: { message: 'Unauthorized' } }, 'Fallback')).toBe(
+      'Unauthorized. Add or update your API token in Settings.',
+    );
+    expect(messageFromHttpError({ status: 401 }, 'Fallback')).toBe(
+      'Unauthorized. Add or update your API token in Settings.',
+    );
+    expect(
+      messageFromHttpError({ status: 401, error: { message: 'Token expired' } }, 'Fallback'),
+    ).toBe('Token expired. Add or update your API token in Settings.');
+  });
 });

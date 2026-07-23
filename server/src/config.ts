@@ -100,6 +100,10 @@ export const config = {
     30,
     { min: 1, max: 1000 },
   ),
+  /** When set, Bearer token required for evaluations, learn-chat, and settings PATCH. */
+  apiToken: process.env['AIEVAL_API_TOKEN']?.trim() ?? '',
+  /** Trust X-Forwarded-* when behind a reverse proxy (rate-limit / client IP). */
+  trustProxy: process.env['TRUST_PROXY'] === 'true',
 } as const;
 
 export function assertConfig(): void {

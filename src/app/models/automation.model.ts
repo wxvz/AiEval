@@ -5,7 +5,7 @@ import { TokenUsageTotals } from './token-usage.model';
 export type AutomationPhase = 'full' | 'generate' | 'score' | 'improved';
 
 /** Terminal and in-flight automation states surfaced in the UI and SSE stream. */
-export type AutomationRunStatus = 'running' | 'completed' | 'failed' | 'cancelled';
+export type AutomationRunStatus = 'running' | 'waiting' | 'completed' | 'failed' | 'cancelled';
 
 /** UI state for the automation status card on the edit evaluation page. */
 export type AutomationOutcomeStatus = AutomationRunStatus | 'idle';
@@ -22,7 +22,10 @@ export function automationStatusFromError(
   return message.toLowerCase().includes('cancelled') ? 'cancelled' : 'failed';
 }
 
-export type AutomationProgressEvent =
+export type AutomationProgressEvent = {
+  /** Present on streamed events so clients can ignore stale runIds. */
+  runId?: string;
+} & (
   | { type: 'provider_resolved'; provider: string }
   | { type: 'provider_fallback'; from: string; to: string }
   | {
@@ -31,13 +34,14 @@ export type AutomationProgressEvent =
       currentProvider: string;
       cloudProvider: string | null;
       elapsedLabel: string;
+      choiceTimeoutLabel: string;
     }
   | { type: 'metadata_generated'; evaluation: Evaluation }
   | { type: 'generating'; modelLabel: string; index: number; total: number }
   | {
       type: 'step_paused';
       step: string;
-      reason: 'rate_limit' | 'empty_content';
+      reason: 'rate_limit' | 'empty_content' | 'unusable_model' | 'failed';
       completed: number;
       pending: number;
     }
@@ -63,7 +67,8 @@ export type AutomationProgressEvent =
       message: string;
       step: string;
       status: Extract<AutomationRunStatus, 'failed' | 'cancelled'>;
-    };
+    }
+);
 
 export function automationProgressLabel(event: AutomationProgressEvent): string {
   switch (event.type) {
@@ -81,10 +86,17 @@ export function automationProgressLabel(event: AutomationProgressEvent): string 
       const suffix = event.total > 1 ? ` (${event.index}/${event.total})` : '';
       return `${event.modelLabel} is generating answer${suffix}`;
     }
-    case 'step_paused':
-      return event.reason === 'empty_content'
-        ? `Paused (${event.completed} done, ${event.pending} pending) — retrying after empty/unusable answers…`
-        : `Paused (${event.completed} done, ${event.pending} pending) — retrying after rate limit…`;
+    case 'step_paused': {
+      const why =
+        event.reason === 'empty_content'
+          ? 'empty content'
+          : event.reason === 'unusable_model'
+            ? 'unusable model'
+            : event.reason === 'failed'
+              ? 'model failure'
+              : 'rate limit';
+      return `Paused (${event.completed} done, ${event.pending} pending) — retrying after ${why}…`;
+    }
     case 'model_fallback':
       return event.slotIndex !== undefined
         ? `Retrying slot ${event.slotIndex + 1} with ${event.toModel} (was ${event.fromModel})`

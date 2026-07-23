@@ -130,7 +130,7 @@
         </fieldset>
 
         <div class="evaluation-form__actions mt-3">
-          <button type="submit" class="btn btn-primary w-100">{{ submitLabel() }}</button>
+          <button type="submit" class="btn btn-primary w-100" [disabled]="disabled()">{{ submitLabel() }}</button>
         </div>
       </aside>
     </app-page-shell>
@@ -251,6 +251,6 @@
       </details>
     </fieldset>
 
-    <button type="submit" class="btn btn-primary">{{ submitLabel() }}</button>
+    <button type="submit" class="btn btn-primary" [disabled]="disabled()">{{ submitLabel() }}</button>
   }
 </form>

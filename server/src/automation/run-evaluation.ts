@@ -35,10 +35,16 @@ import {
   isUnusableAnswerModel,
   stripModelArtifacts,
 } from '../llm/sanitize-model-output.js';
-import { providerChoiceTimeoutLabel, waitForProviderChoice } from './provider-choice.js';
+import {
+  providerChoiceTimeoutLabel,
+  providerChoiceWaitTimeoutLabel,
+  waitForProviderChoice,
+} from './provider-choice.js';
 import {
   clearAutomationRun,
+  getActiveAutomationRunId,
   isAutomationCancelled,
+  ownsAutomationRun,
   registerAutomationRun,
 } from './run-registry.js';
 import { modelIdToLabel } from '../llm/model-presets.js';
@@ -48,6 +54,7 @@ import {
   answersFromSlots,
   buildFallbackCandidates,
   callSingleModelWithFallback,
+  isFallbackEligible,
   mapAnswersToSlots,
   pendingSlotIndices,
   validateAnswersForScoring,
@@ -63,6 +70,7 @@ import type {
   ChatMessage,
   ProgressCallback,
   ResolvedLlmSetup,
+  StepPausedReason,
 } from '../llm/types.js';
 
 export type { AutomationPhase };
@@ -88,6 +96,20 @@ export class AutomationError extends Error {
 
 function assertNotCancelled(signal: AbortSignal, step: AutomationStep): void {
   if (isAutomationCancelled(signal)) {
+    throw new AutomationError('Automation cancelled.', step);
+  }
+}
+
+/** Guard shared Mongo writes: abort signal and registry ownership (supersede). */
+function assertCanPersist(
+  evaluationId: string,
+  runId: string,
+  signal: AbortSignal,
+  step: AutomationStep,
+): void {
+  assertNotCancelled(signal, step);
+
+  if (!ownsAutomationRun(evaluationId, runId)) {
     throw new AutomationError('Automation cancelled.', step);
   }
 }
@@ -151,11 +173,18 @@ function createLlmCallContext(
           currentProvider,
           cloudProvider,
           elapsedLabel: providerChoiceTimeoutLabel(),
+          choiceTimeoutLabel: providerChoiceWaitTimeoutLabel(),
         });
+        emit(onProgress, { type: 'status', status: 'waiting', runId });
 
-        providerChoicePromise = waitForProviderChoice(evaluationId, runId).finally(() => {
-          providerChoicePromise = null;
-        });
+        providerChoicePromise = waitForProviderChoice(evaluationId, runId, signal)
+          .then((useCloud) => {
+            emit(onProgress, { type: 'status', status: 'running', runId });
+            return useCloud;
+          })
+          .finally(() => {
+            providerChoicePromise = null;
+          });
       }
 
       return providerChoicePromise;
@@ -193,7 +222,7 @@ function tokenUsageField(accumulator: TokenAccumulator): {
   return { tokenUsage: accumulator.totals() };
 }
 
-function classifyAnswerRejectReason(error: unknown): string {
+function classifyAnswerRejectReason(error: unknown): StepPausedReason {
   if (isRateLimitExhausted(error)) {
     return 'rate_limit';
   }
@@ -213,6 +242,23 @@ function classifyAnswerRejectReason(error: unknown): string {
   }
 
   return 'failed';
+}
+
+function toStepPausedReason(reason: string | undefined): StepPausedReason {
+  if (
+    reason === 'rate_limit' ||
+    reason === 'empty_content' ||
+    reason === 'unusable_model' ||
+    reason === 'failed'
+  ) {
+    return reason;
+  }
+
+  return 'failed';
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === 'AbortError';
 }
 
 function logAnswerRejected(
@@ -238,22 +284,30 @@ function modelFallbackHandlers(
   onProgress: ProgressCallback,
   step: AutomationStep,
   slotIndex?: number,
-  pause?: { completed: number; pending: number; reason?: 'rate_limit' | 'empty_content' },
-) {
+  pause?: { completed: number; pending: number; reason?: StepPausedReason },
+): ModelFallbackHandlers {
   let pauseEmitted = false;
 
   return {
-    onModelFallback: (fromModel: string, toModel: string, index?: number) => {
+    onModelFallback: (fromModel: string, toModel: string, index?: number, reason?: string) => {
       if (pause && !pauseEmitted) {
         pauseEmitted = true;
         emit(onProgress, {
           type: 'step_paused',
           step,
-          reason: pause.reason ?? 'rate_limit',
+          reason: pause.reason ?? toStepPausedReason(reason),
           completed: pause.completed,
           pending: pause.pending,
         });
       }
+
+      logEvent('warn', LogEvents.automationModelFallback, {
+        step,
+        fromModel,
+        toModel,
+        ...(index !== undefined ? { slotIndex: index } : {}),
+        ...(reason ? { reason } : {}),
+      });
 
       emit(onProgress, {
         type: 'model_fallback',
@@ -291,6 +345,7 @@ async function persistGenerateCheckpoint(
   docId: ObjectId,
   answers: Answer[],
   accumulator: TokenAccumulator,
+  gate: PersistGate,
 ): Promise<void> {
   const now = new Date().toISOString();
 
@@ -299,6 +354,7 @@ async function persistGenerateCheckpoint(
     { answers, updatedAt: now, ...tokenUsageField(accumulator) },
     { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
     'generating',
+    gate,
   );
 }
 
@@ -375,6 +431,9 @@ async function generateOneAnswerSlot(
     label,
     content,
     scores: initialScoresForCriteria(criteria),
+    provider: candidate.providerName,
+    model: effectiveModel,
+    slotIndex,
   };
 
   logEvent('info', LogEvents.automationAnswerGenerated, {
@@ -415,16 +474,22 @@ async function generateAnswers(
   const total = setup.answerModels.length;
   const slots = mapAnswersToSlots(options?.existingAnswers ?? [], setup);
   const attempted = new Set<string>();
-  /** Prefer rate_limit when mixed; empty_content only when that alone caused pending slots. */
-  let concurrentPauseReason: 'rate_limit' | 'empty_content' | null = null;
+  let lastPendingReason: StepPausedReason = 'failed';
 
   for (const [index, slot] of slots.entries()) {
-    if (slot) {
-      const modelRef = setup.answerModels[index];
+    if (!slot) {
+      continue;
+    }
 
-      if (modelRef) {
-        attempted.add(`${setup.providerName}:${modelRef.model}`);
-      }
+    if (slot.provider && slot.model) {
+      attempted.add(`${slot.provider}:${slot.model}`);
+      continue;
+    }
+
+    const modelRef = setup.answerModels[index];
+
+    if (modelRef) {
+      attempted.add(`${setup.providerName}:${modelRef.model}`);
     }
   }
 
@@ -455,22 +520,23 @@ async function generateAnswers(
           },
         );
         slots[slotIndex] = answer;
-        attempted.add(`${setup.providerName}:${modelRef.model}`);
+        attempted.add(
+          `${answer.provider ?? setup.providerName}:${answer.model ?? modelRef.model}`,
+        );
       } catch (error) {
-        const emptyAfterSanitize =
-          error instanceof Error && /has empty content/i.test(error.message);
+        if (
+          isAutomationCancelled(signal) ||
+          (isAbortError(error) && signal.aborted)
+        ) {
+          throw new AutomationError('Automation cancelled.', 'generating');
+        }
 
         // Leave the slot null so sequential fallback can try another model.
-        if (!isRateLimitExhausted(error) && !emptyAfterSanitize) {
+        if (!isFallbackEligible(error)) {
           throw error;
         }
 
-        if (isRateLimitExhausted(error)) {
-          concurrentPauseReason = 'rate_limit';
-        } else if (concurrentPauseReason !== 'rate_limit') {
-          concurrentPauseReason = 'empty_content';
-        }
-
+        lastPendingReason = classifyAnswerRejectReason(error);
         logAnswerRejected(
           {
             runId,
@@ -494,11 +560,15 @@ async function generateAnswers(
 
     if (checkpointAnswers.length > 0) {
       validateAnswersForScoring(checkpointAnswers, criteria, total);
-      await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator);
+      await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator, {
+        evaluationId,
+        runId,
+        signal,
+      });
       emit(onProgress, {
         type: 'step_paused',
         step: 'generating',
-        reason: concurrentPauseReason ?? 'rate_limit',
+        reason: lastPendingReason,
         completed: checkpointAnswers.length,
         pending: pending.length,
       });
@@ -508,7 +578,7 @@ async function generateAnswers(
   for (const slotIndex of pending) {
     assertNotCancelled(signal, 'generating');
 
-    const candidates = await buildFallbackCandidates(setup, 'answer', slotIndex);
+    const candidates = await buildFallbackCandidates(setup, 'answer', slotIndex, signal);
 
     slots[slotIndex] = await callSingleModelWithFallback(
       candidates,
@@ -529,17 +599,37 @@ async function generateAnswers(
           candidate,
         ),
       attempted,
+      signal,
     );
+
+    const filled = slots[slotIndex];
+
+    if (filled?.provider && filled.model) {
+      attempted.add(`${filled.provider}:${filled.model}`);
+    }
+
+    if (options?.docId && options.accumulator) {
+      const checkpointAnswers = answersFromSlots(slots);
+
+      if (checkpointAnswers.length > 0) {
+        validateAnswersForScoring(checkpointAnswers, criteria, total);
+        await persistGenerateCheckpoint(options.docId, checkpointAnswers, options.accumulator, {
+          evaluationId,
+          runId,
+          signal,
+        });
+      }
+    }
   }
 
   const answers = answersFromSlots(slots);
 
   if (answers.length !== total) {
-    const detail =
-      concurrentPauseReason === 'empty_content'
-        ? 'after empty-content / unusable-model fallbacks.'
-        : 'after rate-limit retries.';
-    throw new AutomationError(`Could not generate all model answers ${detail}`, 'generating');
+    const reasonLabel = lastPendingReason.replace(/_/g, ' ');
+    throw new AutomationError(
+      `Could not generate all model answers after ${reasonLabel} retries.`,
+      'generating',
+    );
   }
 
   validateAnswersForScoring(answers, criteria, total);
@@ -601,6 +691,8 @@ async function scoreAnswers(
         { ...llmCtx, provider: provider.name, model, step: 'scoring' },
         (raw) => parseJudgeBatchScoreResponse(raw, criteria, answers),
       ),
+    undefined,
+    signal,
   );
   assertNotCancelled(signal, 'scoring');
 
@@ -723,6 +815,8 @@ async function rebalanceTiedScores(
             answers.map((answer) => answer.id),
           ),
       ),
+    undefined,
+    signal,
   );
   assertNotCancelled(signal, 'scoring');
 
@@ -776,7 +870,7 @@ async function synthesizeImproved(
     { role: 'system', content: JUDGE_IMPROVED_SYSTEM },
     { role: 'user', content: improvedPrompt },
   ];
-  const improvedCandidates = await buildFallbackCandidates(setup, 'judge', 0);
+  const improvedCandidates = await buildFallbackCandidates(setup, 'judge', 0, signal);
 
   emit(onProgress, {
     type: 'improved_generating',
@@ -800,6 +894,8 @@ async function synthesizeImproved(
         { ...llmCtx, provider: provider.name, model, step: 'improved' },
         parseImprovedAnswer,
       ),
+    undefined,
+    signal,
   );
 
   logEvent('info', LogEvents.automationImprovedDone, { runId, evaluationId, step: 'improved' });
@@ -808,23 +904,89 @@ async function synthesizeImproved(
   return improved;
 }
 
+interface PersistGate {
+  evaluationId: string;
+  runId: string;
+  signal: AbortSignal;
+}
+
+/**
+ * Stamp automationRunId on the doc so later writes can filter by ownership.
+ * If superseded during the await, restore the active owner's claim when we stomped it.
+ */
+async function claimEvaluationAutomationRun(
+  docId: ObjectId,
+  evaluationId: string,
+  runId: string,
+  signal: AbortSignal,
+  step: AutomationStep,
+): Promise<void> {
+  assertCanPersist(evaluationId, runId, signal, step);
+
+  await getEvaluationsCollection().updateOne({ _id: docId }, { $set: { automationRunId: runId } });
+
+  if (!ownsAutomationRun(evaluationId, runId)) {
+    const ownerId = getActiveAutomationRunId(evaluationId);
+
+    if (ownerId) {
+      await getEvaluationsCollection().updateOne(
+        { _id: docId, automationRunId: runId },
+        { $set: { automationRunId: ownerId } },
+      );
+    }
+
+    throw new AutomationError('Automation cancelled.', step);
+  }
+}
+
+function ownershipFilter(docId: ObjectId, runId: string): { _id: ObjectId; automationRunId: string } {
+  return { _id: docId, automationRunId: runId };
+}
+
+async function updateEvaluationOwned(
+  docId: ObjectId,
+  gate: PersistGate,
+  update: { $set?: Record<string, unknown>; $unset?: Record<string, ''> },
+  errorStep: AutomationStep,
+): Promise<void> {
+  assertCanPersist(gate.evaluationId, gate.runId, gate.signal, errorStep);
+
+  const result = await getEvaluationsCollection().updateOne(
+    ownershipFilter(docId, gate.runId),
+    update,
+  );
+
+  if (result.matchedCount === 0) {
+    assertCanPersist(gate.evaluationId, gate.runId, gate.signal, errorStep);
+    throw new AutomationError('Failed to save evaluation.', errorStep);
+  }
+}
+
 async function persistEvaluation(
   docId: ObjectId,
   set: Record<string, unknown>,
   unset: Record<string, ''> | undefined,
   errorStep: AutomationStep,
+  gate: PersistGate,
 ): Promise<EvaluationDocument> {
-  const update: { $set: Record<string, unknown>; $unset?: Record<string, ''> } = { $set: set };
+  assertCanPersist(gate.evaluationId, gate.runId, gate.signal, errorStep);
+
+  const update: { $set: Record<string, unknown>; $unset?: Record<string, ''> } = {
+    $set: { ...set, automationRunId: gate.runId },
+  };
 
   if (unset && Object.keys(unset).length > 0) {
     update.$unset = unset;
   }
 
-  const result = await getEvaluationsCollection().findOneAndUpdate({ _id: docId }, update, {
-    returnDocument: 'after',
-  });
+  const result = await getEvaluationsCollection().findOneAndUpdate(
+    ownershipFilter(docId, gate.runId),
+    update,
+    { returnDocument: 'after' },
+  );
 
   if (!result) {
+    assertCanPersist(gate.evaluationId, gate.runId, gate.signal, errorStep);
     throw new AutomationError('Failed to save evaluation.', errorStep);
   }
 
@@ -918,9 +1080,20 @@ async function runGeneratePhase(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const { prompt, criteria } = requirePromptAndCriteria(doc);
   const accumulator = createTokenAccumulator(doc.tokenUsage);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const preparedDoc = await ensureAutomationMetadata(
+    doc,
+    setup,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+    accumulator,
+    modelFallbackHandlers(onProgress, 'generating'),
+  );
+  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
+  const gate: PersistGate = { evaluationId, runId, signal };
 
   const answers = await generateAnswers(
     setup,
@@ -932,17 +1105,18 @@ async function runGeneratePhase(
     onProgress,
     signal,
     llmCtx,
-    { existingAnswers: doc.answers, docId: doc._id, accumulator },
+    { existingAnswers: preparedDoc.answers, docId: preparedDoc._id, accumulator },
   );
   logAutomationStepComplete('generating', runId, evaluationId);
   assertNotCancelled(signal, 'generating');
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
-    doc._id,
+    preparedDoc._id,
     { answers, updatedAt: now, ...tokenUsageField(accumulator) },
     { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
     'generating',
+    gate,
   );
 
   return finishAutomation(saved, runId, evaluationId, onProgress);
@@ -956,21 +1130,43 @@ async function runScorePhase(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const { prompt, criteria } = requirePromptAndCriteria(doc);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const preparedDoc = await ensureAutomationMetadata(
+    doc,
+    setup,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+    accumulator,
+    modelFallbackHandlers(onProgress, 'scoring'),
+  );
+  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
 
-  if (doc.answers.length === 0) {
+  if (preparedDoc.answers.length === 0) {
     throw new AutomationError('Add answers before auto-scoring.', 'scoring');
   }
 
-  const accumulator = createTokenAccumulator(doc.tokenUsage);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const expectedCount = setup.answerModels.length;
+
+  if (preparedDoc.answers.length !== expectedCount) {
+    throw new AutomationError(
+      `Need all ${expectedCount} model answers before scoring (have ${preparedDoc.answers.length}).`,
+      'scoring',
+    );
+  }
+
+  validateAnswersForScoring(preparedDoc.answers, criteria, expectedCount);
+
+  const gate: PersistGate = { evaluationId, runId, signal };
   const scored = await scoreAnswers(
     setup,
     evaluationId,
     prompt,
     criteria,
-    doc.answers,
-    doc.evaluationConfig,
+    preparedDoc.answers,
+    preparedDoc.evaluationConfig,
     runId,
     onProgress,
     signal,
@@ -990,7 +1186,7 @@ async function runScorePhase(
   const now = new Date().toISOString();
   const scoringConfigRevision = computeScoringConfigRevision(doc, criteria);
   const saved = await persistEvaluation(
-    doc._id,
+    preparedDoc._id,
     {
       answers: answersWithWinner,
       winnerAnswerId,
@@ -1004,8 +1200,9 @@ async function runScorePhase(
       },
       ...tokenUsageField(accumulator),
     },
-    undefined,
+    { improvedAnswer: '' },
     'scoring',
+    gate,
   );
 
   return finishAutomation(saved, runId, evaluationId, onProgress, now);
@@ -1019,21 +1216,32 @@ async function runImprovedPhase(
   signal: AbortSignal,
 ): Promise<Evaluation> {
   const evaluationId = doc._id.toString();
-  const { prompt, criteria } = requirePromptAndCriteria(doc);
-  const winner = findWinnerAnswer(doc.answers, doc.winnerAnswerId);
+  const accumulator = createTokenAccumulator(doc.tokenUsage);
+  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const preparedDoc = await ensureAutomationMetadata(
+    doc,
+    setup,
+    runId,
+    onProgress,
+    signal,
+    llmCtx,
+    accumulator,
+    modelFallbackHandlers(onProgress, 'improved'),
+  );
+  const { prompt, criteria } = requirePromptAndCriteria(preparedDoc);
+  const winner = findWinnerAnswer(preparedDoc.answers, preparedDoc.winnerAnswerId);
 
   if (!winner) {
     throw new AutomationError('Mark a winner before generating an improved answer.', 'improved');
   }
 
-  const accumulator = createTokenAccumulator(doc.tokenUsage);
-  const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const gate: PersistGate = { evaluationId, runId, signal };
   const improvedAnswer = await synthesizeImproved(
     setup,
     evaluationId,
     prompt,
     criteria,
-    doc.answers,
+    preparedDoc.answers,
     winner,
     runId,
     onProgress,
@@ -1045,10 +1253,11 @@ async function runImprovedPhase(
 
   const now = new Date().toISOString();
   const saved = await persistEvaluation(
-    doc._id,
+    preparedDoc._id,
     { improvedAnswer, updatedAt: now, ...tokenUsageField(accumulator) },
     undefined,
     'improved',
+    gate,
   );
 
   return finishAutomation(saved, runId, evaluationId, onProgress);
@@ -1093,6 +1302,7 @@ async function ensureAutomationMetadata(
     },
     undefined,
     'generating',
+    { evaluationId, runId, signal },
   );
 
   logEvent('info', LogEvents.automationPipelineStep, {
@@ -1127,6 +1337,7 @@ async function runFullPipeline(
   const evaluationId = doc._id.toString();
   const accumulator = createTokenAccumulator(doc.tokenUsage);
   const llmCtx = createLlmCallContext(setup, runId, evaluationId, onProgress, signal, accumulator);
+  const gate: PersistGate = { evaluationId, runId, signal };
   const preparedDoc = await ensureAutomationMetadata(
     doc,
     setup,
@@ -1153,7 +1364,7 @@ async function runFullPipeline(
   );
   logAutomationStepComplete('generating', runId, evaluationId);
 
-  await persistGenerateCheckpoint(preparedDoc._id, answers, accumulator);
+  await persistGenerateCheckpoint(preparedDoc._id, answers, accumulator, gate);
 
   const scored = await scoreAnswers(
     setup,
@@ -1215,6 +1426,7 @@ async function runFullPipeline(
     },
     undefined,
     'improved',
+    gate,
   );
 
   return finishAutomation(saved, runId, evaluationId, onProgress, now);
@@ -1256,6 +1468,7 @@ export async function prepareDocForPhase(
   doc: EvaluationDocument,
   phase: AutomationPhase,
   force: boolean,
+  gate?: PersistGate,
 ): Promise<EvaluationDocument> {
   const now = new Date().toISOString();
 
@@ -1279,14 +1492,26 @@ export async function prepareDocForPhase(
       }
 
       if (force && doc.answers.length > 0) {
-        const collection = getEvaluationsCollection();
-        await collection.updateOne(
-          { _id: doc._id },
-          {
-            $set: { answers: [], updatedAt: now },
-            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
-          },
-        );
+        if (gate) {
+          await updateEvaluationOwned(
+            doc._id,
+            gate,
+            {
+              $set: { answers: [], updatedAt: now },
+              $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+            },
+            'generating',
+          );
+        } else {
+          const collection = getEvaluationsCollection();
+          await collection.updateOne(
+            { _id: doc._id },
+            {
+              $set: { answers: [], updatedAt: now },
+              $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+            },
+          );
+        }
 
         return { ...doc, answers: [] };
       }
@@ -1296,6 +1521,18 @@ export async function prepareDocForPhase(
     case 'score': {
       if (doc.answers.length === 0) {
         throw new AutomationError('Add answers before auto-scoring.', 'scoring');
+      }
+
+      {
+        const setup = await resolveProvider();
+        const expectedCount = setup.answerModels.length;
+
+        if (doc.answers.length !== expectedCount) {
+          throw new AutomationError(
+            `Need all ${expectedCount} model answers before scoring (have ${doc.answers.length}).`,
+            'scoring',
+          );
+        }
       }
 
       if ((doc.winnerAnswerId || doc.automatedAt) && !force) {
@@ -1311,14 +1548,26 @@ export async function prepareDocForPhase(
           isWinner: false,
         }));
 
-        const collection = getEvaluationsCollection();
-        await collection.updateOne(
-          { _id: doc._id },
-          {
-            $set: { answers, updatedAt: now },
-            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
-          },
-        );
+        if (gate) {
+          await updateEvaluationOwned(
+            doc._id,
+            gate,
+            {
+              $set: { answers, updatedAt: now },
+              $unset: { winnerAnswerId: '', automatedAt: '', improvedAnswer: '' },
+            },
+            'scoring',
+          );
+        } else {
+          const collection = getEvaluationsCollection();
+          await collection.updateOne(
+            { _id: doc._id },
+            {
+              $set: { answers, updatedAt: now },
+              $unset: { winnerAnswerId: '', automatedAt: '', improvedAnswer: '' },
+            },
+          );
+        }
 
         return {
           ...doc,
@@ -1362,21 +1611,22 @@ export async function runEvaluationAutomation(options: {
   phase?: AutomationPhase;
   onProgress: ProgressCallback;
 }): Promise<Evaluation> {
-  const { evaluationObjectId, runId, force, onProgress } = options;
+  const { evaluationObjectId, runId, force } = options;
   const phase = options.phase ?? 'full';
   const collection = getEvaluationsCollection();
-  const storedDoc = await collection.findOne({ _id: evaluationObjectId });
-
-  if (!storedDoc) {
-    throw new AutomationError('Evaluation not found.', initialFailureStep(phase));
-  }
-  const doc: EvaluationDocument = {
-    _id: storedDoc._id,
-    ...normalizeEvaluationRecord(storedDoc, storedDoc._id.toString()),
-  };
-
-  const evaluationId = doc._id.toString();
+  const evaluationId = evaluationObjectId.toString();
+  // Register before findOne / setup so cancel/disconnect after SSE runId is honored.
   const signal = registerAutomationRun(evaluationId, runId);
+
+  // Stamp runId on every progress event so clients can drop stale streams.
+  const onProgress: ProgressCallback = (event) => {
+    if (typeof event.runId === 'string' && event.runId.length > 0) {
+      options.onProgress(event);
+      return;
+    }
+
+    options.onProgress({ ...event, runId });
+  };
 
   logEvent('info', LogEvents.automationStarted, {
     runId,
@@ -1386,35 +1636,24 @@ export async function runEvaluationAutomation(options: {
     preset: getLlmPreset(),
   });
 
-  let workingDoc = doc;
-
   try {
-    if (phase === 'full') {
-      if (doc.answers.length > 0 && !force) {
-        throw new AutomationError(
-          'Evaluation already has answers. Re-run with force=true after confirming.',
-          'generating',
-        );
-      }
+    assertNotCancelled(signal, initialFailureStep(phase));
 
-      if (force && doc.answers.length > 0) {
-        await collection.updateOne(
-          { _id: doc._id },
-          {
-            $set: {
-              answers: [],
-              updatedAt: new Date().toISOString(),
-            },
-            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
-          },
-        );
-        workingDoc = { ...doc, answers: [] };
-      }
-    } else {
-      workingDoc = await prepareDocForPhase(doc, phase, force);
+    const storedDoc = await collection.findOne({ _id: evaluationObjectId });
+
+    if (!storedDoc) {
+      throw new AutomationError('Evaluation not found.', initialFailureStep(phase));
     }
 
-    let setup = await resolveProvider();
+    const doc: EvaluationDocument = {
+      _id: storedDoc._id,
+      ...normalizeEvaluationRecord(storedDoc, evaluationId),
+    };
+
+    assertNotCancelled(signal, initialFailureStep(phase));
+
+    // Resolve provider before any force-clear so setup failure does not wipe durable state.
+    const setup = await resolveProvider();
 
     emit(onProgress, {
       type: 'provider_resolved',
@@ -1428,7 +1667,54 @@ export async function runEvaluationAutomation(options: {
       judge: setup.judgeModel.model,
     });
 
-    return runPhaseWithSetup(setup, workingDoc, runId, onProgress, signal, phase);
+    assertNotCancelled(signal, initialFailureStep(phase));
+
+    // Claim doc ownership after provider resolve so setup failure does not write;
+    // subsequent persists/force-clears filter on automationRunId.
+    await claimEvaluationAutomationRun(
+      evaluationObjectId,
+      evaluationId,
+      runId,
+      signal,
+      initialFailureStep(phase),
+    );
+
+    let workingDoc = doc;
+
+    if (phase === 'full') {
+      if (doc.answers.length > 0 && !force) {
+        throw new AutomationError(
+          'Evaluation already has answers. Re-run with force=true after confirming.',
+          'generating',
+        );
+      }
+
+      if (force && doc.answers.length > 0) {
+        await updateEvaluationOwned(
+          doc._id,
+          { evaluationId, runId, signal },
+          {
+            $set: {
+              answers: [],
+              updatedAt: new Date().toISOString(),
+            },
+            $unset: { winnerAnswerId: '', improvedAnswer: '', automatedAt: '' },
+          },
+          'generating',
+        );
+        workingDoc = { ...doc, answers: [] };
+      }
+    } else {
+      workingDoc = await prepareDocForPhase(doc, phase, force, {
+        evaluationId,
+        runId,
+        signal,
+      });
+    }
+
+    assertNotCancelled(signal, initialFailureStep(phase));
+
+    return await runPhaseWithSetup(setup, workingDoc, runId, onProgress, signal, phase);
   } catch (error) {
     if (error instanceof AutomationError) {
       logEvent('error', LogEvents.automationFailed, {
@@ -1440,8 +1726,16 @@ export async function runEvaluationAutomation(options: {
       throw error;
     }
 
-    const message = error instanceof Error ? error.message : 'Automation failed';
     const step = initialFailureStep(phase);
+    const cancelled =
+      isAutomationCancelled(signal) ||
+      (isAbortError(error) && signal.aborted) ||
+      (error instanceof Error && /cancelled/i.test(error.message));
+    const message = cancelled
+      ? 'Automation cancelled.'
+      : error instanceof Error
+        ? error.message
+        : 'Automation failed';
     logEvent('error', LogEvents.automationFailed, {
       runId,
       evaluationId,

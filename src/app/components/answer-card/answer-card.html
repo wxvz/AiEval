@@ -14,8 +14,10 @@
       </div>
     }
     <app-score-summary [summary]="summary()" />
-    <button type="button" class="btn btn-sm btn-outline-danger mt-3" (click)="removeRequested.emit(answer().id)">
-      Remove
-    </button>
+    @if (removable()) {
+      <button type="button" class="btn btn-sm btn-outline-danger mt-3" (click)="removeRequested.emit(answer().id)">
+        Remove
+      </button>
+    }
   </div>
 </div>

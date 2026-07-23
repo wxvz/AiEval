@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
   APP_INITIALIZER,
   ApplicationConfig,
@@ -7,22 +7,27 @@ import {
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
+import { apiTokenInterceptor } from './interceptors/api-token.interceptor';
 import { routes } from './app.routes';
+import { AppStatusService } from './services/app-status.service';
 import { EvaluationService } from './services/evaluation.service';
 
-function loadEvaluations(): () => Promise<void> {
+function loadAppData(): () => Promise<void> {
   const evaluationService = inject(EvaluationService);
-  return () => evaluationService.loadFromApi();
+  const appStatus = inject(AppStatusService);
+  return async () => {
+    await Promise.all([evaluationService.loadFromApi(), appStatus.load()]);
+  };
 }
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([apiTokenInterceptor])),
     {
       provide: APP_INITIALIZER,
-      useFactory: loadEvaluations,
+      useFactory: loadAppData,
       multi: true,
     },
   ],

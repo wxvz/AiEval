@@ -44,6 +44,8 @@ export class LearnChatFab {
   private revealAbort = false;
   private revealTimer: ReturnType<typeof setTimeout> | null = null;
   private sleepResolve: (() => void) | null = null;
+  /** Bumped on each send/abort so stale catch/finally cannot clobber a newer turn. */
+  private sendGeneration = 0;
 
   constructor() {
     void this.learnChat.syncContext();
@@ -87,6 +89,7 @@ export class LearnChatFab {
       return;
     }
 
+    const generation = ++this.sendGeneration;
     this.draft = '';
     this.error.set(null);
     this.messages.update((list) => [
@@ -114,7 +117,7 @@ export class LearnChatFab {
     try {
       const response = await this.learnChat.ask(text, {
         onToken: (token) => {
-          if (this.revealAbort) {
+          if (this.revealAbort || generation !== this.sendGeneration) {
             return;
           }
           if (reducedMotion) {
@@ -127,6 +130,10 @@ export class LearnChatFab {
       });
       streamDone = true;
       await revealPromise;
+
+      if (generation !== this.sendGeneration) {
+        return;
+      }
 
       // Close/toggle/nav/destroy may abort after ask resolves; never snap a cancelled reveal.
       if (this.revealAbort) {
@@ -156,6 +163,9 @@ export class LearnChatFab {
       });
     } catch (error) {
       streamDone = true;
+      if (generation !== this.sendGeneration) {
+        return;
+      }
       this.stopReveal();
       const message =
         error instanceof Error ? error.message : 'Could not reach the tutor. Try again.';
@@ -164,6 +174,9 @@ export class LearnChatFab {
         this.error.set(message);
       }
     } finally {
+      if (generation !== this.sendGeneration) {
+        return;
+      }
       this.sending.set(false);
       this.thinking.set(false);
       this.revealing.set(false);
@@ -215,11 +228,13 @@ export class LearnChatFab {
 
   /** Cancel fetch/SSE and freeze reveal; shared by close, toggle dismiss, nav, destroy. */
   private abortInflight(): void {
+    this.sendGeneration++;
     this.learnChat.cancel();
     this.stopReveal();
     this.sending.set(false);
     this.thinking.set(false);
     this.revealing.set(false);
+    this.dropEmptyAssistantPlaceholder();
   }
 
   private dropEmptyAssistantPlaceholder(): void {

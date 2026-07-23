@@ -82,6 +82,10 @@ export class EditEvaluationPage {
   }
 
   protected onEvaluationSubmit(value: EvaluationFormValue): void {
+    if (this.automating()) {
+      return;
+    }
+
     this.evaluationService.update(this.evaluationId, value, {
       success: 'Changes saved.',
       error: 'Could not save changes.',
@@ -89,6 +93,10 @@ export class EditEvaluationPage {
   }
 
   protected setCriteriaMode(criteriaMode: CriteriaMode): void {
+    if (this.automating()) {
+      return;
+    }
+
     this.evaluationService.setCriteriaMode(this.evaluationId, criteriaMode, {
       success:
         criteriaMode === 'default' ? 'Using default criteria.' : 'Using custom criteria.',
@@ -97,6 +105,10 @@ export class EditEvaluationPage {
   }
 
   protected onCriterionSubmit(value: CriterionFormValue): void {
+    if (this.automating()) {
+      return;
+    }
+
     this.evaluationService.addCriterion(
       this.evaluationId,
       {
@@ -113,6 +125,10 @@ export class EditEvaluationPage {
   }
 
   protected removeCriterion(criterionId: string): void {
+    if (this.automating()) {
+      return;
+    }
+
     const current = this.evaluation();
 
     if (!current) {
@@ -132,6 +148,10 @@ export class EditEvaluationPage {
   }
 
   protected onAnswerSubmit(value: AnswerFormValue): void {
+    if (this.automating()) {
+      return;
+    }
+
     this.evaluationService.addAnswer(this.evaluationId, value, {
       success: 'Model answer added.',
       error: 'Could not add model answer.',
@@ -139,6 +159,10 @@ export class EditEvaluationPage {
   }
 
   protected removeAnswer(answerId: string): void {
+    if (this.automating()) {
+      return;
+    }
+
     const current = this.evaluation();
 
     if (!current) {

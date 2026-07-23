@@ -1,4 +1,4 @@
-import { Component, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { FeedbackService } from '../../services/feedback.service';
@@ -20,6 +20,7 @@ export class CriterionForm {
   private readonly feedback = inject(FeedbackService);
 
   readonly submitLabel = input('Add criterion');
+  readonly disabled = input(false);
 
   readonly submitted = output<CriterionFormValue>();
 
@@ -36,7 +37,21 @@ export class CriterionForm {
     }),
   });
 
+  constructor() {
+    effect(() => {
+      if (this.disabled()) {
+        this.form.disable({ emitEvent: false });
+      } else {
+        this.form.enable({ emitEvent: false });
+      }
+    });
+  }
+
   onSubmit(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.feedback.error('Please enter a valid criterion name and max points.');

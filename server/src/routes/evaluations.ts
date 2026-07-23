@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 
+import { getActiveAutomationRunId } from '../automation/run-registry.js';
 import { generateEvaluationPrompt } from '../llm/generate-prompt.js';
 import { generateEvaluationTitle } from '../llm/generate-title.js';
 import { getEvaluationsCollection } from '../db.js';
@@ -10,7 +11,99 @@ import {
   parseObjectId,
   toApiEvaluation,
 } from '../serialization.js';
-import type { Evaluation, EvaluationRecord } from '../types/evaluation.js';
+import type { Evaluation, EvaluationDocument, EvaluationRecord } from '../types/evaluation.js';
+
+const GENERATE_RATE_LIMIT_WINDOW_MS = 60_000;
+const GENERATE_RATE_LIMIT_MAX_PER_MINUTE = 20;
+const GENERATE_RATE_LIMIT_MAX_KEYS = 2_000;
+const generateRateLimitHits = new Map<string, number[]>();
+
+/** Test helper — clears the in-memory generate-assist rate-limit window. */
+export function resetGenerateAssistRateLimitState(): void {
+  generateRateLimitHits.clear();
+}
+
+function clientGenerateRateKey(req: Request): string {
+  // Do not trust X-Forwarded-For without Express `trust proxy` — clients can spoof it.
+  const ip = String(req.ip || req.socket.remoteAddress || '').trim();
+  return ip ? `ip:${ip}` : 'ip:unknown';
+}
+
+function pruneGenerateRateLimitHits(now: number): void {
+  for (const [key, stamps] of generateRateLimitHits) {
+    const recent = stamps.filter((stamp) => now - stamp < GENERATE_RATE_LIMIT_WINDOW_MS);
+    if (recent.length === 0) {
+      generateRateLimitHits.delete(key);
+    } else if (recent.length !== stamps.length) {
+      generateRateLimitHits.set(key, recent);
+    }
+  }
+
+  if (generateRateLimitHits.size > GENERATE_RATE_LIMIT_MAX_KEYS) {
+    const overflow = generateRateLimitHits.size - GENERATE_RATE_LIMIT_MAX_KEYS;
+    let removed = 0;
+    for (const key of generateRateLimitHits.keys()) {
+      generateRateLimitHits.delete(key);
+      removed += 1;
+      if (removed >= overflow) {
+        break;
+      }
+    }
+  }
+}
+
+function checkGenerateRateLimit(key: string): boolean {
+  const now = Date.now();
+  pruneGenerateRateLimitHits(now);
+  const recent = (generateRateLimitHits.get(key) ?? []).filter(
+    (stamp) => now - stamp < GENERATE_RATE_LIMIT_WINDOW_MS,
+  );
+  if (recent.length >= GENERATE_RATE_LIMIT_MAX_PER_MINUTE) {
+    generateRateLimitHits.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  generateRateLimitHits.set(key, recent);
+  return true;
+}
+
+function jsonEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** True when an automation run is active for this evaluation in the process registry. */
+export function isEvaluationAutomationActive(evaluationId: string): boolean {
+  return getActiveAutomationRunId(evaluationId) !== undefined;
+}
+
+/**
+ * Client PUTs send the full evaluation; treat answers / winner / improved as mutations
+ * only when the payload would change stored automation-owned fields.
+ */
+export function wouldOverwriteAutomationOwnedFields(
+  body: Partial<Evaluation>,
+  existing: Pick<EvaluationDocument, 'answers' | 'winnerAnswerId' | 'improvedAnswer'>,
+): boolean {
+  if (body.answers !== undefined && !jsonEqual(body.answers, existing.answers)) {
+    return true;
+  }
+
+  if (
+    body.winnerAnswerId !== undefined &&
+    body.winnerAnswerId !== existing.winnerAnswerId
+  ) {
+    return true;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(body, 'improvedAnswer') &&
+    !jsonEqual(body.improvedAnswer, existing.improvedAnswer)
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export function createEvaluationsRouter(): Router {
   const router = Router();
@@ -55,16 +148,29 @@ export function createEvaluationsRouter(): Router {
 
   router.post('/generate-title', async (req, res, next) => {
     try {
-      const title = await generateEvaluationTitle({}, undefined, normalizeEvaluationConfig(req.body?.evaluationConfig));
+      if (!checkGenerateRateLimit(clientGenerateRateKey(req))) {
+        res.status(429).json({ message: 'Title generation rate limit exceeded. Try again shortly.' });
+        return;
+      }
+
+      const title = await generateEvaluationTitle(
+        {},
+        undefined,
+        normalizeEvaluationConfig(req.body?.evaluationConfig),
+      );
       res.json({ title });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to generate title';
-      res.status(500).json({ message });
+      next(error);
     }
   });
 
   router.post('/generate-prompt', async (req, res, next) => {
     try {
+      if (!checkGenerateRateLimit(clientGenerateRateKey(req))) {
+        res.status(429).json({ message: 'Prompt generation rate limit exceeded. Try again shortly.' });
+        return;
+      }
+
       const body = req.body as { title?: string; evaluationConfig?: unknown } | undefined;
       const title = body?.title?.trim() ?? '';
 
@@ -81,8 +187,7 @@ export function createEvaluationsRouter(): Router {
       );
       res.json({ prompt });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to generate prompt';
-      res.status(500).json({ message });
+      next(error);
     }
   });
 
@@ -163,7 +268,7 @@ export function createEvaluationsRouter(): Router {
       }
 
       const collection = getEvaluationsCollection();
-      const existing = await collection.findOne({ _id: objectId });
+      const existing = (await collection.findOne({ _id: objectId })) as EvaluationDocument | null;
 
       if (!existing) {
         res.status(404).json({ message: 'Evaluation not found' });
@@ -172,6 +277,53 @@ export function createEvaluationsRouter(): Router {
 
       const body = req.body as Partial<Evaluation>;
       const evaluationId = objectId.toString();
+
+      if (
+        typeof body.updatedAt === 'string' &&
+        body.updatedAt.length > 0 &&
+        body.updatedAt < existing.updatedAt
+      ) {
+        res.status(409).json({
+          message: 'Evaluation was updated elsewhere. Refresh and try again.',
+        });
+        return;
+      }
+
+      const automationActive = isEvaluationAutomationActive(evaluationId);
+
+      if (automationActive && wouldOverwriteAutomationOwnedFields(body, existing)) {
+        res.status(409).json({
+          message:
+            'Automation is in progress. Answers, winner, and improved answer cannot be edited until it finishes.',
+        });
+        return;
+      }
+
+      const now = new Date().toISOString();
+
+      // While automation owns answers/winner/improved, never $set those fields from the
+      // client (or from a stale findOne snapshot) — checkpoints can land between read and write.
+      if (automationActive) {
+        const metadataSet = {
+          title: body.title?.trim() ?? existing.title,
+          prompt: body.prompt?.trim() ?? existing.prompt,
+          criteriaMode: body.criteriaMode ?? existing.criteriaMode ?? 'default',
+          criteria: body.criteria ?? existing.criteria,
+          updatedAt: now,
+        };
+
+        await collection.updateOne({ _id: objectId }, { $set: metadataSet });
+        const fresh = (await collection.findOne({ _id: objectId })) as EvaluationDocument | null;
+
+        if (!fresh) {
+          res.status(404).json({ message: 'Evaluation not found' });
+          return;
+        }
+
+        res.json(toApiEvaluation(fresh));
+        return;
+      }
+
       const updated: EvaluationRecord = normalizeEvaluationRecord(
         {
           title: body.title?.trim() ?? existing.title,
@@ -190,14 +342,23 @@ export function createEvaluationsRouter(): Router {
           ...(existing.scoringConfigRevision !== undefined
             ? { scoringConfigRevision: existing.scoringConfigRevision }
             : {}),
+          ...(existing.tokenUsage !== undefined ? { tokenUsage: existing.tokenUsage } : {}),
           createdAt: existing.createdAt,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now,
         },
         evaluationId,
       );
 
-      await collection.updateOne({ _id: objectId }, { $set: updated });
-      res.json(toApiEvaluation({ _id: objectId, ...updated }));
+      // Preserve automationRunId ownership — never clear via unguarded PUT.
+      const setDoc: EvaluationRecord & { automationRunId?: string } = {
+        ...updated,
+        ...(existing.automationRunId !== undefined
+          ? { automationRunId: existing.automationRunId }
+          : {}),
+      };
+
+      await collection.updateOne({ _id: objectId }, { $set: setDoc });
+      res.json(toApiEvaluation({ _id: objectId, ...setDoc }));
     } catch (error) {
       next(error);
     }
@@ -209,6 +370,15 @@ export function createEvaluationsRouter(): Router {
 
       if (!objectId) {
         res.status(400).json({ message: 'Invalid evaluation id' });
+        return;
+      }
+
+      const evaluationId = objectId.toString();
+
+      if (isEvaluationAutomationActive(evaluationId)) {
+        res.status(409).json({
+          message: 'Automation is in progress. Cancel or wait before deleting this evaluation.',
+        });
         return;
       }
 

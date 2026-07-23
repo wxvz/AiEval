@@ -13,6 +13,7 @@ import { WinnerBadge } from '../winner-badge/winner-badge';
 export class AnswerCard {
   readonly answer = input.required<Answer>();
   readonly criteria = input<RubricCriterion[]>([]);
+  readonly removable = input(true);
 
   readonly removeRequested = output<string>();
 

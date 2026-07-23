@@ -11,6 +11,7 @@ vi.mock('./provider.js', () => ({
     provider: { name: 'groq' },
     judgeModel: { model: 'judge-model', label: 'Judge' },
     answerModels: [],
+    preset: 'balanced',
   }),
 }));
 

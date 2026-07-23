@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { initialScoresForCriteria } from './scores.js';
 import { getActiveCriteria } from './criteria.js';
@@ -11,7 +11,7 @@ const { chat, chatJson, findOne, findOneAndUpdate, updateOne, resolveProvider } 
   chatJson: vi.fn(),
   findOne: vi.fn(),
   findOneAndUpdate: vi.fn(),
-  updateOne: vi.fn().mockResolvedValue({ modifiedCount: 1 }),
+  updateOne: vi.fn().mockResolvedValue({ matchedCount: 1, modifiedCount: 1 }),
   resolveProvider: vi.fn(),
 }));
 
@@ -31,11 +31,12 @@ vi.mock('../llm/provider.js', async (importOriginal) => {
 vi.mock('./metadata.js', () => ({
   generateEvaluationMetadata: vi.fn(),
 }));
-vi.mock('./run-registry.js', () => ({
-  registerAutomationRun: () => new AbortController().signal,
-  clearAutomationRun: vi.fn(),
-  isAutomationCancelled: () => false,
-}));
+
+import {
+  cancelAutomationRun,
+  clearAutomationRun,
+} from './run-registry.js';
+import { runEvaluationAutomation } from './run-evaluation.js';
 
 const baseSetup: ResolvedLlmSetup = {
   providerName: 'groq',
@@ -46,6 +47,7 @@ const baseSetup: ResolvedLlmSetup = {
     { model: 'model-c', label: 'C' },
   ],
   judgeModel: { model: 'judge-model', label: 'Judge' },
+  preset: 'balanced',
 };
 
 function baseDoc(overrides: Partial<EvaluationDocument> = {}): EvaluationDocument {
@@ -62,13 +64,21 @@ function baseDoc(overrides: Partial<EvaluationDocument> = {}): EvaluationDocumen
   };
 }
 
-import { runEvaluationAutomation } from './run-evaluation.js';
-
 describe('resilient generate automation', () => {
+  const activeRunIds: Array<{ evaluationId: string; runId: string }> = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
     resolveProvider.mockResolvedValue(baseSetup);
     chatJson.mockReset();
+    activeRunIds.length = 0;
+  });
+
+  afterEach(() => {
+    for (const { evaluationId, runId } of activeRunIds) {
+      cancelAutomationRun(evaluationId, runId);
+      clearAutomationRun(evaluationId, runId);
+    }
   });
 
   it('runs fallback when every initial slot hits rate limit', async () => {
@@ -239,5 +249,79 @@ describe('resilient generate automation', () => {
 
     expect(chat).toHaveBeenCalledTimes(1);
     expect(chat.mock.calls[0]?.[1]).toBe('model-c');
+  });
+
+  it('does not force-clear answers when resolveProvider fails', async () => {
+    const doc = baseDoc({
+      answers: [
+        {
+          id: 'a1',
+          evaluationId: 'eval',
+          label: 'A',
+          content: 'Existing',
+          scores: [],
+        },
+      ],
+    });
+    const runId = 'run-force-provider-fail';
+    activeRunIds.push({ evaluationId: doc._id.toString(), runId });
+
+    findOne.mockResolvedValue(doc);
+    resolveProvider.mockRejectedValue(new Error('No LLM provider configured'));
+
+    await expect(
+      runEvaluationAutomation({
+        evaluationObjectId: doc._id,
+        runId,
+        force: true,
+        phase: 'full',
+        onProgress: vi.fn(),
+      }),
+    ).rejects.toThrow(/No LLM provider configured/);
+
+    expect(updateOne).not.toHaveBeenCalled();
+    expect(findOneAndUpdate).not.toHaveBeenCalled();
+  });
+
+  it('does not persist answers when the run is cancelled before save', async () => {
+    const doc = baseDoc();
+    const runId = 'run-cancel-before-persist';
+    const evaluationId = doc._id.toString();
+    activeRunIds.push({ evaluationId, runId });
+    const criteria = getActiveCriteria(doc.criteriaMode, doc.criteria);
+
+    findOne.mockResolvedValue(doc);
+    chat
+      .mockImplementationOnce(async () => {
+        cancelAutomationRun(evaluationId, runId);
+        return { text: 'Answer one' };
+      })
+      .mockResolvedValueOnce({ text: 'Answer two' })
+      .mockResolvedValueOnce({ text: 'Answer three' });
+
+    findOneAndUpdate.mockResolvedValue({
+      ...doc,
+      answers: [
+        {
+          id: '1',
+          evaluationId,
+          label: 'A',
+          content: 'Answer one',
+          scores: initialScoresForCriteria(criteria),
+        },
+      ],
+    });
+
+    await expect(
+      runEvaluationAutomation({
+        evaluationObjectId: doc._id,
+        runId,
+        force: false,
+        phase: 'generate',
+        onProgress: vi.fn(),
+      }),
+    ).rejects.toThrow(/Automation cancelled/);
+
+    expect(findOneAndUpdate).not.toHaveBeenCalled();
   });
 });

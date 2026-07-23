@@ -97,7 +97,7 @@ export async function chat(
     );
   } catch (error) {
     if (
-      !isSlowRequestError(error) ||
+      !isSlowRequestError(error, context.abortSignal) ||
       provider.name !== 'ollama' ||
       context.skipSlowFallback ||
       !context.currentSetup ||

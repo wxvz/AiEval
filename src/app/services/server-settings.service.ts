@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { LlmPreset, ServerSettings } from '../models/llm-preset.model';
+import { readStoredApiToken, writeStoredApiToken } from './api-token.storage';
 import { FeedbackService } from './feedback.service';
 import { messageFromHttpError } from './http-error-message';
 
@@ -15,12 +16,14 @@ export class ServerSettingsService {
 
   private readonly llmPresetSignal = signal<LlmPreset | null>(null);
   private readonly envDefaultLlmPresetSignal = signal<LlmPreset | null>(null);
+  private readonly apiTokenRequiredSignal = signal(false);
   private readonly loadingSignal = signal(false);
   private readonly patchingSignal = signal(false);
   private readonly errorSignal = signal<string | null>(null);
 
   readonly llmPreset = this.llmPresetSignal.asReadonly();
   readonly envDefaultLlmPreset = this.envDefaultLlmPresetSignal.asReadonly();
+  readonly apiTokenRequired = this.apiTokenRequiredSignal.asReadonly();
   readonly loading = this.loadingSignal.asReadonly();
   readonly patching = this.patchingSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
@@ -32,6 +35,14 @@ export class ServerSettingsService {
       this.error() !== null ||
       this.llmPreset() === null,
   );
+
+  getApiToken(): string | null {
+    return readStoredApiToken();
+  }
+
+  setApiToken(token: string): void {
+    writeStoredApiToken(token);
+  }
 
   async load(): Promise<void> {
     this.loadingSignal.set(true);
@@ -95,6 +106,7 @@ export class ServerSettingsService {
   private applySettings(settings: ServerSettings): void {
     this.llmPresetSignal.set(settings.llmPreset);
     this.envDefaultLlmPresetSignal.set(settings.envDefaultLlmPreset);
+    this.apiTokenRequiredSignal.set(!!settings.apiTokenRequired);
     this.errorSignal.set(null);
   }
 }

@@ -4,6 +4,7 @@ import {
   createHuggingFaceProvider,
   hasHuggingFaceCredentials,
 } from './huggingface.js';
+import { getLlmPreset } from '../runtime-settings.js';
 import { resolveModelsForProvider } from './model-presets.js';
 import { createOllamaProvider, isOllamaHealthy } from './ollama.js';
 import { createOpenRouterProvider, hasOpenRouterCredentials } from './openrouter.js';
@@ -48,13 +49,15 @@ async function tryResolve(name: ProviderName): Promise<ResolvedLlmSetup | null> 
     return null;
   }
 
-  const { answerModels, judgeModel } = resolveModelsForProvider(name);
+  const preset = getLlmPreset();
+  const { answerModels, judgeModel } = resolveModelsForProvider(name, preset);
 
   return {
     providerName: name,
     provider: createLlmProvider(name),
     answerModels,
     judgeModel,
+    preset,
   };
 }
 

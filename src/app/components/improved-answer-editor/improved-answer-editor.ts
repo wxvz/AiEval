@@ -17,6 +17,8 @@ export class ImprovedAnswerEditor {
 
   readonly winnerAnswerId = input<string | undefined>();
 
+  readonly disabled = input(false);
+
   readonly saved = output<ImprovedAnswer>();
 
   readonly form = new FormGroup({
@@ -48,9 +50,32 @@ export class ImprovedAnswerEditor {
         finalAnswer: current.finalAnswer ?? '',
       });
     });
+
+    effect(() => {
+      const controls = [
+        this.form.controls.strengths,
+        this.form.controls.weaknesses,
+        this.form.controls.usefulFromOthers,
+        this.form.controls.finalAnswer,
+      ];
+
+      if (this.disabled()) {
+        for (const control of controls) {
+          control.disable({ emitEvent: false });
+        }
+      } else {
+        for (const control of controls) {
+          control.enable({ emitEvent: false });
+        }
+      }
+    });
   }
 
   onSave(): void {
+    if (this.disabled()) {
+      return;
+    }
+
     const raw = this.form.getRawValue();
     this.saved.emit({
       winningAnswer: raw.winningAnswer.trim(),

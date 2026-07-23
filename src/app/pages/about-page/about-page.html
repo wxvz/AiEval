@@ -77,8 +77,8 @@
     </p>
     <p class="mb-4 text-muted small">
       You can change the performance preset (Balanced / Fast) in Settings → Models without editing
-      <code>.env</code>; the choice applies until the API restarts, when <code>LLM_PRESET</code> in
-      <code>.env</code> is used again.
+      <code>.env</code>; new runs pick up the choice, while in-flight automation keeps the preset it
+      started with. After an API restart, <code>LLM_PRESET</code> in <code>.env</code> is used again.
     </p>
 
     <a routerLink="/" class="btn btn-primary">Go to dashboard</a>

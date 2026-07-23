@@ -159,7 +159,7 @@ Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set 
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) 22.12+ (see `.nvmrc`)
+- [Node.js](https://nodejs.org/) 24+ (see `.nvmrc`; Active LTS)
 - [npm](https://www.npmjs.com/) 11.12+ (use `corepack install` after cloning)
 - [MongoDB](https://www.mongodb.com/) running locally or a connection string to a hosted cluster
 
@@ -189,7 +189,7 @@ cp .env.example .env
 | `OPENROUTER_APP_TITLE` | App title sent to OpenRouter (default: `AiEval`) |
 | `GEMINI_API_KEY` | Google Gemini API key |
 | `HUGGINGFACE_API_KEY` | Hugging Face Inference API key |
-| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`). Override at runtime in **Settings → Models** until the API restarts. |
+| `LLM_PRESET` | `balanced` or `fast` (default: `balanced`). Override at runtime in **Settings → Models** until the API restarts. In-flight automation keeps the preset captured at run start; PATCH is rejected (409) while a run is active. |
 | `LLM_ANSWER_MODELS` | Override comma-separated `provider:model` list for answers |
 | `LLM_JUDGE_MODEL` | Override judge as `provider:model` (e.g. `openrouter:meta-llama/llama-3.3-70b-instruct:free`). Ignored if the provider does not match the active automation provider. |
 | `LLM_CONCURRENCY` | Max parallel answer-generation calls (default: `3`). Use `1` for OpenRouter free / `openrouter/free`. |
@@ -202,6 +202,8 @@ cp .env.example .env
 | `LOG_FORMAT` | `json`, `pretty`, or `text` — `text` prints `LEVEL: message` to the terminal (default: `json`) |
 | `LOG_FILE` | Optional path to append NDJSON logs |
 | `STARTUP_PREFLIGHT` | Print MongoDB and LLM provider status on API boot (default: `true`) |
+| `AIEVAL_API_TOKEN` | Optional shared Bearer token. When set, required for `/api/evaluations`, `/api/learn-chat`, and `PATCH /api/settings` |
+| `TRUST_PROXY` | Set `true` when the API sits behind a reverse proxy (client IP / rate limits) |
 
 ### Run locally
 
@@ -220,8 +222,17 @@ npm start
 
 - Frontend: [http://localhost:4200/](http://localhost:4200/) (proxies `/api` to the backend)
 - API: [http://localhost:3000/api](http://localhost:3000/api)
+- **`GET /api/health`** — liveness only (process is up)
+- **`GET /api/status`** — readiness (MongoDB + LLM provider probes)
 
-On startup, the API prints a checklist of MongoDB and LLM provider readiness (Ollama reachability, cloud API keys, and which provider automation would use). Set `STARTUP_PREFLIGHT=false` to skip this probe.
+On startup, the API prints a checklist of MongoDB and LLM provider readiness (Ollama reachability, cloud API keys, and which provider automation would use). Set `STARTUP_PREFLIGHT=false` to skip this probe (a log line still records that preflight was skipped).
+
+The Settings → Models preset overlay is **process-local**: it lasts until the API restarts and is not written to `.env`. CORS is open (`cors()` with defaults) for local UI use; set `AIEVAL_API_TOKEN` if you expose the API beyond localhost.
+
+**Deferred / future work**
+
+- Learn hub Full 11 progress tracking and learn→evaluation handoff polish
+- Durable provider-choice waits across API process restarts
 
 Evaluations are stored in the `evaluations` collection. The API creates an index on `updatedAt` when it connects.
 
