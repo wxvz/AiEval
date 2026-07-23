@@ -131,7 +131,11 @@ describe('EditEvaluationPage.canDeactivate', () => {
     const updateSpy = vi.spyOn(evaluationService, 'update');
     const addAnswerSpy = vi.spyOn(evaluationService, 'addAnswer');
 
-    page['onEvaluationSubmit']({ title: 'Changed title', prompt: 'Changed prompt text.' });
+    page['onEvaluationSubmit']({
+      title: 'Changed title',
+      prompt: 'Changed prompt text.',
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+    });
     page['onAnswerSubmit']({ label: 'Model', content: 'Some answer content' });
     page['removeAnswer']('x');
 

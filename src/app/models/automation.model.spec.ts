@@ -64,6 +64,16 @@ describe('automationProgressLabel', () => {
         completed: 2,
         pending: 1,
       }),
-    ).toBe('Paused (2 done, 1 pending) — retrying after empty/unusable answers…');
+    ).toBe('Paused (2 done, 1 pending) — retrying after empty content…');
+
+    expect(
+      automationProgressLabel({
+        type: 'step_paused',
+        step: 'generating',
+        reason: 'unusable_model',
+        completed: 2,
+        pending: 1,
+      }),
+    ).toBe('Paused (2 done, 1 pending) — retrying after unusable model…');
   });
 });

@@ -461,7 +461,10 @@ describe('EvaluationService.generateTitle', () => {
     const service = TestBed.inject(EvaluationService);
     const feedback = TestBed.inject(FeedbackService);
     const errorSpy = vi.spyOn(feedback, 'error');
-    const promise = service.generateTitle({ success: '', error: 'Could not generate title.' });
+    const promise = service.generateTitle(DEFAULT_EVALUATION_CONFIG, {
+      success: '',
+      error: 'Could not generate title.',
+    });
 
     const req = httpMock.expectOne('/api/evaluations/generate-title');
     req.flush({ title: 'ab' });
@@ -505,10 +508,14 @@ describe('EvaluationService.generatePrompt', () => {
     const service = TestBed.inject(EvaluationService);
     const feedback = TestBed.inject(FeedbackService);
     const errorSpy = vi.spyOn(feedback, 'error');
-    const promise = service.generatePrompt('My evaluation title', {
-      success: 'Prompt generated.',
-      error: 'Could not generate prompt.',
-    });
+    const promise = service.generatePrompt(
+      'My evaluation title',
+      DEFAULT_EVALUATION_CONFIG,
+      {
+        success: 'Prompt generated.',
+        error: 'Could not generate prompt.',
+      },
+    );
 
     const req = httpMock.expectOne('/api/evaluations/generate-prompt');
     req.flush({ prompt: 'short' });
