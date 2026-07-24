@@ -208,6 +208,66 @@ describe('POST /api/learn-chat', () => {
     );
   });
 
+  it('strips response sources for short social turns', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'Sounds good. Let me know if you have any more questions.',
+          sessionId: 's-social',
+          sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    for (const message of ['okay', 'hi', 'thanks']) {
+      const { status, body } = await postLearnChat({
+        message,
+        sessionId: 's-social',
+        sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        curriculumCatalog: [
+          { title: 'Learning rate', route: '/learn/lessons/learning-rate' },
+        ],
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({
+        reply: 'Sounds good. Let me know if you have any more questions.',
+        sessionId: 's-social',
+        sources: [],
+      });
+    }
+  });
+
+  it('keeps response sources for substantive asks', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'Learning rate scales each weight update.',
+          sessionId: 's-ask',
+          sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const { status, body } = await postLearnChat({
+      message: 'how does learning rate as a value work?',
+      sessionId: 's-ask',
+      sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+      curriculumCatalog: [
+        { title: 'Learning rate', route: '/learn/lessons/learning-rate' },
+      ],
+    });
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      reply: 'Learning rate scales each weight update.',
+      sessionId: 's-ask',
+      sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+    });
+  });
+
   it('drops all response sources when curriculum catalog is empty', async () => {
     stubWebhookFetch(async () =>
       new Response(

@@ -70,6 +70,25 @@ function asOptionalString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** True when the learner message looks like a real ask (not hi/ok/thanks). */
+export function shouldAttachLearnChatSources(message: string): boolean {
+  const normalized = message.trim().replace(/\s+/g, ' ');
+  if (!normalized) {
+    return false;
+  }
+  if (/\?/.test(normalized)) {
+    return true;
+  }
+  const words = normalized.split(' ');
+  if (words.length >= 4) {
+    return true;
+  }
+  // Short interrogatives / prompts without "?": "what is bias", "explain loss"
+  return /^(how|what|why|when|where|which|who|whom|whose|can|could|would|should|is|are|do|does|did|explain|tell|describe|define|compare|help)\b/i.test(
+    normalized,
+  );
+}
+
 function wantsStream(req: Request): boolean {
   const accept = String(req.headers.accept ?? '');
   if (accept.includes('text/event-stream')) {
@@ -318,6 +337,7 @@ function normalizeResponse(
   fallbackSessionId: string,
   catalog: CatalogEntry[] = [],
   requestSources: LearnChatSource[] = [],
+  requestMessage = '',
 ): LearnChatResponse {
   const record =
     payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
@@ -325,11 +345,13 @@ function normalizeResponse(
   const reply = asOptionalString(record['reply']) ?? 'No reply generated.';
   const sessionId = asOptionalString(record['sessionId']) ?? fallbackSessionId;
   const rawSources = normalizeSources(record['sources']).items;
+  const filtered = filterSourcesToCatalog(rawSources, catalog, requestSources);
 
   return {
     reply,
     sessionId,
-    sources: filterSourcesToCatalog(rawSources, catalog, requestSources),
+    // Short social turns (hi/ok/thanks) must not show lesson chips.
+    sources: shouldAttachLearnChatSources(requestMessage) ? filtered : [],
   };
 }
 
@@ -643,7 +665,13 @@ export function createLearnChatRouter(): Router {
           });
           return;
         }
-        const normalized = normalizeResponse(payload, sessionId, curriculumCatalog, sources);
+        const normalized = normalizeResponse(
+          payload,
+          sessionId,
+          curriculumCatalog,
+          sources,
+          message ?? '',
+        );
         const status = upstream.status === 403 || upstream.status === 401 ? upstream.status : 502;
         sendChatResult(
           res,
@@ -701,7 +729,7 @@ export function createLearnChatRouter(): Router {
       sendChatResult(
         res,
         200,
-        normalizeResponse(payload, sessionId, curriculumCatalog, sources),
+        normalizeResponse(payload, sessionId, curriculumCatalog, sources, message ?? ''),
         stream,
       );
     } catch (error) {
