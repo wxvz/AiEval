@@ -1,63 +1,106 @@
 <app-page-shell>
+  <aside shellLeft class="learn-hub-rail" aria-label="Learn navigation">
+    <nav class="learn-hub-tracks" aria-label="Tracks">
+      <p class="learn-eyebrow mb-2">Tracks</p>
+      <ul class="learn-hub-tracks__list list-unstyled mb-0">
+        @for (track of trackIndex(); track track.id) {
+          <li>
+            <a
+              class="learn-hub-tracks__link"
+              [class.learn-hub-tracks__link--active]="track.id === activeTrackId()"
+              routerLink="/learn"
+              [fragment]="track.anchor"
+            >
+              <span class="learn-hub-tracks__icon" aria-hidden="true">
+                @switch (track.id) {
+                  @case ('foundation') {
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <path d="M2 7.5 8 4l6 3.5M3.5 8.5v3.5L8 14l4.5-2V8.5" />
+                    </svg>
+                  }
+                  @case ('llm-systems') {
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <rect x="2.5" y="3" width="11" height="10" rx="1.5" />
+                      <path d="M5 6.5h6M5 9.5h4" />
+                    </svg>
+                  }
+                  @default {
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+                      <circle cx="8" cy="8" r="5.5" />
+                      <path d="M8 5.5v2.5l1.8 1.8" />
+                    </svg>
+                  }
+                }
+              </span>
+              <span class="learn-hub-tracks__title">{{ track.title }}</span>
+              <span class="learn-hub-tracks__frac">{{ track.done }}/{{ track.total }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  </aside>
+
   <main shellMain>
-    <header class="page-header text-center">
-      <h1 class="page-header__title">Learn</h1>
-      <p class="page-header__subtitle text-muted mb-0">{{ hubCopy.subtitle }}</p>
+    <header class="learn-hub-main-brand mb-3">
+      <h1 class="learn-hub-main-brand__title">Learn</h1>
+      <p class="learn-hub-main-brand__subtitle text-muted mb-0">{{ hubCopy.subtitle }}</p>
     </header>
 
     <app-learn-roadmap />
 
-    <div class="learn-tracks row g-4 mb-4">
-      <div class="col-lg-4">
+    <div class="learn-tracks mb-4">
+      <div class="learn-tracks__grid">
         <app-learn-track-list trackId="foundation" />
-      </div>
-      <div class="col-lg-4">
         <app-learn-track-list trackId="llm-systems" />
-      </div>
-      <div class="col-lg-4">
         <app-learn-track-list trackId="systems-production" />
       </div>
     </div>
 
-    <section class="learn-side-paths card-elevated mb-4" aria-label="Optional side paths">
-      <h2 class="h6 mb-2">Optional side paths</h2>
-      <p class="text-muted small mb-3">
-        Trees, rewards and GANs stay available off the Continue spine if you want other learning styles.
-      </p>
-      <ul class="list-unstyled mb-0">
-        @for (lesson of sidePaths; track lesson.id) {
-          <li class="mb-2">
-            <a [routerLink]="lesson.route">{{ lesson.title }}</a>
-            <span class="text-muted small">: {{ lesson.summary }}</span>
-          </li>
-        }
+    <section class="learn-more" aria-label="More">
+      <h2 class="h6 mb-2">More</h2>
+      <ul class="learn-more__list list-unstyled mb-0">
+        <li>
+          <a class="learn-more__row" routerLink="/evaluations/new">
+            <span class="learn-more__icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M4 12.5 12.5 4M7 4h5.5V9.5" />
+              </svg>
+            </span>
+            <span class="learn-more__body">
+              <span class="learn-more__title">{{ hubCopy.toolsLabel }}</span>
+              <span class="learn-more__summary">Open AiEval to compare model answers.</span>
+            </span>
+            <span class="learn-more__chevron" aria-hidden="true">›</span>
+          </a>
+        </li>
       </ul>
-    </section>
-
-    <section class="learn-tools card-elevated mb-4" aria-label="Tools">
-      <h2 class="h6 learn-tools__title">Tools</h2>
-      <a class="learn-tools__link" routerLink="/evaluations/new">{{ hubCopy.toolsLabel }} →</a>
     </section>
   </main>
 
-  <nav shellRight class="learn-hub-nav card-elevated" aria-label="Learn shortcuts">
+  <nav shellRight class="learn-hub-nav learn-sticky-panel" aria-label="Learn shortcuts">
     @if (nextLesson(); as next) {
       <div class="learn-hub-nav__next">
-        <p class="learn-hub-nav__eyebrow text-muted small mb-1">{{ nextKindLabel() }}</p>
-        <h2 class="learn-hub-nav__title h6 mb-2">{{ next.title }}</h2>
+        <p class="learn-eyebrow learn-eyebrow--accent mb-1">{{ nextKindLabel() }}</p>
+        <h2 class="learn-hub-nav__title mb-2">{{ next.title }}</h2>
         <p class="learn-hub-nav__summary text-muted small mb-0">{{ next.summary }}</p>
       </div>
-      <a class="btn btn-primary btn-sm learn-hub-nav__continue" [routerLink]="next.route">Continue →</a>
+      <a
+        class="btn btn-primary btn-sm learn-hub-nav__continue learn-hub-nav__continue--solid"
+        [routerLink]="next.route"
+      >
+        Continue →
+      </a>
     } @else {
       <div class="learn-hub-nav__next">
-        <p class="learn-hub-nav__eyebrow text-muted small mb-1">Curriculum</p>
-        <h2 class="learn-hub-nav__title h6 mb-2">Path complete</h2>
+        <p class="learn-eyebrow learn-eyebrow--accent mb-1">Curriculum</p>
+        <h2 class="learn-hub-nav__title mb-2">Path complete</h2>
         <p class="learn-hub-nav__summary text-muted small mb-0">
           You've finished every live lesson and lab on the path.
         </p>
       </div>
-      <span class="badge text-bg-success align-self-start">Path complete</span>
+      <span class="learn-status-chip learn-status-chip--done align-self-start">Path complete</span>
     }
-    <a class="btn btn-outline-secondary btn-sm" routerLink="/">Dashboard</a>
+    <a class="btn btn-outline-secondary btn-sm learn-hub-nav__dashboard" routerLink="/">Dashboard</a>
   </nav>
 </app-page-shell>

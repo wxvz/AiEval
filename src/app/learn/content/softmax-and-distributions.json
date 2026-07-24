@@ -67,19 +67,19 @@
         "You now have the chain for a classifier-style head: weighted sums, {{activation}}s in hidden layers, then often {{softmax}} on the final scores.",
         "The Neural network lab keeps some heads simple so you can focus on {{loss}} falling. Still, when you see multi-class language later, remember the distribution view.",
         "Honesty: stable {{softmax}} subtracts the max score before exp to avoid overflow. Libraries do that for you; the lab can show the probabilities without forcing you to type the formula.",
-        "Optional Softmax lab: push the Dog score until it owns the largest probability bar.",
-        "Next: **Neural network lab**, where you train a tiny net end to end and watch {{prediction}}s improve on puzzles like XOR."
+        "Branch spur on the Learn hub: Softmax lab and Neural network lab peel off this lesson. They are not required for Continue.",
+        "Next spine step: **Embeddings and representations**, where hidden layers hold number patterns that capture similarity."
       ],
       "bullets": [
         "Classifier head: scores → {{softmax}} → probabilities.",
-        "Next spine step: Neural network lab.",
-        "Optional: Softmax lab for hands-on bars."
+        "Next spine step: Embeddings and representations.",
+        "Branch: Softmax lab and Neural network lab on the hub spur."
       ],
       "aside": {
-        "title": "Practice softmax",
-        "body": "Open the Softmax lab and raise the Dog score until it becomes the clear probability winner.",
-        "route": "/learn/labs/softmax",
-        "actionLabel": "Open softmax lab"
+        "title": "Branch on the hub",
+        "body": "Open Softmax lab or Neural network lab from this lesson's Branch spur on the Learn hub.",
+        "route": "/learn/labs/neural-network",
+        "actionLabel": "Open neural network lab"
       },
       "check": {
         "prompt": "In a short phrase, what does {{softmax}} add on top of raw scores?",

@@ -1,13 +1,35 @@
 .learn-roadmap {
-  padding: 1.25rem 1.5rem;
+  padding: 0.9rem 1.1rem;
   margin-bottom: 1.5rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
+}
+
+.learn-roadmap__meta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: var(--aieval-muted);
 }
 
 .learn-roadmap__title {
   font-weight: 600;
-  margin: 0;
+  color: var(--aieval-ink);
+}
+
+.learn-roadmap__sep {
+  color: var(--aieval-muted);
 }
 
 .learn-roadmap__bar {
-  height: 0.5rem;
+  height: 0.4rem;
+}
+
+.learn-roadmap__bar .progress-bar {
+  transition: width 0.2s ease;
+  background: var(--aieval-primary);
 }

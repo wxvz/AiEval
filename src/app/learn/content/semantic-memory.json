@@ -67,16 +67,17 @@
       "title": "From memory to hands-on search",
       "paragraphs": [
         "Production {{semanticMemory}} rarely stops at pure vector search. Teams combine semantic scores with keyword filters, metadata tags (team, product, date) and re-ranking before anything reaches the {{contextWindow}}.",
-        "Teaching shortcut: the next lab uses **2D** {{embedding}}s so you can see closeness on a map. Real systems use hundreds or thousands of dimensions. The idea is the same; only the geometry is harder to draw.",
-        "Try the optional **Semantic memory practice** lab from the sidebar for a quick ranking drill. The **Semantic search lab** on the track goes deeper with a 2D map.",
-        "In the **Semantic search lab** you will type queries, watch similarity scores and see which {{chunk}}s rank highest. That is {{retrieval}} without API keys: the same ranking step RAG depends on.",
-        "After that, the **RAG playground** assembles retrieved {{chunk}}s into a prompt and previews a stub answer. You will see how {{semanticMemory}} feeds generation, not replaces it.",
-        "When you run evaluations in AiEval, ask whether the winning answer used the right retrieved evidence, not just fluent prose. Good {{retrieval}} is often the difference between grounded and guessed."
+        "Teaching shortcut: the Branch spur labs use **2D** {{embedding}}s so you can see closeness on a map. Real systems use hundreds or thousands of dimensions. The idea is the same; only the geometry is harder to draw.",
+        "Branch spur on the Learn hub: Semantic memory practice, then Semantic search lab and RAG playground. They are not required for Continue.",
+        "In the **Semantic search lab** you type queries, watch similarity scores and see which {{chunk}}s rank highest. That is {{retrieval}} without API keys: the same ranking step RAG depends on.",
+        "The **RAG playground** assembles retrieved {{chunk}}s into a prompt and previews a stub answer. You will see how {{semanticMemory}} feeds generation, not replaces it.",
+        "When you run evaluations in AiEval, ask whether the winning answer used the right retrieved evidence, not just fluent prose. Good {{retrieval}} is often the difference between grounded and guessed.",
+        "Next spine step: **Faithfulness and hallucinations**, where you spot invented facts against retrieved context."
       ],
       "bullets": [
         "Real stacks: hybrid search, metadata filters, re-ranking.",
-        "Next: Semantic search lab, where you rank {{chunk}}s in 2D.",
-        "Then: RAG playground. Practice context assembly and a stub answer."
+        "Branch: Semantic search lab and RAG playground on the hub spur.",
+        "Next spine step: Faithfulness and hallucinations."
       ],
       "check": {
         "prompt": "In one short phrase: what is {{semanticMemory}} in an LLM app?",

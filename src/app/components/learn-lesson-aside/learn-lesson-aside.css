@@ -1,19 +1,80 @@
 .learn-lesson-aside {
   position: sticky;
   top: 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
 }
 
-.learn-lesson-aside__block {
-  padding: 0.85rem 1rem;
+.learn-lesson-aside__panel,
+.learn-lesson-aside__tip,
+.learn-optional-lab,
+.learn-lesson-aside__complete {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
 }
 
-.learn-lesson-aside__heading {
-  letter-spacing: 0.02em;
+.learn-lesson-aside__progress-meta {
+  margin: 0;
+}
+
+.learn-lesson-aside__bar {
+  height: 0.35rem;
+}
+
+.learn-lesson-aside__bar .progress-bar {
+  background: var(--aieval-primary);
+  transition: width 0.2s ease;
+}
+
+.learn-lesson-aside__tip {
+  border-color: color-mix(in srgb, var(--aieval-primary) 35%, var(--aieval-border));
+  background: color-mix(in srgb, var(--aieval-primary) 6%, var(--aieval-surface));
+}
+
+.learn-lesson-aside__tip-icon {
+  display: inline-flex;
+  vertical-align: -0.1rem;
+  margin-right: 0.25rem;
+}
+
+.learn-optional-lab {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--aieval-muted) 6%, var(--aieval-surface));
+}
+
+.learn-lesson-aside__complete-btn {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--aieval-primary);
+  --bs-btn-border-color: var(--aieval-primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--aieval-primary-hover);
+  --bs-btn-hover-border-color: var(--aieval-primary-hover);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--aieval-primary-hover);
+  --bs-btn-active-border-color: var(--aieval-primary-hover);
+  --bs-btn-disabled-opacity: 0.55;
+}
+
+[data-bs-theme='dark'] .learn-lesson-aside__complete-btn {
+  --bs-btn-color: #0b1220;
+  --bs-btn-hover-color: #0b1220;
+  --bs-btn-active-color: #0b1220;
+}
+
+.learn-lesson-aside__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding-top: 0.25rem;
 }
 
 .learn-lesson-aside__nav-link {
   text-decoration: none;
-  color: var(--bs-body-color);
+  color: var(--aieval-ink);
+  line-height: 1.35;
 }
 
 .learn-lesson-aside__nav-link:hover {
@@ -21,14 +82,12 @@
   text-decoration: underline;
 }
 
-.learn-optional-lab {
-  padding: 1rem 1.1rem;
-  border: 1px dashed var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  background: var(--bs-tertiary-bg);
+.learn-lesson-aside__nav-link--next {
+  text-align: right;
 }
 
-.learn-optional-lab__eyebrow {
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+@media (max-width: 991.98px) {
+  .learn-lesson-aside {
+    position: static;
+  }
 }

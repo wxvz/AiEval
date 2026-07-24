@@ -1,32 +1,41 @@
-<section class="learn-lesson-section mb-4">
+<section class="learn-lesson-section mb-4" [attr.id]="'lesson-section-' + sectionIndex()">
   @if (view() === 'collapsed') {
     <button
       type="button"
-      class="learn-lesson-section__collapsed card-elevated w-100 text-start"
+      class="learn-lesson-section__collapsed w-100 text-start"
       (click)="toggleCollapsed()"
       [attr.aria-expanded]="false"
     >
+      <span class="learn-lesson-section__num" aria-hidden="true">{{ sectionIndex() + 1 }}</span>
       <span class="learn-lesson-section__collapsed-title">{{ heading() }}</span>
-      <span class="badge text-bg-success learn-lesson-section__badge">Complete</span>
+      <span class="learn-status-chip learn-status-chip--done learn-lesson-section__badge">Complete</span>
       <span class="learn-lesson-section__chevron" aria-hidden="true">▸</span>
     </button>
   } @else {
     @if (view() === 'solvedExpanded') {
       <button
         type="button"
-        class="learn-lesson-section__collapsed learn-lesson-section__collapsed--open card-elevated w-100 text-start mb-3"
+        class="learn-lesson-section__collapsed learn-lesson-section__collapsed--open w-100 text-start"
         (click)="toggleCollapsed()"
         [attr.aria-expanded]="true"
       >
+        <span class="learn-lesson-section__num" aria-hidden="true">{{ sectionIndex() + 1 }}</span>
         <span class="learn-lesson-section__collapsed-title">{{ heading() }}</span>
-        <span class="badge text-bg-success learn-lesson-section__badge">Complete</span>
+        <span class="learn-status-chip learn-status-chip--done learn-lesson-section__badge">Complete</span>
         <span class="learn-lesson-section__chevron" aria-hidden="true">▾</span>
       </button>
-    } @else if (heading(); as title) {
-      <h2 class="h5 mb-2">{{ title }}</h2>
     }
 
-    <div class="learn-lesson-section__body">
+    <div
+      class="learn-lesson-section__body"
+      [class.learn-lesson-section__body--joined]="view() === 'solvedExpanded'"
+    >
+      @if (view() !== 'solvedExpanded' && heading(); as title) {
+        <h2 class="learn-lesson-section__heading">
+          <span class="learn-lesson-section__num" aria-hidden="true">{{ sectionIndex() + 1 }}</span>
+          <span>{{ title }}</span>
+        </h2>
+      }
       @for (paragraph of section().paragraphs; track $index) {
         <p class="mb-2">
           <app-learn-lesson-text
@@ -56,7 +65,7 @@
       @if (section().reveals?.length) {
         <div class="learn-lesson-reveals">
           @for (item of section().reveals; track $index) {
-            <details class="learn-lesson-reveal card-elevated mb-2">
+            <details class="learn-lesson-reveal mb-2">
               <summary class="learn-lesson-reveal__summary">
                 <app-learn-lesson-text
                   [text]="item.prompt"

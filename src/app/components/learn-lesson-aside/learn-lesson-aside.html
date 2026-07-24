@@ -1,14 +1,29 @@
 <aside class="learn-lesson-aside" aria-label="Lesson guide">
-  @if (checksTotal() > 0) {
-    <section class="learn-lesson-aside__block card-elevated mb-3" aria-label="Progress">
-      <h2 class="learn-lesson-aside__heading h6 mb-2">Progress</h2>
-      <p class="text-muted small mb-0">{{ checksDone() }} of {{ checksTotal() }} checks done</p>
+  @if (sectionsTotal() > 0) {
+    <section class="learn-lesson-aside__panel" aria-label="Progress">
+      <h2 class="learn-eyebrow mb-2">Progress</h2>
+      <p class="learn-lesson-aside__progress-meta text-muted small mb-2">
+        {{ sectionsDone() }} of {{ sectionsTotal() }} sections
+      </p>
+      <div
+        class="learn-lesson-aside__bar progress"
+        role="progressbar"
+        [attr.aria-valuenow]="sectionsDone()"
+        [attr.aria-valuemin]="0"
+        [attr.aria-valuemax]="sectionsTotal()"
+        [attr.aria-label]="'Section progress ' + sectionsPercent() + ' percent'"
+      >
+        <div class="progress-bar" [style.width.%]="sectionsPercent()"></div>
+      </div>
+      @if (checksTotal() > sectionsTotal()) {
+        <p class="text-muted small mt-2 mb-0">{{ checksDone() }} of {{ checksTotal() }} checks done</p>
+      }
     </section>
   }
 
   @if (!locked() && optionalLab(); as lab) {
-    <section class="learn-optional-lab mb-3" aria-label="Optional lab">
-      <p class="learn-optional-lab__eyebrow text-muted small mb-1">Optional — try it yourself</p>
+    <section class="learn-optional-lab mb-0" aria-label="Optional lab">
+      <p class="learn-eyebrow mb-1">Optional · try it yourself</p>
       <h2 class="h6 mb-2">{{ lab.title }}</h2>
       <p class="text-muted small mb-3">{{ lab.summary }}</p>
       <a class="btn btn-outline-primary btn-sm" [routerLink]="lab.route">
@@ -22,8 +37,16 @@
   }
 
   @if (!locked() && activeAside(); as aside) {
-    <section class="learn-lesson-aside__block learn-lesson-aside__tip card-elevated mb-3" aria-label="AiEval tip">
-      <h2 class="learn-lesson-aside__heading h6 mb-2">{{ aside.title }}</h2>
+    <section class="learn-lesson-aside__tip" aria-label="AiEval tip">
+      <h2 class="learn-eyebrow learn-eyebrow--accent mb-2">
+        <span class="learn-lesson-aside__tip-icon" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M6.2 11.5h3.6M7 13h2" />
+            <path d="M5.2 9.2A3.6 3.6 0 1 1 10.8 9.2c0 1.3-.7 2-1.4 2.6-.4.35-.6.7-.6 1.2H7.2c0-.5-.2-.85-.6-1.2-.7-.6-1.4-1.3-1.4-2.6Z" />
+          </svg>
+        </span>
+        {{ aside.title }}
+      </h2>
       <p class="text-muted small mb-0">
         <app-learn-lesson-text
           [text]="aside.body"
@@ -41,17 +64,38 @@
     </section>
   }
 
+  @if (!locked()) {
+    <div class="learn-lesson-aside__complete">
+      @if (!markCompleteEnabled() && !completed() && sectionsTotal() > 0) {
+        <p class="text-muted small mb-2">Answer all section checks and recap questions first.</p>
+      }
+      <button
+        type="button"
+        class="btn btn-primary btn-sm w-100 learn-lesson-aside__complete-btn"
+        [disabled]="!markCompleteEnabled()"
+        (click)="markComplete.emit()"
+      >
+        @if (completed()) {
+          Completed
+        } @else {
+          Mark complete
+        }
+      </button>
+    </div>
+  }
+
   @if (!locked() && (adjacent().previous || adjacent().next)) {
-    <nav class="learn-lesson-aside__block card-elevated mb-3" aria-label="Lesson navigation">
-      <h2 class="learn-lesson-aside__heading h6 mb-2">Navigate</h2>
-      <div class="d-flex flex-column gap-2">
-        @if (adjacent().previous; as previous) {
-          <a class="learn-lesson-aside__nav-link small" [routerLink]="previous.route">← {{ previous.title }}</a>
-        }
-        @if (adjacent().next; as next) {
-          <a class="learn-lesson-aside__nav-link small" [routerLink]="next.route">{{ next.title }} →</a>
-        }
-      </div>
+    <nav class="learn-lesson-aside__nav" aria-label="Lesson navigation">
+      @if (adjacent().previous; as previous) {
+        <a class="learn-lesson-aside__nav-link small" [routerLink]="previous.route">
+          ← Previous: {{ previous.title }}
+        </a>
+      }
+      @if (adjacent().next; as next) {
+        <a class="learn-lesson-aside__nav-link small learn-lesson-aside__nav-link--next" [routerLink]="next.route">
+          Next: {{ next.title }} →
+        </a>
+      }
     </nav>
   }
 </aside>

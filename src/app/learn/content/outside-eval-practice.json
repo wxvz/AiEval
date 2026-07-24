@@ -71,15 +71,15 @@
       "title": "Hand the deck to the harness",
       "paragraphs": [
         "You now have an outside artifact: constrained Acme instructions, six {{testCase}} ideas and a three-row {{rubric}}.",
-        "The First evaluation lab warms up AiEval's generate → score → compare loop with a seeded Acme prompt.",
-        "The Support bot decision lab then asks for a ship / ship-other / neither call backed by rubric rows, not taste.",
+        "Branch spur on the Learn hub: First evaluation lab warms up AiEval's generate → score → compare loop. Support bot decision lab asks for a ship / ship-other / neither call.",
+        "Those harness labs are not required for Continue. Use them when you want the live tool loop.",
         "That is the perspective shift: models are computable inside and measurable outside. The harness is how you repeat the measurement.",
-        "Next: **First evaluation lab**. Bring the constrained prompt and at least three golden questions with you."
+        "Next spine step: **Regression evals**. Re-run a golden set after changes to catch quality drops."
       ],
       "bullets": [
         "Artifact ready: prompt, cases, {{rubric}}.",
-        "Next: First evaluation lab (harness warm-up).",
-        "Then: Support bot decision lab (ship call)."
+        "Branch: First evaluation lab and Support bot decision lab on the hub spur.",
+        "Next spine step: Regression evals."
       ],
       "check": {
         "prompt": "In a short phrase, what should you carry into the harness labs?",

@@ -23,7 +23,17 @@ describe('LearnLabNav', () => {
 
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('a[href="/learn/lessons/semantic-memory"]')).toHaveLength(1);
+    expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeTruthy();
+  });
+
+  it('walks nested branch parents to spine Continue neighbors', () => {
+    fixture.componentRef.setInput('lesson', getLesson('rag-playground-lab'));
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('a[href="/learn/labs/semantic-search"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/lessons/structured-outputs-for-judges"]')).toBeTruthy();
   });
 
   it('emits completion from the sticky nav button', () => {

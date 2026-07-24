@@ -1,32 +1,33 @@
 <div class="learn-lesson-rail">
-  <a routerLink="/learn" class="learn-nav-link">← Learn</a>
+  <a routerLink="/learn" class="learn-back-link learn-nav-link">← Learn</a>
 
   @if (trackLabel()) {
-    <p class="learn-lesson-rail__track text-muted small mb-2">{{ trackLabel() }}</p>
+    <p class="learn-eyebrow learn-eyebrow--accent learn-lesson-rail__track mb-2">{{ trackLabel() }}</p>
   }
 
-  <h1 class="h3 mb-2">{{ lesson().title }}</h1>
-  <p class="text-muted mb-2">{{ lesson().summary }}</p>
-  <p class="text-muted small mb-4">
+  <h1 class="learn-lesson-rail__title">{{ lesson().title }}</h1>
+  <p class="learn-lesson-rail__summary text-muted">{{ lesson().summary }}</p>
+  <p class="text-muted small mb-3">
     Tap the first <span class="learn-term-hint-sample">highlighted word</span> for each idea to save its definition
     in Key terms.
   </p>
 
   @if (sections().length > 0) {
     <nav class="learn-lesson-rail__sections" aria-label="Lesson sections">
-      <h2 class="h6 mb-2">Sections</h2>
+      <h2 class="learn-eyebrow mb-2">Sections</h2>
       <ol class="learn-lesson-rail__toc list-unstyled mb-0">
         @for (section of sections(); track section.index) {
-          <li class="learn-lesson-rail__toc-item">
-            <span
-              class="learn-lesson-rail__status"
-              [class.text-success]="section.solved"
-              [class.text-muted]="!section.solved"
-              aria-hidden="true"
+          <li>
+            <a
+              class="learn-lesson-rail__toc-item"
+              [class.learn-lesson-rail__toc-item--active]="section.active && !locked()"
+              [class.learn-lesson-rail__toc-item--done]="section.solved"
+              [routerLink]="[]"
+              [fragment]="'lesson-section-' + section.index"
             >
-              {{ section.solved ? '✓' : '○' }}
-            </span>
-            <span>{{ section.title }}</span>
+              <span class="learn-lesson-rail__num" aria-hidden="true">{{ section.index + 1 }}</span>
+              <span class="learn-lesson-rail__toc-title">{{ section.title }}</span>
+            </a>
           </li>
         }
       </ol>
@@ -35,28 +36,12 @@
 
   @if (!locked() && keyTermEntries().length > 0) {
     <section class="learn-lesson-rail__key-terms" aria-label="Key terms">
-      <h2 class="h6 mb-2">Key terms</h2>
-      <ul class="learn-lesson-rail__key-term-list list-unstyled mb-0">
+      <h2 class="learn-eyebrow mb-2">Key terms</h2>
+      <ul class="learn-lesson-rail__terms list-unstyled mb-0">
         @for (entry of keyTermEntries(); track entry.term) {
-          <li class="learn-lesson-rail__key-term">
-            <button
-              type="button"
-              class="learn-lesson-rail__key-term-toggle"
-              (click)="toggleKeyTerm(entry.term)"
-              [attr.aria-expanded]="isKeyTermExpanded(entry.term)"
-            >
-              <span class="learn-lesson-rail__key-term-label">{{ entry.label }}</span>
-              <span class="learn-lesson-rail__key-term-chevron" aria-hidden="true">
-                @if (isKeyTermExpanded(entry.term)) {
-                  ▴
-                } @else {
-                  ▾
-                }
-              </span>
-            </button>
-            @if (isKeyTermExpanded(entry.term)) {
-              <p class="learn-lesson-rail__key-term-body text-muted small mb-0">{{ entry.explanation }}</p>
-            }
+          <li class="learn-lesson-rail__term">
+            <span class="learn-lesson-rail__term-label">{{ entry.label }}</span>
+            <span class="learn-lesson-rail__term-body">{{ entry.explanation }}</span>
           </li>
         }
       </ul>

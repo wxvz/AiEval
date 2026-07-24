@@ -1,4 +1,4 @@
-<nav class="learn-lab-nav card-elevated" aria-label="Learn navigation">
+<nav class="learn-lab-nav learn-sticky-panel" aria-label="Learn navigation">
   @if (resolvedParent(); as parentLesson) {
     <a class="learn-lab-nav__back small" [routerLink]="parentLesson.route">← {{ parentLesson.title }}</a>
   } @else {

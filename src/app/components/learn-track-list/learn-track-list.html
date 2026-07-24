@@ -1,36 +1,177 @@
-<section class="learn-track">
-  <h2 class="learn-track__title h5">{{ trackTitle() }}</h2>
-  <p class="learn-track__description text-muted small">{{ description() }}</p>
+<section class="learn-track" [attr.id]="'track-' + trackId()">
+  <header class="learn-track__header">
+    <h2 class="learn-track__title">
+      {{ trackTitle() }}
+      <span class="learn-track__count">({{ trackStats().done }}/{{ trackStats().total }})</span>
+    </h2>
+  </header>
 
   <ul class="learn-track__list list-unstyled mb-0">
     @for (row of lessonRows(); track row.lesson.id) {
       <li class="learn-track__item">
         @if (row.lesson.status === 'planned' || !row.lesson.route) {
-          <div class="learn-track__card learn-track__card--planned card-elevated">
-            <span class="learn-track__badge learn-track__badge--muted">Coming soon</span>
-            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
-            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+          <div
+            class="learn-track__row learn-track__row--planned"
+            [class.learn-track__row--expanded]="isExpanded(row.lesson.id)"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isExpanded(row.lesson.id)"
+            (click)="toggleExpand(row.lesson.id)"
+            (keydown)="onRowKeydown($event, row.lesson.id)"
+          >
+            <span class="learn-track__index" aria-hidden="true">{{ row.index }}</span>
+            <div class="learn-track__row-body">
+              <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
+              @if (isExpanded(row.lesson.id)) {
+                <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+              }
+            </div>
+            <span class="learn-track__status learn-track__status--muted">
+              <svg class="learn-track__lock" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M5 7V5.5a3 3 0 0 1 6 0V7h.5A1.5 1.5 0 0 1 13 8.5v4A1.5 1.5 0 0 1 11.5 14h-7A1.5 1.5 0 0 1 3 12.5v-4A1.5 1.5 0 0 1 4.5 7H5Zm1.5 0h3V5.5a1.5 1.5 0 0 0-3 0V7Z"
+                />
+              </svg>
+              Coming soon
+            </span>
           </div>
         } @else if (row.route; as route) {
-          <a class="learn-track__card card-elevated" [routerLink]="route">
-            @if (row.complete) {
-              <span class="learn-track__badge learn-track__badge--done">Complete</span>
-            } @else if (row.lesson.kind !== 'read') {
-              <span class="learn-track__badge">Lab</span>
+          <div
+            class="learn-track__row"
+            [class.learn-track__row--next]="row.isNext"
+            [class.learn-track__row--expanded]="isExpanded(row.lesson.id)"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isExpanded(row.lesson.id)"
+            (click)="toggleExpand(row.lesson.id)"
+            (keydown)="onRowKeydown($event, row.lesson.id)"
+          >
+            @if (row.isNext) {
+              <span class="learn-track__marker" aria-hidden="true"></span>
+            } @else {
+              <span class="learn-track__index" aria-hidden="true">{{ row.index }}</span>
             }
-            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
-            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
-            <span class="learn-track__cta">Open →</span>
-          </a>
-        } @else {
-          <div class="learn-track__card learn-track__card--locked card-elevated" aria-disabled="true">
-            <span class="learn-track__badge learn-track__badge--muted">Locked</span>
-            <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
-            <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
-            @if (row.prereqLabel; as prereq) {
-              <p class="learn-track__prereq small mb-0">Complete {{ prereq }} first</p>
+            <div class="learn-track__row-body">
+              <h3 class="learn-track__lesson-title">
+                <a
+                  class="learn-track__title-link"
+                  [routerLink]="route"
+                  (click)="$event.stopPropagation()"
+                >
+                  {{ row.lesson.title }}
+                </a>
+              </h3>
+              @if (isExpanded(row.lesson.id)) {
+                <p class="learn-track__lesson-summary mb-0">{{ row.lesson.summary }}</p>
+              }
+            </div>
+            @if (row.isNext) {
+              <span class="learn-status-chip learn-status-chip--next">Next</span>
+            } @else if (row.complete) {
+              <span class="learn-status-chip learn-status-chip--done">Complete</span>
+            } @else if (row.lesson.kind !== 'read') {
+              <span class="learn-status-chip">Lab</span>
             }
           </div>
+        } @else {
+          <div
+            class="learn-track__row learn-track__row--locked"
+            [class.learn-track__row--expanded]="isExpanded(row.lesson.id)"
+            role="button"
+            tabindex="0"
+            [attr.aria-expanded]="isExpanded(row.lesson.id)"
+            (click)="toggleExpand(row.lesson.id)"
+            (keydown)="onRowKeydown($event, row.lesson.id)"
+          >
+            <span class="learn-track__index" aria-hidden="true">{{ row.index }}</span>
+            <div class="learn-track__row-body">
+              <h3 class="learn-track__lesson-title">{{ row.lesson.title }}</h3>
+              @if (isExpanded(row.lesson.id) && row.prereqLabel; as prereq) {
+                <p class="learn-track__prereq small mb-0">Complete {{ prereq }} first</p>
+              }
+            </div>
+            <span class="learn-track__status learn-track__status--muted">
+              <svg class="learn-track__lock" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                <path
+                  fill="currentColor"
+                  d="M5 7V5.5a3 3 0 0 1 6 0V7h.5A1.5 1.5 0 0 1 13 8.5v4A1.5 1.5 0 0 1 11.5 14h-7A1.5 1.5 0 0 1 3 12.5v-4A1.5 1.5 0 0 1 4.5 7H5Zm1.5 0h3V5.5a1.5 1.5 0 0 0-3 0V7Z"
+                />
+              </svg>
+              Locked
+            </span>
+          </div>
+        }
+
+        @if (row.spur.length && isExpanded(row.lesson.id)) {
+          <ul class="learn-track__spur list-unstyled mb-0" aria-label="Branch">
+            @for (spur of row.spur; track spur.lesson.id) {
+              <li
+                class="learn-track__spur-item"
+                [style.--spur-depth]="spur.depth"
+              >
+                @if (spur.route; as route) {
+                  <div
+                    class="learn-track__row learn-track__row--spur"
+                    [class.learn-track__row--expanded]="isExpanded(spur.lesson.id)"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="isExpanded(spur.lesson.id)"
+                    (click)="toggleExpand(spur.lesson.id, row.lesson.id)"
+                    (keydown)="onRowKeydown($event, spur.lesson.id, row.lesson.id)"
+                  >
+                    <span class="learn-track__spur-rail" aria-hidden="true"></span>
+                    <div class="learn-track__row-body">
+                      <h3 class="learn-track__lesson-title">
+                        <a
+                          class="learn-track__title-link"
+                          [routerLink]="route"
+                          (click)="$event.stopPropagation()"
+                        >
+                          {{ spur.lesson.title }}
+                        </a>
+                      </h3>
+                      @if (isExpanded(spur.lesson.id)) {
+                        <p class="learn-track__lesson-summary mb-0">{{ spur.lesson.summary }}</p>
+                      }
+                    </div>
+                    @if (spur.complete) {
+                      <span class="learn-status-chip learn-status-chip--done">Complete</span>
+                    } @else {
+                      <span class="learn-status-chip learn-status-chip--muted">Branch</span>
+                    }
+                  </div>
+                } @else {
+                  <div
+                    class="learn-track__row learn-track__row--spur learn-track__row--locked"
+                    [class.learn-track__row--expanded]="isExpanded(spur.lesson.id)"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-expanded]="isExpanded(spur.lesson.id)"
+                    (click)="toggleExpand(spur.lesson.id, row.lesson.id)"
+                    (keydown)="onRowKeydown($event, spur.lesson.id, row.lesson.id)"
+                  >
+                    <span class="learn-track__spur-rail" aria-hidden="true"></span>
+                    <div class="learn-track__row-body">
+                      <h3 class="learn-track__lesson-title">{{ spur.lesson.title }}</h3>
+                      @if (isExpanded(spur.lesson.id) && spur.prereqLabel; as prereq) {
+                        <p class="learn-track__prereq small mb-0">Complete {{ prereq }} first</p>
+                      }
+                    </div>
+                    <span class="learn-track__status learn-track__status--muted">
+                      <svg class="learn-track__lock" viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                        <path
+                          fill="currentColor"
+                          d="M5 7V5.5a3 3 0 0 1 6 0V7h.5A1.5 1.5 0 0 1 13 8.5v4A1.5 1.5 0 0 1 11.5 14h-7A1.5 1.5 0 0 1 3 12.5v-4A1.5 1.5 0 0 1 4.5 7H5Zm1.5 0h3V5.5a1.5 1.5 0 0 0-3 0V7Z"
+                        />
+                      </svg>
+                      Locked
+                    </span>
+                  </div>
+                }
+              </li>
+            }
+          </ul>
         }
       </li>
     }

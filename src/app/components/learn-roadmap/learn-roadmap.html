@@ -1,17 +1,9 @@
-<section class="learn-roadmap card-elevated" aria-label="Learning progress">
-  <div class="learn-roadmap__header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-    <div>
-      <h2 class="learn-roadmap__title h6 mb-1">Your path</h2>
-      <p class="learn-roadmap__meta text-muted small mb-0">
-        {{ completedCount() }} of {{ totalCount }} complete
-      </p>
-    </div>
-    @if (nextLesson(); as next) {
-      <a class="btn btn-primary btn-sm" [routerLink]="next.route">Continue →</a>
-    } @else if (allComplete()) {
-      <span class="badge text-bg-success">Path complete</span>
-    }
-  </div>
+<section class="learn-roadmap" aria-label="Learning progress">
+  <p class="learn-roadmap__meta mb-2">
+    <span class="learn-roadmap__title">Your path</span>
+    <span class="learn-roadmap__sep" aria-hidden="true">·</span>
+    <span>{{ completedCount() }} of {{ totalCount }} complete</span>
+  </p>
 
   <div
     class="learn-roadmap__bar progress"

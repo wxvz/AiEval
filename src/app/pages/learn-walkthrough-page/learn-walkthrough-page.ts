@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
 import { PageShell } from '../../components/page-shell/page-shell';
-import { getAdjacentLessons, getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
+import { getLesson, getLessonsForTrack, getNavigableAdjacent, getTrack } from '../../learn/curriculum';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 import { loadWalkthroughContent } from '../../learn/walkthrough-content';
@@ -32,7 +32,7 @@ export class LearnWalkthroughPage {
 
   readonly meta = computed(() => getLesson(this.lessonId()));
   readonly prereqMeta = computed(() => getLesson(this.meta()?.prerequisites[0] ?? ''));
-  readonly nextLessonMeta = computed(() => getAdjacentLessons(this.lessonId()).next);
+  readonly nextLessonMeta = computed(() => getNavigableAdjacent(this.lessonId()).next);
   readonly content = computed(() => loadWalkthroughContent(this.lessonId()));
   readonly hasSteps = computed(() => this.content().steps.length > 0);
   readonly trackLabCount = getLessonsForTrack('llm-systems').filter(

@@ -86,7 +86,7 @@ export class LearnChatService {
   }
 
   contextFromRouter(): LearnChatPageContext {
-    const route = this.router.url.split('?')[0] || '/learn';
+    const route = this.router.url.split(/[?#]/, 2)[0] || '/learn';
     let lessonId: string | null = null;
 
     const lessonMatch = /^\/learn\/lessons\/([^/]+)/.exec(route);

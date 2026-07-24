@@ -22,6 +22,17 @@ export interface LearnLessonMeta {
   optional?: boolean;
   /** Read lesson id that surfaces the optional lab link. */
   parentLessonId?: string;
+  /**
+   * Optional side branch (not a practice mini-lab). Hidden from Continue / hub spine;
+   * surfaced as a forked spur under the spine parent on the hub.
+   */
+  branch?: boolean;
+}
+
+/** Nested branch lessons for a hub track spur under a spine parent. */
+export interface LearnBranchSpurNode {
+  lesson: LearnLessonMeta;
+  children: LearnBranchSpurNode[];
 }
 
 export const LEARN_TRACKS: LearnTrack[] = [
@@ -46,7 +57,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'learning-from-examples-lab',
     trackId: 'foundation',
-    order: 3,
+    order: 1,
     title: 'Learning from examples lab',
     summary: 'Match four inputs to the targets a model should learn.',
     kind: 'interactive',
@@ -55,6 +66,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/learning-from-examples',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'learning-from-examples',
   },
   {
@@ -72,7 +84,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'what-is-a-dataset-lab',
     trackId: 'foundation',
-    order: 4,
+    order: 2,
     title: 'Build the XOR dataset',
     summary: 'Fill in the 0/1 target for each XOR corner yourself.',
     kind: 'interactive',
@@ -81,6 +93,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/what-is-a-dataset',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'what-is-a-dataset',
   },
   {
@@ -98,7 +111,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'train-vs-test-lab',
     trackId: 'foundation',
-    order: 1,
+    order: 3,
     title: 'Train vs test lab',
     summary: 'Hold out one XOR corner and compare train vs test accuracy.',
     kind: 'interactive',
@@ -107,6 +120,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/train-vs-test',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'train-vs-test',
   },
   {
@@ -124,7 +138,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'loss-and-updates-lab',
     trackId: 'foundation',
-    order: 2,
+    order: 4,
     title: 'Loss and updates lab',
     summary: 'Train on XOR and watch loss fall while predictions improve.',
     kind: 'interactive',
@@ -133,6 +147,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/loss-and-updates',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'loss-and-updates',
   },
   {
@@ -159,6 +174,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/learning-rate',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'learning-rate',
   },
   {
@@ -176,7 +192,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'bias-and-weights-lab',
     trackId: 'foundation',
-    order: 3,
+    order: 6,
     title: 'Bias and weights lab',
     summary: 'Nudge weight and bias on a one-neuron toy to match a target boundary.',
     kind: 'interactive',
@@ -185,6 +201,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/bias-and-weights',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'bias-and-weights',
   },
   {
@@ -202,7 +219,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'activation-functions-lab',
     trackId: 'foundation',
-    order: 4,
+    order: 7,
     title: 'Activation functions lab',
     summary: 'Compare linear, sigmoid, ReLU and tanh on the same scores.',
     kind: 'interactive',
@@ -211,6 +228,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/activation-functions',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'activation-functions',
   },
   {
@@ -237,12 +255,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/softmax',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'softmax-and-distributions',
   },
   {
     id: 'neural-network-lab',
     trackId: 'foundation',
-    order: 9,
+    order: 8,
     title: 'Neural network lab',
     summary: 'Train a tiny network on puzzles like XOR.',
     kind: 'interactive',
@@ -250,23 +269,26 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     prerequisites: ['softmax-and-distributions'],
     route: '/learn/labs/neural-network',
     contentFile: null,
+    optional: true,
+    branch: true,
+    parentLessonId: 'softmax-and-distributions',
   },
   {
     id: 'embeddings-and-representations',
     trackId: 'foundation',
-    order: 10,
+    order: 9,
     title: 'Embeddings and representations',
     summary: 'Hidden layers hold number patterns that capture similarity inside the model.',
     kind: 'read',
     status: 'live',
-    prerequisites: ['neural-network-lab'],
+    prerequisites: ['softmax-and-distributions'],
     route: '/learn/lessons/embeddings-and-representations',
     contentFile: 'embeddings-and-representations.json',
   },
   {
     id: 'data-literacy',
     trackId: 'foundation',
-    order: 11,
+    order: 10,
     title: 'Data literacy',
     summary: 'Read distributions, spot leakage and decide what labels are worth collecting.',
     kind: 'read',
@@ -278,7 +300,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'decision-trees',
     trackId: 'foundation',
-    order: 1,
+    order: 10,
     title: 'Decision trees',
     summary: 'Split features into readable rules and learn when trees beat black-box models.',
     kind: 'read',
@@ -287,12 +309,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/lessons/decision-trees',
     contentFile: 'decision-trees.json',
     optional: true,
+    branch: true,
     parentLessonId: 'data-literacy',
   },
   {
     id: 'decision-trees-lab',
     trackId: 'foundation',
-    order: 2,
+    order: 10,
     title: 'Decision trees lab',
     summary: 'Pick a root split and leaf labels on a tiny ticket-routing table.',
     kind: 'interactive',
@@ -301,12 +324,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/decision-trees',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'decision-trees',
   },
   {
     id: 'deep-learning-approaches',
     trackId: 'foundation',
-    order: 12,
+    order: 11,
     title: 'Deep learning approaches',
     summary: 'CNNs, RNNs and transformers as tools: pick the right inductive bias.',
     kind: 'read',
@@ -318,7 +342,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'reinforcement-learning',
     trackId: 'foundation',
-    order: 3,
+    order: 11,
     title: 'Reinforcement learning',
     summary: 'Agents, rewards and when trial-and-error beats labeled datasets.',
     kind: 'read',
@@ -327,12 +351,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/lessons/reinforcement-learning',
     contentFile: 'reinforcement-learning.json',
     optional: true,
+    branch: true,
     parentLessonId: 'deep-learning-approaches',
   },
   {
     id: 'reinforcement-learning-lab',
     trackId: 'foundation',
-    order: 4,
+    order: 11,
     title: 'Reinforcement learning lab',
     summary: 'Explore and exploit two reward arms, then lock in a policy.',
     kind: 'interactive',
@@ -341,12 +366,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/reinforcement-learning',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'reinforcement-learning',
   },
   {
     id: 'generative-adversarial-networks',
     trackId: 'foundation',
-    order: 5,
+    order: 11,
     title: 'Generative adversarial networks',
     summary: 'Generator vs discriminator and what GANs teach about generative modeling.',
     kind: 'read',
@@ -355,12 +381,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/lessons/generative-adversarial-networks',
     contentFile: 'generative-adversarial-networks.json',
     optional: true,
+    branch: true,
     parentLessonId: 'reinforcement-learning-lab',
   },
   {
     id: 'tokenization-inside-models',
     trackId: 'foundation',
-    order: 13,
+    order: 12,
     title: 'Tokenization inside models',
     summary: 'How text becomes tokens and embedding lookups before the network runs.',
     kind: 'read',
@@ -372,7 +399,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'residual-connections',
     trackId: 'foundation',
-    order: 14,
+    order: 13,
     title: 'Residual connections',
     summary: 'Skip paths and light normalization ideas that help deep stacks train.',
     kind: 'read',
@@ -389,7 +416,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     summary: 'Condition a language model with clear task wording.',
     kind: 'read',
     status: 'live',
-    prerequisites: ['tokenization-inside-models'],
+    prerequisites: [],
     route: '/learn/lessons/prompts-as-instructions',
     contentFile: 'prompts-as-instructions.json',
   },
@@ -417,6 +444,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/controlling-generation',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'controlling-generation',
   },
   {
@@ -443,6 +471,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/comparing-answers',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'comparing-answers',
   },
   {
@@ -481,6 +510,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/rubrics-and-criteria',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'rubrics-and-criteria',
   },
   {
@@ -507,6 +537,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/judge-json',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'structured-outputs-for-judges',
   },
   {
@@ -533,12 +564,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/semantic-memory',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'semantic-memory',
   },
   {
     id: 'semantic-search-lab',
     trackId: 'llm-systems',
-    order: 8,
+    order: 7,
     title: 'Semantic search lab',
     summary: 'See how embeddings rank text chunks by meaning.',
     kind: 'interactive',
@@ -546,11 +578,14 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     prerequisites: ['semantic-memory'],
     route: '/learn/labs/semantic-search',
     contentFile: null,
+    optional: true,
+    branch: true,
+    parentLessonId: 'semantic-memory',
   },
   {
     id: 'rag-playground-lab',
     trackId: 'llm-systems',
-    order: 9,
+    order: 7,
     title: 'RAG playground',
     summary: 'Retrieve chunks, assemble context and preview a stub answer.',
     kind: 'interactive',
@@ -558,23 +593,26 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     prerequisites: ['semantic-search-lab'],
     route: '/learn/labs/rag-playground',
     contentFile: null,
+    optional: true,
+    branch: true,
+    parentLessonId: 'semantic-search-lab',
   },
   {
     id: 'faithfulness-and-hallucinations',
     trackId: 'llm-systems',
-    order: 10,
+    order: 8,
     title: 'Faithfulness and hallucinations',
     summary: 'Ground answers in retrieved context; spot invented facts.',
     kind: 'read',
     status: 'live',
-    prerequisites: ['rag-playground-lab'],
+    prerequisites: ['semantic-memory'],
     route: '/learn/lessons/faithfulness-and-hallucinations',
     contentFile: 'faithfulness-and-hallucinations.json',
   },
   {
     id: 'faithfulness-lab',
     trackId: 'llm-systems',
-    order: 10,
+    order: 8,
     title: 'Faithfulness lab',
     summary: 'Mark which answer sentences are supported by the provided context.',
     kind: 'interactive',
@@ -583,12 +621,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/faithfulness',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'faithfulness-and-hallucinations',
   },
   {
     id: 'outside-eval-practice',
     trackId: 'llm-systems',
-    order: 11,
+    order: 9,
     title: 'Outside eval practice',
     summary: 'Build a golden set and rubric for an Acme support bot, then judge canned answers with evidence.',
     kind: 'read',
@@ -600,7 +639,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'first-evaluation-lab',
     trackId: 'llm-systems',
-    order: 12,
+    order: 9,
     title: 'First evaluation lab',
     summary: 'Warm up the AiEval harness with a seeded Acme support prompt.',
     kind: 'tool',
@@ -608,11 +647,14 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     prerequisites: ['outside-eval-practice'],
     route: '/learn/labs/first-evaluation',
     contentFile: null,
+    optional: true,
+    branch: true,
+    parentLessonId: 'outside-eval-practice',
   },
   {
     id: 'support-bot-decision-lab',
     trackId: 'llm-systems',
-    order: 13,
+    order: 9,
     title: 'Support bot decision lab',
     summary: 'Run a full AiEval comparison and make a ship, ship-other or neither call with evidence.',
     kind: 'tool',
@@ -620,23 +662,26 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     prerequisites: ['first-evaluation-lab'],
     route: '/learn/labs/support-bot-decision',
     contentFile: null,
+    optional: true,
+    branch: true,
+    parentLessonId: 'first-evaluation-lab',
   },
   {
     id: 'regression-evals',
     trackId: 'llm-systems',
-    order: 14,
+    order: 10,
     title: 'Regression evals',
     summary: 'Re-run a golden set after changes to catch quality drops.',
     kind: 'read',
     status: 'live',
-    prerequisites: ['support-bot-decision-lab'],
+    prerequisites: ['outside-eval-practice'],
     route: '/learn/lessons/regression-evals',
     contentFile: 'regression-evals.json',
   },
   {
     id: 'automation-and-judges',
     trackId: 'llm-systems',
-    order: 15,
+    order: 11,
     title: 'Automation and judges',
     summary: 'When AI scores answers for you and when to double-check.',
     kind: 'read',
@@ -648,7 +693,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'transformers-overview',
     trackId: 'llm-systems',
-    order: 16,
+    order: 12,
     title: 'Transformers',
     summary: 'Attention, tokens and next-token prediction.',
     kind: 'read',
@@ -660,7 +705,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'transformers-lab',
     trackId: 'llm-systems',
-    order: 16,
+    order: 12,
     title: 'Transformers lab',
     summary: 'Tune a tiny attention pattern and watch next-token preference shift.',
     kind: 'interactive',
@@ -669,12 +714,13 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/transformers',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'transformers-overview',
   },
   {
     id: 'tool-calling',
     trackId: 'llm-systems',
-    order: 17,
+    order: 13,
     title: 'Tool calling',
     summary: 'Let models request structured tool calls and eval when those tools fail.',
     kind: 'read',
@@ -686,7 +732,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'mcp',
     trackId: 'llm-systems',
-    order: 18,
+    order: 14,
     title: 'MCP',
     summary: 'Model Context Protocol: standard connectors for tools and context.',
     kind: 'read',
@@ -698,7 +744,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'multimodal-vector-databases',
     trackId: 'llm-systems',
-    order: 19,
+    order: 15,
     title: 'Multimodal vector databases',
     summary: 'Store and retrieve text, image and mixed embeddings for RAG at scale.',
     kind: 'read',
@@ -710,7 +756,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
   {
     id: 'multimodal-vector-databases-lab',
     trackId: 'llm-systems',
-    order: 19,
+    order: 15,
     title: 'Multimodal vector databases lab',
     summary: 'Rank image and text product matches with metadata filters.',
     kind: 'interactive',
@@ -719,6 +765,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     route: '/learn/labs/multimodal-vector-databases',
     contentFile: null,
     optional: true,
+    branch: true,
     parentLessonId: 'multimodal-vector-databases',
   },
   {
@@ -729,7 +776,7 @@ export const LEARN_LESSONS: LearnLessonMeta[] = [
     summary: 'Cost, latency, monitoring and safety at scale.',
     kind: 'read',
     status: 'live',
-    prerequisites: ['transformers-overview'],
+    prerequisites: [],
     route: '/learn/lessons/production-concerns',
     contentFile: 'production-concerns.json',
   },
@@ -780,7 +827,10 @@ export function getLesson(id: string): LearnLessonMeta | undefined {
 }
 
 export function getLessonsForTrack(trackId: LearnTrackId): LearnLessonMeta[] {
-  return LEARN_LESSONS.filter((lesson) => lesson.trackId === trackId).sort((a, b) => a.order - b.order);
+  return LEARN_LESSONS.filter((lesson) => lesson.trackId === trackId)
+    .map((lesson, index) => ({ lesson, index }))
+    .sort((a, b) => a.lesson.order - b.lesson.order || a.index - b.index)
+    .map(({ lesson }) => lesson);
 }
 
 export function getHubLessonsForTrack(trackId: LearnTrackId): LearnLessonMeta[] {
@@ -788,7 +838,28 @@ export function getHubLessonsForTrack(trackId: LearnTrackId): LearnLessonMeta[] 
 }
 
 export function getOptionalLabForLesson(lessonId: string): LearnLessonMeta | undefined {
-  return LEARN_LESSONS.find((lesson) => lesson.optional && lesson.parentLessonId === lessonId);
+  return LEARN_LESSONS.find(
+    (lesson) => lesson.optional && !lesson.branch && lesson.parentLessonId === lessonId,
+  );
+}
+
+function branchChildrenOf(parentId: string): LearnLessonMeta[] {
+  return LEARN_LESSONS.filter((lesson) => lesson.branch && lesson.parentLessonId === parentId)
+    .map((lesson, index) => ({ lesson, index }))
+    .sort((a, b) => a.lesson.order - b.lesson.order || a.index - b.index)
+    .map(({ lesson }) => lesson);
+}
+
+function toBranchSpurNode(lesson: LearnLessonMeta): LearnBranchSpurNode {
+  return {
+    lesson,
+    children: branchChildrenOf(lesson.id).map(toBranchSpurNode),
+  };
+}
+
+/** Branch spur tree rooted under a spine (or other) parent lesson id. */
+export function getBranchSpurForLesson(parentId: string): LearnBranchSpurNode[] {
+  return branchChildrenOf(parentId).map(toBranchSpurNode);
 }
 
 export function getLiveLessons(): LearnLessonMeta[] {
@@ -808,7 +879,7 @@ export function isLessonLocked(
   completedIds: Set<string>,
   options?: { ignorePrerequisites?: boolean },
 ): boolean {
-  if (options?.ignorePrerequisites || lesson.kind !== 'read') {
+  if (options?.ignorePrerequisites) {
     return false;
   }
   return !prerequisitesMet(lesson, completedIds);
@@ -835,6 +906,43 @@ export function getAdjacentLessons(lessonId: string): {
     previous: index > 0 ? LIVE_LESSON_ORDER[index - 1]! : null,
     next: index < LIVE_LESSON_ORDER.length - 1 ? LIVE_LESSON_ORDER[index + 1]! : null,
   };
+}
+
+/**
+ * Spine lesson used for Continue-order prev/next when `lesson` is optional/branch.
+ * Walks `parentLessonId` until a non-optional lesson (or null).
+ */
+export function getSpineNavigationAnchor(lesson: LearnLessonMeta): LearnLessonMeta | null {
+  if (!lesson.optional) {
+    return lesson;
+  }
+
+  const seen = new Set<string>();
+  let current: LearnLessonMeta | undefined = lesson;
+  while (current?.optional && current.parentLessonId) {
+    if (seen.has(current.id)) {
+      return null;
+    }
+    seen.add(current.id);
+    current = getLesson(current.parentLessonId);
+  }
+  return current && !current.optional ? current : null;
+}
+
+/** Prev/next for hub Continue order, resolving optional/branch lessons via spine parent. */
+export function getNavigableAdjacent(lessonId: string): {
+  previous: LearnLessonMeta | null;
+  next: LearnLessonMeta | null;
+} {
+  const lesson = getLesson(lessonId);
+  if (!lesson) {
+    return { previous: null, next: null };
+  }
+  const anchor = getSpineNavigationAnchor(lesson);
+  if (!anchor) {
+    return { previous: null, next: null };
+  }
+  return getAdjacentLessons(anchor.id);
 }
 
 export interface CurriculumValidationIssue {
@@ -886,6 +994,35 @@ export function validateCurriculum(contentLessonIds: Set<string>): CurriculumVal
         lessonId: trackId,
         message: `Track ${trackId} has non-contiguous order values`,
       });
+    }
+  }
+
+  const arrayIndex = new Map(LEARN_LESSONS.map((lesson, index) => [lesson.id, index]));
+  for (const lesson of LEARN_LESSONS) {
+    for (const prerequisiteId of lesson.prerequisites) {
+      const prerequisite = getLesson(prerequisiteId);
+      if (!prerequisite) {
+        continue;
+      }
+      if (prerequisite.trackId !== lesson.trackId) {
+        continue;
+      }
+      if (prerequisite.order > lesson.order) {
+        issues.push({
+          lessonId: lesson.id,
+          message: `Prerequisite ${prerequisiteId} has higher order (${prerequisite.order}) than this lesson (${lesson.order})`,
+        });
+        continue;
+      }
+      if (
+        prerequisite.order === lesson.order &&
+        (arrayIndex.get(prerequisiteId) ?? 0) > (arrayIndex.get(lesson.id) ?? 0)
+      ) {
+        issues.push({
+          lessonId: lesson.id,
+          message: `Prerequisite ${prerequisiteId} appears after this lesson in LEARN_LESSONS at equal order ${lesson.order}`,
+        });
+      }
     }
   }
 

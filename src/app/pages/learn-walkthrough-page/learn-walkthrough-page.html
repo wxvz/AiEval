@@ -10,7 +10,7 @@
           AiEval harness loop.
         </p>
       }
-      <div class="alert alert-light border mb-3" role="note">
+      <div class="learn-callout mb-3" role="note">
         Teaching shortcut: automation uses AI judges to score answers. Keep a human eye on Faithfulness when
         prices or policy windows matter.
         @if (nextLessonMeta(); as next) {
@@ -45,7 +45,7 @@
     </figure>
 
     @if (!hasSteps()) {
-      <div class="alert alert-light border" role="status">Walkthrough steps coming soon.</div>
+      <div class="learn-callout" role="status">Walkthrough steps coming soon.</div>
     } @else {
       <ol class="list-group list-group-numbered mb-4">
         @for (step of content().steps; track $index) {

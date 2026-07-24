@@ -86,8 +86,8 @@
         "Proceed only when the evidence fits the claim and report remaining limits."
       ],
       "aside": {
-        "title": "Optional side path",
-        "body": "Decision trees stay available as an optional side path from this lesson. They are not required for Continue.",
+        "title": "Branch on the hub",
+        "body": "Decision trees peel off this lesson as a Branch spur on the Learn hub. They are not required for Continue.",
         "route": "/learn/lessons/decision-trees",
         "actionLabel": "Open decision trees"
       },

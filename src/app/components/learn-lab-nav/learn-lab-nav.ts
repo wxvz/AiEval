@@ -1,7 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { getAdjacentLessons, getLesson, type LearnLessonMeta } from '../../learn/curriculum';
+import { getAdjacentLessons, getLesson, getNavigableAdjacent, type LearnLessonMeta } from '../../learn/curriculum';
 
 @Component({
   selector: 'app-learn-lab-nav',
@@ -33,15 +33,6 @@ export class LearnLabNav {
     if (!lesson.optional) {
       return getAdjacentLessons(lesson.id);
     }
-
-    const parent = this.resolvedParent();
-    if (!parent) {
-      return { previous: null, next: null };
-    }
-    const parentAdjacent = getAdjacentLessons(parent.id);
-    return {
-      previous: parentAdjacent.previous,
-      next: parentAdjacent.next,
-    };
+    return getNavigableAdjacent(lesson.id);
   });
 }

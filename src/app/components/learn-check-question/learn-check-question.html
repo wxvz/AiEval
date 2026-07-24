@@ -1,8 +1,9 @@
 <div class="learn-check-question mb-3">
-  <div class="card mb-3">
-    <div class="card-body">
-      <h3 class="h6 text-muted mb-2">Question</h3>
-      <p class="card-text mb-0">
+  <div class="learn-check-question__shell">
+    <h3 class="learn-check-question__prompt-label">Check yourself</h3>
+
+    <div class="learn-check-question__prompt-row">
+      <p class="learn-check-question__prompt-text mb-0">
         <app-learn-lesson-text
           [text]="question().prompt"
           [hintIdPrefix]="hintIdPrefix() || inputId"
@@ -11,103 +12,111 @@
           (termSelect)="termSelect.emit($event)"
         />
       </p>
+      @if (interactive() && hasChoices()) {
+        <button type="button" class="btn btn-primary btn-sm learn-check-question__check" (click)="check()">
+          Check
+        </button>
+      }
     </div>
-  </div>
 
-  @if (interactive()) {
-    @if (hasChoices()) {
-      <fieldset class="learn-check-question__choices mb-2">
-        <legend class="visually-hidden">Choose an answer</legend>
-        @for (choice of question().choices!; track $index) {
-          <label class="learn-check-question__choice">
-            <input
-              type="radio"
-              [name]="inputId"
-              [value]="choice"
-              [checked]="selectedChoice() === choice"
-              (change)="onChoiceChange(choice)"
-              [attr.aria-invalid]="checked() && isCorrect() === false && selectedChoice() === choice"
-            />
-            <span>{{ choice }}</span>
-          </label>
-        }
-      </fieldset>
-      <button type="button" class="btn btn-primary btn-sm" (click)="check()">Check</button>
-    } @else if (hasWordBank()) {
-      <div class="learn-check-question__assembled mb-2" aria-label="Your answer so far">
-        @if (assembledIndices().length === 0) {
-          <span class="text-muted small">Tap words below to build your answer.</span>
-        } @else {
-          @for (word of assembledWords(); track $index) {
+    @if (interactive()) {
+      @if (hasChoices()) {
+        <fieldset class="learn-check-question__choices mb-0 mt-2">
+          <legend class="visually-hidden">Choose an answer</legend>
+          @for (choice of question().choices!; track $index) {
+            <label class="learn-check-question__choice">
+              <input
+                type="radio"
+                [name]="inputId"
+                [value]="choice"
+                [checked]="selectedChoice() === choice"
+                (change)="onChoiceChange(choice)"
+                [attr.aria-invalid]="checked() && isCorrect() === false && selectedChoice() === choice"
+              />
+              <span>{{ choice }}</span>
+            </label>
+          }
+        </fieldset>
+      } @else if (hasWordBank()) {
+        <div class="learn-check-question__assembled mb-2 mt-2" aria-label="Your answer so far">
+          @if (assembledIndices().length === 0) {
+            <span class="text-muted small">Tap words below to build your answer.</span>
+          } @else {
+            @for (word of assembledWords(); track $index) {
+              <button
+                type="button"
+                class="learn-check-question__chip learn-check-question__chip--assembled"
+                [class.learn-check-question__chip--correct]="placementAt($index) === 'correct'"
+                [class.learn-check-question__chip--wrong-place]="placementAt($index) === 'wrong-place'"
+                [class.learn-check-question__chip--absent]="placementAt($index) === 'absent'"
+                (click)="removeAssembled($index)"
+                [attr.aria-label]="'Remove ' + word"
+              >
+                {{ word }}
+              </button>
+            }
+          }
+        </div>
+        <div class="learn-check-question__bank mb-2" aria-label="Word bank">
+          @for (word of question().wordBank!; track $index) {
             <button
               type="button"
-              class="learn-check-question__chip learn-check-question__chip--assembled"
-              [class.learn-check-question__chip--correct]="placementAt($index) === 'correct'"
-              [class.learn-check-question__chip--wrong-place]="placementAt($index) === 'wrong-place'"
-              [class.learn-check-question__chip--absent]="placementAt($index) === 'absent'"
-              (click)="removeAssembled($index)"
-              [attr.aria-label]="'Remove ' + word"
+              class="learn-check-question__chip"
+              [disabled]="isChipUsed($index)"
+              (click)="addChip($index)"
             >
               {{ word }}
             </button>
           }
-        }
-      </div>
-      <div class="learn-check-question__bank mb-2" aria-label="Word bank">
-        @for (word of question().wordBank!; track $index) {
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-primary btn-sm learn-check-question__check" (click)="check()">
+            Check
+          </button>
           <button
             type="button"
-            class="learn-check-question__chip"
-            [disabled]="isChipUsed($index)"
-            (click)="addChip($index)"
+            class="btn btn-outline-secondary btn-sm"
+            (click)="clearAssembled()"
+            [disabled]="assembledIndices().length === 0"
           >
-            {{ word }}
+            Clear
           </button>
-        }
-      </div>
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-primary btn-sm" (click)="check()">Check</button>
-        <button
-          type="button"
-          class="btn btn-outline-secondary btn-sm"
-          (click)="clearAssembled()"
-          [disabled]="assembledIndices().length === 0"
-        >
-          Clear
-        </button>
-      </div>
-    }
-  } @else {
-    <p class="learn-check-question__readonly-answer mb-2">
-      <span class="text-muted small">Your answer:</span>
-      {{ hasChoices() ? selectedChoice() || question().answer : question().answer }}
-    </p>
-  }
-
-  <div aria-live="polite">
-    @if (checked() && isCorrect() && interactive()) {
-      <div class="alert alert-success py-2 mb-0" role="status">Correct!</div>
-    }
-    @if (checked() && isCorrect() === false && interactive()) {
-      @if (hasWordBank()) {
-        <div class="alert alert-warning py-2 mb-0" role="status">
-          Not quite. Green is right, yellow is misplaced, red does not belong. Tap a word to remove
-          it and try again.
         </div>
       } @else {
-        <div class="card mb-0">
-          <div class="card-body">
-            <h3 class="h6 text-muted mb-2">Answer</h3>
-            <p class="card-text mb-0">{{ question().answer }}</p>
-          </div>
+        <div class="d-flex gap-2 mt-2">
+          <button type="button" class="btn btn-primary btn-sm learn-check-question__check" (click)="check()">
+            Check
+          </button>
         </div>
       }
+    } @else {
+      <p class="learn-check-question__readonly-answer mb-0 mt-2">
+        <span class="text-muted small">Your answer:</span>
+        {{ hasChoices() ? selectedChoice() || question().answer : question().answer }}
+      </p>
     }
-    @if (showExplanation() && solved() && question().explanation) {
-      <div class="card learn-check-question__explanation mt-2 mb-0">
-        <div class="card-body">
-          <h3 class="h6 text-muted mb-2">Why this answer</h3>
-          <p class="card-text mb-0">
+
+    <div aria-live="polite" class="mt-2">
+      @if (checked() && isCorrect() && interactive()) {
+        <div class="learn-callout learn-callout--success py-2 mb-0" role="status">Correct!</div>
+      }
+      @if (checked() && isCorrect() === false && interactive()) {
+        @if (hasWordBank()) {
+          <div class="learn-callout learn-callout--warning py-2 mb-0" role="status">
+            Not quite. Green is right, yellow is misplaced, red does not belong. Tap a word to remove
+            it and try again.
+          </div>
+        } @else {
+          <div class="learn-check-question__answer-card mb-0">
+            <h3 class="learn-check-question__prompt-label">Answer</h3>
+            <p class="mb-0">{{ question().answer }}</p>
+          </div>
+        }
+      }
+      @if (showExplanation() && solved() && question().explanation) {
+        <div class="learn-check-question__explanation learn-callout learn-callout--success mt-2 mb-0">
+          <h3 class="learn-check-question__prompt-label">Why this answer</h3>
+          <p class="mb-0">
             <app-learn-lesson-text
               [text]="question().explanation"
               [hintIdPrefix]="(hintIdPrefix() || inputId) + '-explanation'"
@@ -117,7 +126,7 @@
             />
           </p>
         </div>
-      </div>
-    }
+      }
+    </div>
   </div>
 </div>

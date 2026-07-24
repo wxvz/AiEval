@@ -5,9 +5,13 @@ import {
   getNextLesson,
   getLesson,
   getHubLessonsForTrack,
+  getBranchSpurForLesson,
+  getNavigableAdjacent,
   getOptionalLabForLesson,
+  getSpineNavigationAnchor,
   isLessonLocked,
   validateCurriculum,
+  LEARN_LESSONS,
 } from './curriculum';
 import { getContentLessonIds } from './learn-content';
 
@@ -17,11 +21,11 @@ describe('curriculum', () => {
     expect(issues).toEqual([]);
   });
 
-  it('orders live lessons foundation reads before neural-network-lab', () => {
+  it('orders live foundation reads through softmax before embeddings', () => {
     const live = getLiveLessons();
-    const nnIndex = live.findIndex((lesson) => lesson.id === 'neural-network-lab');
+    const embedIndex = live.findIndex((lesson) => lesson.id === 'embeddings-and-representations');
     const readIds = live
-      .slice(0, nnIndex)
+      .slice(0, embedIndex)
       .filter((lesson) => lesson.trackId === 'foundation' && lesson.kind === 'read')
       .map((lesson) => lesson.id);
     expect(readIds).toEqual([
@@ -34,22 +38,24 @@ describe('curriculum', () => {
       'activation-functions',
       'softmax-and-distributions',
     ]);
+    expect(live.map((lesson) => lesson.id)).not.toContain('neural-network-lab');
   });
 
-  it('keeps the neural spine after the neural-network lab without trees/RL/GANs', () => {
+  it('keeps the neural spine after softmax without trees/RL/GANs or the NN lab', () => {
     const foundationIds = getLiveLessons()
       .filter((lesson) => lesson.trackId === 'foundation')
       .map((lesson) => lesson.id);
-    const nnIndex = foundationIds.indexOf('neural-network-lab');
-    expect(foundationIds.slice(nnIndex)).toEqual([
-      'neural-network-lab',
+    const softmaxIndex = foundationIds.indexOf('softmax-and-distributions');
+    expect(foundationIds.slice(softmaxIndex)).toEqual([
+      'softmax-and-distributions',
       'embeddings-and-representations',
       'data-literacy',
       'deep-learning-approaches',
       'tokenization-inside-models',
     ]);
     expect(getLesson('deep-learning-approaches')?.prerequisites).toEqual(['data-literacy']);
-    expect(getLesson('prompts-as-instructions')?.prerequisites).toEqual(['tokenization-inside-models']);
+    expect(getLesson('prompts-as-instructions')?.prerequisites).toEqual([]);
+    expect(getLesson('embeddings-and-representations')?.prerequisites).toEqual(['softmax-and-distributions']);
   });
 
   it('keeps optional labs and demoted branches off the hub track list', () => {
@@ -63,13 +69,13 @@ describe('curriculum', () => {
       'bias-and-weights',
       'activation-functions',
       'softmax-and-distributions',
-      'neural-network-lab',
       'embeddings-and-representations',
       'data-literacy',
       'deep-learning-approaches',
       'tokenization-inside-models',
       'residual-connections',
     ]);
+    expect(hubIds).not.toContain('neural-network-lab');
     expect(hubIds).not.toContain('decision-trees');
     expect(hubIds).not.toContain('reinforcement-learning');
     expect(hubIds).not.toContain('generative-adversarial-networks');
@@ -80,33 +86,62 @@ describe('curriculum', () => {
 
   it('demotes trees, RL and GANs to optional side branches', () => {
     expect(getLesson('decision-trees')?.optional).toBe(true);
+    expect(getLesson('decision-trees')?.branch).toBe(true);
     expect(getLesson('decision-trees')?.parentLessonId).toBe('data-literacy');
     expect(getLesson('decision-trees-lab')?.optional).toBe(true);
+    expect(getLesson('decision-trees-lab')?.branch).toBe(true);
     expect(getLesson('reinforcement-learning')?.optional).toBe(true);
+    expect(getLesson('reinforcement-learning')?.branch).toBe(true);
     expect(getLesson('reinforcement-learning')?.parentLessonId).toBe('deep-learning-approaches');
     expect(getLesson('reinforcement-learning-lab')?.optional).toBe(true);
+    expect(getLesson('reinforcement-learning-lab')?.branch).toBe(true);
     expect(getLesson('generative-adversarial-networks')?.optional).toBe(true);
+    expect(getLesson('generative-adversarial-networks')?.branch).toBe(true);
     expect(getLesson('generative-adversarial-networks')?.parentLessonId).toBe(
       'reinforcement-learning-lab',
     );
   });
 
-  it('links optional labs to parent read lessons', () => {
-    expect(getOptionalLabForLesson('train-vs-test')?.route).toBe('/learn/labs/train-vs-test');
-    expect(getOptionalLabForLesson('loss-and-updates')?.route).toBe('/learn/labs/loss-and-updates');
-    expect(getOptionalLabForLesson('learning-rate')?.route).toBe('/learn/labs/learning-rate');
-    expect(getOptionalLabForLesson('softmax-and-distributions')?.route).toBe('/learn/labs/softmax');
-    expect(getOptionalLabForLesson('semantic-memory')?.route).toBe('/learn/labs/semantic-memory');
-    expect(getOptionalLabForLesson('controlling-generation')?.route).toBe('/learn/labs/controlling-generation');
-    expect(getOptionalLabForLesson('structured-outputs-for-judges')?.route).toBe('/learn/labs/judge-json');
-    expect(getOptionalLabForLesson('faithfulness-and-hallucinations')?.route).toBe('/learn/labs/faithfulness');
-    expect(getOptionalLabForLesson('learning-from-examples')?.route).toBe('/learn/labs/learning-from-examples');
-    expect(getOptionalLabForLesson('what-is-a-dataset')?.route).toBe('/learn/labs/what-is-a-dataset');
-    expect(getOptionalLabForLesson('activation-functions')?.route).toBe('/learn/labs/activation-functions');
-    expect(getOptionalLabForLesson('comparing-answers')?.route).toBe('/learn/labs/comparing-answers');
-    expect(getOptionalLabForLesson('rubrics-and-criteria')?.route).toBe('/learn/labs/rubrics-and-criteria');
-    expect(getOptionalLabForLesson('data-literacy')?.id).toBe('decision-trees');
-    expect(getOptionalLabForLesson('deep-learning-approaches')?.id).toBe('reinforcement-learning');
+  it('surfaces practice and spine labs as hub branch spurs, not aside optional labs', () => {
+    expect(getOptionalLabForLesson('train-vs-test')).toBeUndefined();
+    expect(getOptionalLabForLesson('softmax-and-distributions')).toBeUndefined();
+    expect(getOptionalLabForLesson('semantic-memory')).toBeUndefined();
+    expect(getOptionalLabForLesson('data-literacy')).toBeUndefined();
+
+    const softmaxSpur = getBranchSpurForLesson('softmax-and-distributions');
+    expect(softmaxSpur.map((n) => n.lesson.id)).toEqual([
+      'softmax-and-distributions-lab',
+      'neural-network-lab',
+    ]);
+
+    const memorySpur = getBranchSpurForLesson('semantic-memory');
+    expect(memorySpur.map((n) => n.lesson.id)).toEqual([
+      'semantic-memory-lab',
+      'semantic-search-lab',
+    ]);
+    expect(memorySpur.find((n) => n.lesson.id === 'semantic-search-lab')?.children[0]?.lesson.id).toBe(
+      'rag-playground-lab',
+    );
+
+    const outsideSpur = getBranchSpurForLesson('outside-eval-practice');
+    expect(outsideSpur).toHaveLength(1);
+    expect(outsideSpur[0]?.lesson.id).toBe('first-evaluation-lab');
+    expect(outsideSpur[0]?.children[0]?.lesson.id).toBe('support-bot-decision-lab');
+  });
+
+  it('resolves Continue neighbors for nested branch labs via spine parent', () => {
+    expect(getSpineNavigationAnchor(getLesson('rag-playground-lab')!)?.id).toBe('semantic-memory');
+    expect(getNavigableAdjacent('rag-playground-lab').previous?.id).toBe(
+      'structured-outputs-for-judges',
+    );
+    expect(getNavigableAdjacent('rag-playground-lab').next?.id).toBe(
+      'faithfulness-and-hallucinations',
+    );
+    expect(getNavigableAdjacent('decision-trees').previous?.id).toBe('embeddings-and-representations');
+    expect(getNavigableAdjacent('decision-trees').next?.id).toBe('deep-learning-approaches');
+    expect(getNavigableAdjacent('softmax-and-distributions').next?.id).toBe(
+      'embeddings-and-representations',
+    );
   });
 
   it('keeps new optional labs off the hub track lists', () => {
@@ -118,7 +153,11 @@ describe('curriculum', () => {
     expect(foundationIds).not.toContain('softmax-and-distributions-lab');
     expect(llmIds).not.toContain('comparing-answers-lab');
     expect(llmIds).not.toContain('rubrics-and-criteria-lab');
+    expect(llmIds).not.toContain('semantic-search-lab');
+    expect(llmIds).not.toContain('rag-playground-lab');
+    expect(llmIds).not.toContain('first-evaluation-lab');
     expect(getLesson('comparing-answers-lab')?.optional).toBe(true);
+    expect(getLesson('comparing-answers-lab')?.branch).toBe(true);
     expect(getLesson('rubrics-and-criteria-lab')?.parentLessonId).toBe('rubrics-and-criteria');
   });
 
@@ -126,6 +165,7 @@ describe('curriculum', () => {
     const hubIds = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
     expect(hubIds).not.toContain('semantic-memory-lab');
     expect(getLesson('semantic-memory-lab')?.optional).toBe(true);
+    expect(getLesson('semantic-memory-lab')?.branch).toBe(true);
     expect(getLesson('semantic-memory-lab')?.parentLessonId).toBe('semantic-memory');
   });
 
@@ -136,16 +176,17 @@ describe('curriculum', () => {
     expect(getLesson('multimodal-vector-databases-lab')?.parentLessonId).toBe(
       'multimodal-vector-databases',
     );
-    expect(getOptionalLabForLesson('multimodal-vector-databases')?.route).toBe(
-      '/learn/labs/multimodal-vector-databases',
+    expect(getOptionalLabForLesson('multimodal-vector-databases')).toBeUndefined();
+    expect(getBranchSpurForLesson('multimodal-vector-databases')[0]?.lesson.id).toBe(
+      'multimodal-vector-databases-lab',
     );
   });
 
-  it('orders llm reads before semantic-search-lab', () => {
+  it('orders llm reads through semantic-memory before faithfulness', () => {
     const live = getLiveLessons();
-    const labIndex = live.findIndex((lesson) => lesson.id === 'semantic-search-lab');
+    const faithIndex = live.findIndex((lesson) => lesson.id === 'faithfulness-and-hallucinations');
     const readIds = live
-      .slice(0, labIndex)
+      .slice(0, faithIndex)
       .filter((lesson) => lesson.trackId === 'llm-systems' && lesson.kind === 'read')
       .map((lesson) => lesson.id);
     expect(readIds).toEqual([
@@ -159,11 +200,11 @@ describe('curriculum', () => {
     ]);
   });
 
-  it('orders retrieval labs before outside practice and harness labs', () => {
+  it('orders llm spine through outside practice without retrieval or harness labs', () => {
     const live = getLiveLessons();
-    const evalLabIndex = live.findIndex((lesson) => lesson.id === 'first-evaluation-lab');
+    const regressionIndex = live.findIndex((lesson) => lesson.id === 'regression-evals');
     const llmSlice = live
-      .slice(0, evalLabIndex)
+      .slice(0, regressionIndex + 1)
       .filter((lesson) => lesson.trackId === 'llm-systems')
       .map((lesson) => lesson.id);
     expect(llmSlice).toEqual([
@@ -174,20 +215,23 @@ describe('curriculum', () => {
       'rubrics-and-criteria',
       'structured-outputs-for-judges',
       'semantic-memory',
-      'semantic-search-lab',
-      'rag-playground-lab',
       'faithfulness-and-hallucinations',
       'outside-eval-practice',
+      'regression-evals',
     ]);
   });
 
-  it('links new labs to routes and prerequisites', () => {
+  it('links new labs to routes and rewired Continue prerequisites', () => {
     expect(getLesson('semantic-search-lab')?.route).toBe('/learn/labs/semantic-search');
     expect(getLesson('rag-playground-lab')?.route).toBe('/learn/labs/rag-playground');
+    expect(getLesson('semantic-search-lab')?.optional).toBe(true);
+    expect(getLesson('semantic-search-lab')?.branch).toBe(true);
+    expect(getLesson('rag-playground-lab')?.parentLessonId).toBe('semantic-search-lab');
     expect(getLesson('semantic-search-lab')?.prerequisites).toEqual(['semantic-memory']);
     expect(getLesson('first-evaluation-lab')?.prerequisites).toEqual(['outside-eval-practice']);
     expect(getLesson('support-bot-decision-lab')?.prerequisites).toEqual(['first-evaluation-lab']);
-    expect(getLesson('regression-evals')?.prerequisites).toEqual(['support-bot-decision-lab']);
+    expect(getLesson('faithfulness-and-hallucinations')?.prerequisites).toEqual(['semantic-memory']);
+    expect(getLesson('regression-evals')?.prerequisites).toEqual(['outside-eval-practice']);
     expect(getLesson('automation-and-judges')?.prerequisites).toEqual(['regression-evals']);
     expect(getLesson('comparing-answers')?.prerequisites).toEqual(['controlling-generation']);
   });
@@ -205,12 +249,16 @@ describe('curriculum', () => {
   it('links optional foundation labs to routes', () => {
     expect(getLesson('train-vs-test-lab')?.route).toBe('/learn/labs/train-vs-test');
     expect(getLesson('train-vs-test-lab')?.optional).toBe(true);
+    expect(getLesson('train-vs-test-lab')?.branch).toBe(true);
     expect(getLesson('loss-and-updates-lab')?.route).toBe('/learn/labs/loss-and-updates');
     expect(getLesson('loss-and-updates-lab')?.parentLessonId).toBe('loss-and-updates');
   });
 
-  it('links neural-network-lab to labs route', () => {
+  it('links neural-network-lab to labs route as a branch', () => {
     expect(getLesson('neural-network-lab')?.route).toBe('/learn/labs/neural-network');
+    expect(getLesson('neural-network-lab')?.optional).toBe(true);
+    expect(getLesson('neural-network-lab')?.branch).toBe(true);
+    expect(getLesson('neural-network-lab')?.parentLessonId).toBe('softmax-and-distributions');
   });
 
   it('orders the remaining LLM systems lessons before systems-production', () => {
@@ -227,13 +275,21 @@ describe('curriculum', () => {
     ]);
   });
 
-  it('chains systems-production prerequisites from transformers-overview', () => {
+  it('lets each track start without prior-track prerequisites', () => {
+    expect(getLesson('learning-from-examples')?.prerequisites).toEqual([]);
+    expect(getLesson('prompts-as-instructions')?.prerequisites).toEqual([]);
+    expect(getLesson('production-concerns')?.prerequisites).toEqual([]);
+    expect(isLessonLocked(getLesson('prompts-as-instructions')!, new Set())).toBe(false);
+    expect(isLessonLocked(getLesson('production-concerns')!, new Set())).toBe(false);
+  });
+
+  it('chains systems-production prerequisites from production-concerns', () => {
     expect(getLesson('transformers-overview')?.trackId).toBe('llm-systems');
     expect(getLesson('transformers-overview')?.prerequisites).toEqual(['automation-and-judges']);
     expect(getLesson('mcp')?.prerequisites).toEqual(['tool-calling']);
     expect(getLesson('multimodal-vector-databases')?.prerequisites).toEqual(['mcp']);
     expect(getLesson('production-concerns')?.trackId).toBe('systems-production');
-    expect(getLesson('production-concerns')?.prerequisites).toEqual(['transformers-overview']);
+    expect(getLesson('production-concerns')?.prerequisites).toEqual([]);
     expect(getLesson('building-eval-harnesses')?.prerequisites).toEqual(['production-concerns']);
   });
 
@@ -242,9 +298,11 @@ describe('curriculum', () => {
     expect(getLesson('activation-functions')?.prerequisites).toEqual(['bias-and-weights']);
     expect(getLesson('softmax-and-distributions')?.prerequisites).toEqual(['activation-functions']);
     expect(getLesson('neural-network-lab')?.prerequisites).toEqual(['softmax-and-distributions']);
-    expect(getOptionalLabForLesson('bias-and-weights')?.id).toBe('bias-and-weights-lab');
-    expect(getOptionalLabForLesson('activation-functions')?.id).toBe('activation-functions-lab');
-    expect(getOptionalLabForLesson('transformers-overview')?.id).toBe('transformers-lab');
+    expect(getBranchSpurForLesson('bias-and-weights')[0]?.lesson.id).toBe('bias-and-weights-lab');
+    expect(getBranchSpurForLesson('activation-functions')[0]?.lesson.id).toBe(
+      'activation-functions-lab',
+    );
+    expect(getBranchSpurForLesson('transformers-overview')[0]?.lesson.id).toBe('transformers-lab');
   });
 
   it('locks read lessons until prerequisites are complete', () => {
@@ -254,8 +312,37 @@ describe('curriculum', () => {
     expect(isLessonLocked(lesson!, new Set(['controlling-generation']))).toBe(false);
   });
 
+  it('locks labs until prerequisites are complete', () => {
+    const lab = getLesson('neural-network-lab');
+    expect(lab).toBeTruthy();
+    expect(isLessonLocked(lab!, new Set())).toBe(true);
+    expect(isLessonLocked(lab!, new Set(['softmax-and-distributions']))).toBe(false);
+  });
+
   it('ignores prerequisites when unlock option is set', () => {
     const lesson = getLesson('comparing-answers');
     expect(isLessonLocked(lesson!, new Set(), { ignorePrerequisites: true })).toBe(false);
+    const lab = getLesson('semantic-search-lab');
+    expect(isLessonLocked(lab!, new Set(), { ignorePrerequisites: true })).toBe(false);
+  });
+
+  it('keeps optional lesson order at or after parent prerequisites', () => {
+    expect(getLesson('train-vs-test-lab')?.order).toBe(getLesson('train-vs-test')?.order);
+    expect(getLesson('decision-trees')?.order).toBe(getLesson('data-literacy')?.order);
+    expect(getLesson('reinforcement-learning')?.order).toBe(
+      getLesson('deep-learning-approaches')?.order,
+    );
+    const foundation = LEARN_LESSONS.filter((lesson) => lesson.trackId === 'foundation');
+    const sorted = [...foundation].sort((a, b) => a.order - b.order);
+    const index = new Map(sorted.map((lesson, i) => [lesson.id, i]));
+    for (const lesson of foundation) {
+      for (const prerequisiteId of lesson.prerequisites) {
+        const preIdx = index.get(prerequisiteId);
+        const lessonIdx = index.get(lesson.id);
+        if (preIdx !== undefined && lessonIdx !== undefined) {
+          expect(preIdx).toBeLessThan(lessonIdx);
+        }
+      }
+    }
   });
 });
