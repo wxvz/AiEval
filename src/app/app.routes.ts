@@ -110,6 +110,16 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'learn/labs/learning-rate',
+    loadComponent: () =>
+      import('./pages/learning-rate-lab/learning-rate-lab').then((m) => m.LearningRateLabPage),
+  },
+  {
+    path: 'learn/labs/softmax',
+    loadComponent: () =>
+      import('./pages/softmax-lab/softmax-lab').then((m) => m.SoftmaxLabPage),
+  },
+  {
     path: 'learn/labs/decision-trees',
     loadComponent: () =>
       import('./pages/decision-trees-lab/decision-trees-lab').then((m) => m.DecisionTreesLabPage),
@@ -177,6 +187,15 @@ export const routes: Routes = [
       import('./pages/learn-walkthrough-page/learn-walkthrough-page').then(
         (m) => m.LearnWalkthroughPage,
       ),
+    data: { lessonId: 'first-evaluation-lab' },
+  },
+  {
+    path: 'learn/labs/support-bot-decision',
+    loadComponent: () =>
+      import('./pages/learn-walkthrough-page/learn-walkthrough-page').then(
+        (m) => m.LearnWalkthroughPage,
+      ),
+    data: { lessonId: 'support-bot-decision-lab' },
   },
   { path: 'learn/neural-network', redirectTo: 'learn/labs/neural-network', pathMatch: 'full' },
   { path: '**', redirectTo: '' },

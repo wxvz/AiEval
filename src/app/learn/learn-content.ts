@@ -8,20 +8,25 @@ import controllingGeneration from './content/controlling-generation.json';
 import dataLiteracy from './content/data-literacy.json';
 import decisionTrees from './content/decision-trees.json';
 import deepLearningApproaches from './content/deep-learning-approaches.json';
+import embeddingsAndRepresentations from './content/embeddings-and-representations.json';
 import faithfulnessAndHallucinations from './content/faithfulness-and-hallucinations.json';
 import generativeAdversarialNetworks from './content/generative-adversarial-networks.json';
 import goldenTestCases from './content/golden-test-cases.json';
 import learningFromExamples from './content/learning-from-examples.json';
+import learningRate from './content/learning-rate.json';
 import lossAndUpdates from './content/loss-and-updates.json';
 import mcp from './content/mcp.json';
 import multimodalVectorDatabases from './content/multimodal-vector-databases.json';
+import outsideEvalPractice from './content/outside-eval-practice.json';
 import productionConcerns from './content/production-concerns.json';
 import promptsAsInstructions from './content/prompts-as-instructions.json';
 import reinforcementLearning from './content/reinforcement-learning.json';
 import regressionEvals from './content/regression-evals.json';
 import rubricsAndCriteria from './content/rubrics-and-criteria.json';
 import semanticMemory from './content/semantic-memory.json';
+import softmaxAndDistributions from './content/softmax-and-distributions.json';
 import structuredOutputsForJudges from './content/structured-outputs-for-judges.json';
+import tokenizationInsideModels from './content/tokenization-inside-models.json';
 import toolCalling from './content/tool-calling.json';
 import trainVsTest from './content/train-vs-test.json';
 import transformersOverview from './content/transformers-overview.json';
@@ -75,11 +80,16 @@ const FULL_RECAP_LESSON_IDS = new Set([
   'what-is-a-dataset',
   'train-vs-test',
   'loss-and-updates',
+  'learning-rate',
   'bias-and-weights',
   'activation-functions',
+  'softmax-and-distributions',
+  'embeddings-and-representations',
   'data-literacy',
   'decision-trees',
   'deep-learning-approaches',
+  'tokenization-inside-models',
+  'outside-eval-practice',
   'semantic-memory',
   'transformers-overview',
   'tool-calling',
@@ -117,11 +127,15 @@ const LESSON_CONTENT: Record<string, LessonContent> = {
   'what-is-a-dataset': whatIsADataset,
   'train-vs-test': trainVsTest,
   'loss-and-updates': lossAndUpdates,
+  'learning-rate': learningRate,
   'bias-and-weights': biasAndWeights,
   'activation-functions': activationFunctions,
+  'softmax-and-distributions': softmaxAndDistributions,
+  'embeddings-and-representations': embeddingsAndRepresentations,
   'data-literacy': dataLiteracy,
   'decision-trees': decisionTrees,
   'deep-learning-approaches': deepLearningApproaches,
+  'tokenization-inside-models': tokenizationInsideModels,
   'prompts-as-instructions': promptsAsInstructions,
   'controlling-generation': controllingGeneration,
   'comparing-answers': comparingAnswers,
@@ -130,6 +144,7 @@ const LESSON_CONTENT: Record<string, LessonContent> = {
   'structured-outputs-for-judges': structuredOutputsForJudges,
   'semantic-memory': semanticMemory,
   'faithfulness-and-hallucinations': faithfulnessAndHallucinations,
+  'outside-eval-practice': outsideEvalPractice,
   'regression-evals': regressionEvals,
   'automation-and-judges': automationAndJudges,
   'transformers-overview': transformersOverview,

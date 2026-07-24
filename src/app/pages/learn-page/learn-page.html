@@ -19,6 +19,21 @@
       </div>
     </div>
 
+    <section class="learn-side-paths card-elevated mb-4" aria-label="Optional side paths">
+      <h2 class="h6 mb-2">Optional side paths</h2>
+      <p class="text-muted small mb-3">
+        Trees, rewards and GANs stay available off the Continue spine if you want other learning styles.
+      </p>
+      <ul class="list-unstyled mb-0">
+        @for (lesson of sidePaths; track lesson.id) {
+          <li class="mb-2">
+            <a [routerLink]="lesson.route">{{ lesson.title }}</a>
+            <span class="text-muted small">: {{ lesson.summary }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+
     <section class="learn-tools card-elevated mb-4" aria-label="Tools">
       <h2 class="h6 learn-tools__title">Tools</h2>
       <a class="learn-tools__link" routerLink="/evaluations/new">{{ hubCopy.toolsLabel }} →</a>

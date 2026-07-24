@@ -1,0 +1,143 @@
+{
+  "sections": [
+    {
+      "title": "Step size is a dial, not a detail",
+      "paragraphs": [
+        "After a {{model}} computes {{loss}}, training nudges each {{weights}} value a little. How far that nudge travels is the {{learningRate}}.",
+        "Picture walking downhill in fog. Tiny steps keep you safe but take forever. Giant leaps might leap past the valley floor and climb the other side.",
+        "The {{gradient}} points downhill. The {{learningRate}} scales how far you move along that direction in one update.",
+        "Same {{loss}} formula, same data, different {{learningRate}}: training can crawl, converge or thrash. The dial belongs inside the training loop, next to {{weights}} and {{bias}}.",
+        "You already saw {{learningRate}} named in Loss and updates. This lesson makes the dial the main idea before you open Bias and weights."
+      ],
+      "bullets": [
+        "{{learningRate}}: size of each weight update.",
+        "{{gradient}}: direction that should reduce {{loss}}.",
+        "Too large or too small both waste training time."
+      ],
+      "check": {
+        "prompt": "Training {{loss}} jumps up and down every step with no steady drop. What is the most likely inside cause among these options?",
+        "answer": "Learning rate is too large and updates overshoot",
+        "choices": [
+          "Learning rate is too large and updates overshoot",
+          "The dataset has zero rows",
+          "Softmax was never invented",
+          "You forgot to write a {{prompt}}"
+        ],
+        "explanation": "Huge steps along the {{gradient}} often overshoot the low-{{loss}} region, so {{loss}} bounces. Turning the {{learningRate}} down is the first fix to try inside the training loop."
+      }
+    },
+    {
+      "title": "Too small, too large, just workable",
+      "paragraphs": [
+        "A tiny {{learningRate}} makes each update almost invisible. {{loss}} may fall, but only after many {{epoch}}s. Teams sometimes mistake that crawl for a broken {{model}}.",
+        "A huge {{learningRate}} can send {{weights}} into wild values. Predictions flip, {{loss}} explodes or oscillates and the run looks random.",
+        "A workable rate shrinks {{loss}} smoothly across early {{epoch}}s without fireworks. You still check a held-out set later; a pretty training curve is not proof of {{generalization}}.",
+        "Click each story to connect it to the dial. The optional Learning rate lab lets you watch tiny, medium and huge rates on the same toy bowl.",
+        "Real optimizers add momentum and adaptive rates. The teaching point stays: step size is part of what happens inside training, not a UI decoration."
+      ],
+      "reveals": [
+        {
+          "prompt": "{{loss}} barely moves after hundreds of steps.",
+          "reveal": "Often the {{learningRate}} is too small. Try a larger step before redesigning the whole network."
+        },
+        {
+          "prompt": "{{loss}} spikes and {{weights}} become enormous.",
+          "reveal": "Often the {{learningRate}} is too large. Cut it and restart from sane {{weights}}."
+        },
+        {
+          "prompt": "{{loss}} falls for a while then plateaus.",
+          "reveal": "Normal late training. Confirm on held-out data; do not keep cranking the rate forever."
+        }
+      ],
+      "check": {
+        "prompt": "You want a first teaching run on XOR. Which {{learningRate}} habit matches this lesson?",
+        "answer": "Start moderate, watch loss, then adjust the dial",
+        "choices": [
+          "Start moderate, watch loss, then adjust the dial",
+          "Always use the largest rate the hardware allows",
+          "Set learning rate to zero so weights never change",
+          "Ignore learning rate because only architecture matters"
+        ],
+        "explanation": "Inside training, the {{learningRate}} is a {{hyperparameters}} you tune by watching {{loss}} behavior. Moderate first, then adjust with evidence from the curve."
+      }
+    },
+    {
+      "title": "From dial to neuron parts",
+      "paragraphs": [
+        "Once step size makes sense, the next question is what those numbers are. Each neuron stores {{weights}} on its inputs and a {{bias}} offset.",
+        "Training multiplies the {{gradient}} by the {{learningRate}} and subtracts that product from each {{weights}} entry (and the {{bias}}). That is the update you will see in Bias and weights.",
+        "Keep one mental checklist: data in, forward {{prediction}}, {{loss}}, {{gradient}}, scaled step, new {{weights}}. The dial sits in the middle of that checklist.",
+        "Honesty: production stacks pick schedules that decay the {{learningRate}} over time. The lab uses fixed rates so you can see the effect clearly.",
+        "Next lesson: **Bias and weights**, where you inspect the numbers the dial is moving. Try the optional Learning rate lab if you want a hands-on bowl before you go."
+      ],
+      "bullets": [
+        "Update ≈ {{weights}} minus {{learningRate}} times {{gradient}}.",
+        "Next spine lesson: Bias and weights.",
+        "Optional lab: compare tiny, medium and huge rates."
+      ],
+      "aside": {
+        "title": "Practice the dial",
+        "body": "Open the Learning rate lab and compare how tiny, medium and huge rates move the same toy {{loss}} bowl.",
+        "route": "/learn/labs/learning-rate",
+        "actionLabel": "Open learning rate lab"
+      },
+      "check": {
+        "prompt": "In one short phrase, where does {{learningRate}} sit in the training checklist?",
+        "answer": "It scales the gradient step on weights",
+        "accept": [
+          "scales how far weights move",
+          "multiplies the gradient for the update",
+          "sets update step size",
+          "controls size of each weight nudge"
+        ],
+        "wordBank": [
+          "It",
+          "scales",
+          "the",
+          "gradient",
+          "step",
+          "on",
+          "weights",
+          "deletes",
+          "prompts"
+        ],
+        "explanation": "The {{learningRate}} does not replace {{loss}} or the {{gradient}}. It scales how far each update moves the {{weights}} (and {{bias}}) inside the model."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Which failure matches a {{learningRate}} that is much too large?",
+      "answer": "Loss oscillates or explodes as updates overshoot",
+      "choices": [
+        "Loss oscillates or explodes as updates overshoot",
+        "The model refuses to tokenize text",
+        "Retrieval always returns empty chunks",
+        "Judge JSON becomes valid automatically"
+      ],
+      "explanation": "Overshooting the low-{{loss}} region is the classic large-rate failure inside training. Shrink the dial and watch the curve again."
+    },
+    {
+      "prompt": "Complete the idea: the {{learningRate}} is best described as…",
+      "answer": "The step size on each weight update",
+      "accept": [
+        "update step size",
+        "how far weights move each step",
+        "scale of the gradient step",
+        "size of each training nudge"
+      ],
+      "wordBank": [
+        "The",
+        "step",
+        "size",
+        "on",
+        "each",
+        "weight",
+        "update",
+        "prompt",
+        "rubric"
+      ],
+      "explanation": "Keep the inside meaning crisp: {{learningRate}} is the step size applied when {{weights}} move along the {{gradient}}."
+    }
+  ]
+}

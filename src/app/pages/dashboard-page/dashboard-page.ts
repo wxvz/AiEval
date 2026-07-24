@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ConfirmDeleteModal } from '../../components/confirm-delete-modal/confirm-delete-modal';
 import { DashboardDayRail } from '../../components/dashboard-day-rail/dashboard-day-rail';
@@ -9,7 +10,8 @@ import { LoadingSpinner } from '../../components/loading-spinner/loading-spinner
 import { PageShell } from '../../components/page-shell/page-shell';
 import { Evaluation } from '../../models';
 import { loadWalkthroughContent } from '../../learn/walkthrough-content';
-import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { LEARN_LESSON_QUERY, LearnHandoffService } from '../../learn/learn-handoff.service';
+import { getLesson } from '../../learn/curriculum';
 import { EvaluationService } from '../../services/evaluation.service';
 import { EvaluationDayGroup, localDayKey } from '../../utils/group-evaluations-by-day';
 import { groupEvaluationsByMonth } from '../../utils/group-evaluations-by-month';
@@ -37,6 +39,12 @@ import {
 export class DashboardPage {
   private readonly evaluationService = inject(EvaluationService);
   private readonly learnHandoff = inject(LearnHandoffService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
 
   protected readonly loading = this.evaluationService.loading;
   protected readonly loadError = this.evaluationService.loadError;
@@ -64,11 +72,41 @@ export class DashboardPage {
     this.learnHandoff.highlightedEvaluationId();
     return this.learnHandoff.showDashboardBanner();
   });
-  protected readonly learnBannerCopy =
-    loadWalkthroughContent().handoffCopy?.dashboardBanner ??
-    'Your evaluation from the Learn lab is highlighted below.';
+  protected readonly learnBannerCopy = computed(() => {
+    const lessonId = this.learnHandoff.lessonId();
+    if (!lessonId) {
+      return 'Your evaluation from the Learn lab is highlighted below.';
+    }
+    return (
+      loadWalkthroughContent(lessonId).handoffCopy?.dashboardBanner ??
+      'Your evaluation from the Learn lab is highlighted below.'
+    );
+  });
+  protected readonly learnLabRoute = computed(() => {
+    const lessonId = this.learnHandoff.lessonId();
+    if (!lessonId) {
+      return '/learn';
+    }
+    return getLesson(lessonId)?.route ?? '/learn';
+  });
 
   constructor() {
+    effect(() => {
+      const lessonId = this.queryParamMap().get(LEARN_LESSON_QUERY);
+      if (lessonId) {
+        this.learnHandoff.activateLesson(lessonId);
+      }
+    });
+
+    effect(() => {
+      const openCompare = this.queryParamMap().get('openCompare') === '1';
+      const evalId = this.highlightedEvaluationId();
+      if (!openCompare || !evalId) {
+        return;
+      }
+      void this.router.navigate(['/evaluations', evalId, 'compare'], { replaceUrl: true });
+    });
+
     effect(() => {
       const evaluations = this.evaluations();
       const months = this.monthGroups();
@@ -135,13 +173,14 @@ export class DashboardPage {
   protected confirmDelete(): void {
     const id = this.deleteTargetId();
 
-    if (id) {
+      if (id) {
       this.evaluationService.delete(id, {
         success: 'Evaluation deleted.',
         error: 'Could not delete evaluation.',
       });
-      if (this.highlightedEvaluationId() === id) {
-        this.learnHandoff.clear();
+      const lessonForEval = this.learnHandoff.lessonIdForEvaluation(id);
+      if (lessonForEval) {
+        this.learnHandoff.clearLesson(lessonForEval);
       }
     }
 

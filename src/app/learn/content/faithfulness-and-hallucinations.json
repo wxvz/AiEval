@@ -69,14 +69,17 @@
     {
       "title": "Bridge to hands-on evaluation",
       "paragraphs": [
-        "You now have prompts, rubrics, retrieval and grounding vocabulary. The First evaluation lab walks through creating a real {{evaluation}} in AiEval. You generate answers, score with a {{judge}} and compare winners.",
+        "You now have prompts, rubrics, retrieval and grounding vocabulary. **Outside eval practice** builds an Acme support golden set and rubric before you touch the harness.",
         "Carry faithfulness forward: include at least one {{testCase}} where the correct behavior depends on supplied context, not general knowledge.",
-        "Next: First evaluation lab, where you run full automation on your own golden prompts."
+        "The First evaluation lab then warms up AiEval. The Support bot decision lab asks for a ship call backed by rubric rows.",
+        "Keep refusing when context is empty. A high Faithfulness score on invented policy is a failed eval, not a win.",
+        "Next: Outside eval practice, then the harness labs."
       ],
       "bullets": [
         "Faithful answers respect retrieved {{chunk}}s.",
         "Score grounding explicitly in the {{rubric}}.",
-        "Refusal can be the correct faithful behavior."
+        "Refusal can be the correct faithful behavior.",
+        "Next: Outside eval practice."
       ],
       "check": {
         "prompt": "In one short phrase: what is {{hallucination}} in a RAG system?",

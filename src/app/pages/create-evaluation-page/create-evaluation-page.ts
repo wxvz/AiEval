@@ -1,4 +1,5 @@
 import { Component, DestroyRef, computed, effect, HostListener, inject, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { AutomationControlsComponent } from '../../components/automation-controls/automation-controls';
@@ -11,7 +12,8 @@ import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-
 import { Evaluation, CriteriaMode, RubricCriterion } from '../../models';
 import { AUTOMATION_METADATA_STUB_TITLE, AUTOMATION_METADATA_STUB_PROMPT } from '../../../../server/src/automation/constants';
 import { loadWalkthroughContent } from '../../learn/walkthrough-content';
-import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { LEARN_LESSON_QUERY, LearnHandoffService } from '../../learn/learn-handoff.service';
+import { getLesson } from '../../learn/curriculum';
 import {
   EvaluationService,
   MIN_GENERATED_PROMPT_LENGTH,
@@ -57,10 +59,36 @@ export class CreateEvaluationPage {
   protected readonly creating = signal(false);
   private readonly formFieldsVersion = signal(0);
   private generatePromptAbort: AbortController | null = null;
-  protected readonly fromLearn = signal(
-    this.learnHandoff.isLearnContext(this.route.snapshot.queryParamMap.get('from')),
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, {
+    initialValue: this.route.snapshot.queryParamMap,
+  });
+  protected readonly fromLearn = computed(() =>
+    this.learnHandoff.isLearnContext(this.queryParamMap().get('from')),
   );
-  protected readonly learnHint = loadWalkthroughContent().handoffCopy?.createPageHint ?? null;
+  /** Tool-lab id from `learnLesson` only; no silent default to first-evaluation. */
+  protected readonly learnLessonId = computed(() => {
+    const raw = this.queryParamMap().get(LEARN_LESSON_QUERY);
+    if (!raw) {
+      return null;
+    }
+    const lesson = getLesson(raw);
+    return lesson?.kind === 'tool' ? lesson.id : null;
+  });
+  protected readonly learnHint = computed(() => {
+    const lessonId = this.learnLessonId();
+    if (!this.fromLearn() || !lessonId) {
+      return null;
+    }
+    return loadWalkthroughContent(lessonId).handoffCopy?.createPageHint ?? null;
+  });
+  protected readonly learnLabRoute = computed(() => {
+    const lessonId = this.learnLessonId();
+    if (!lessonId) {
+      return '/learn';
+    }
+    return getLesson(lessonId)?.route ?? '/learn';
+  });
+  protected readonly learnCreateError = signal<string | null>(null);
   protected readonly templates = this.templateService.templates;
   /** Rubric from last applied template — form DTO does not carry criteriaMode/criteria. */
   private readonly appliedTemplateRubric = signal<AppliedTemplateRubric | null>(null);
@@ -219,12 +247,17 @@ export class CreateEvaluationPage {
   }
 
   protected onSubmit(value: EvaluationFormValue): void {
+    this.learnCreateError.set(null);
     void this.createEvaluation(value)
       .then((created) => {
         this.recordLearnHandoff(created.id);
         void this.router.navigate(['/evaluations', created.id, 'edit']);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (this.fromLearn()) {
+          this.learnCreateError.set('Could not create the evaluation for the Learn lab. Try again.');
+        }
+      });
   }
 
   protected onGeneratePrompt(): Promise<void> {
@@ -411,14 +444,19 @@ export class CreateEvaluationPage {
       : this.stubCreateValue();
 
     this.creating.set(true);
+    this.learnCreateError.set(null);
 
     return this.createEvaluation(value)
       .then((created) => {
         this.automationSessionKey.update((key) => key + 1);
         this.createdEvaluationId.set(created.id);
-        this.recordLearnHandoff(created.id);
+        // Handoff is recorded in applyAutomationResult when automation finishes.
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (this.fromLearn()) {
+          this.learnCreateError.set('Could not start automation for the Learn lab. Try again.');
+        }
+      })
       .finally(() => {
         this.creating.set(false);
       });
@@ -521,6 +559,10 @@ export class CreateEvaluationPage {
     if (!this.fromLearn()) {
       return;
     }
-    this.learnHandoff.recordEvaluation(evaluationId);
+    const lessonId = this.learnLessonId();
+    if (!lessonId) {
+      return;
+    }
+    this.learnHandoff.recordEvaluation(evaluationId, lessonId);
   }
 }

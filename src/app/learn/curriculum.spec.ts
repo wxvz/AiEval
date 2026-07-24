@@ -29,66 +29,73 @@ describe('curriculum', () => {
       'what-is-a-dataset',
       'train-vs-test',
       'loss-and-updates',
+      'learning-rate',
       'bias-and-weights',
       'activation-functions',
+      'softmax-and-distributions',
     ]);
   });
 
-  it('orders the new Foundation lessons after the neural-network lab', () => {
+  it('keeps the neural spine after the neural-network lab without trees/RL/GANs', () => {
     const foundationIds = getLiveLessons()
       .filter((lesson) => lesson.trackId === 'foundation')
       .map((lesson) => lesson.id);
     const nnIndex = foundationIds.indexOf('neural-network-lab');
-    expect(foundationIds.slice(nnIndex, nnIndex + 5)).toEqual([
+    expect(foundationIds.slice(nnIndex)).toEqual([
       'neural-network-lab',
+      'embeddings-and-representations',
       'data-literacy',
-      'decision-trees',
-      'decision-trees-lab',
       'deep-learning-approaches',
+      'tokenization-inside-models',
     ]);
-    expect(getLesson('decision-trees')?.prerequisites).toEqual(['data-literacy']);
-    expect(getLesson('decision-trees-lab')?.prerequisites).toEqual(['decision-trees']);
-    expect(getLesson('deep-learning-approaches')?.prerequisites).toEqual(['decision-trees-lab']);
+    expect(getLesson('deep-learning-approaches')?.prerequisites).toEqual(['data-literacy']);
+    expect(getLesson('prompts-as-instructions')?.prerequisites).toEqual(['tokenization-inside-models']);
   });
 
-  it('keeps optional labs off the hub track list', () => {
+  it('keeps optional labs and demoted branches off the hub track list', () => {
     const hubIds = getHubLessonsForTrack('foundation').map((lesson) => lesson.id);
     expect(hubIds).toEqual([
       'learning-from-examples',
       'what-is-a-dataset',
       'train-vs-test',
       'loss-and-updates',
+      'learning-rate',
       'bias-and-weights',
       'activation-functions',
+      'softmax-and-distributions',
       'neural-network-lab',
+      'embeddings-and-representations',
       'data-literacy',
-      'decision-trees',
-      'decision-trees-lab',
       'deep-learning-approaches',
-      'reinforcement-learning',
-      'reinforcement-learning-lab',
-      'generative-adversarial-networks',
+      'tokenization-inside-models',
+      'residual-connections',
     ]);
+    expect(hubIds).not.toContain('decision-trees');
+    expect(hubIds).not.toContain('reinforcement-learning');
+    expect(hubIds).not.toContain('generative-adversarial-networks');
     expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('train-vs-test-lab');
-    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('loss-and-updates-lab');
-    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('bias-and-weights-lab');
-    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('activation-functions-lab');
-    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('transformers-lab');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('decision-trees');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('reinforcement-learning-lab');
   });
 
-  it('keeps decision-trees and reinforcement-learning labs on the hub (required)', () => {
-    expect(getLesson('decision-trees-lab')?.optional).toBeFalsy();
-    expect(getLesson('reinforcement-learning-lab')?.optional).toBeFalsy();
-    expect(getLesson('decision-trees-lab')?.route).toBe('/learn/labs/decision-trees');
-    expect(getLesson('reinforcement-learning-lab')?.route).toBe('/learn/labs/reinforcement-learning');
-    expect(getLesson('generative-adversarial-networks')?.prerequisites).toEqual([
+  it('demotes trees, RL and GANs to optional side branches', () => {
+    expect(getLesson('decision-trees')?.optional).toBe(true);
+    expect(getLesson('decision-trees')?.parentLessonId).toBe('data-literacy');
+    expect(getLesson('decision-trees-lab')?.optional).toBe(true);
+    expect(getLesson('reinforcement-learning')?.optional).toBe(true);
+    expect(getLesson('reinforcement-learning')?.parentLessonId).toBe('deep-learning-approaches');
+    expect(getLesson('reinforcement-learning-lab')?.optional).toBe(true);
+    expect(getLesson('generative-adversarial-networks')?.optional).toBe(true);
+    expect(getLesson('generative-adversarial-networks')?.parentLessonId).toBe(
       'reinforcement-learning-lab',
-    ]);
+    );
   });
 
   it('links optional labs to parent read lessons', () => {
     expect(getOptionalLabForLesson('train-vs-test')?.route).toBe('/learn/labs/train-vs-test');
     expect(getOptionalLabForLesson('loss-and-updates')?.route).toBe('/learn/labs/loss-and-updates');
+    expect(getOptionalLabForLesson('learning-rate')?.route).toBe('/learn/labs/learning-rate');
+    expect(getOptionalLabForLesson('softmax-and-distributions')?.route).toBe('/learn/labs/softmax');
     expect(getOptionalLabForLesson('semantic-memory')?.route).toBe('/learn/labs/semantic-memory');
     expect(getOptionalLabForLesson('controlling-generation')?.route).toBe('/learn/labs/controlling-generation');
     expect(getOptionalLabForLesson('structured-outputs-for-judges')?.route).toBe('/learn/labs/judge-json');
@@ -98,6 +105,8 @@ describe('curriculum', () => {
     expect(getOptionalLabForLesson('activation-functions')?.route).toBe('/learn/labs/activation-functions');
     expect(getOptionalLabForLesson('comparing-answers')?.route).toBe('/learn/labs/comparing-answers');
     expect(getOptionalLabForLesson('rubrics-and-criteria')?.route).toBe('/learn/labs/rubrics-and-criteria');
+    expect(getOptionalLabForLesson('data-literacy')?.id).toBe('decision-trees');
+    expect(getOptionalLabForLesson('deep-learning-approaches')?.id).toBe('reinforcement-learning');
   });
 
   it('keeps new optional labs off the hub track lists', () => {
@@ -105,6 +114,8 @@ describe('curriculum', () => {
     const llmIds = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
     expect(foundationIds).not.toContain('learning-from-examples-lab');
     expect(foundationIds).not.toContain('what-is-a-dataset-lab');
+    expect(foundationIds).not.toContain('learning-rate-lab');
+    expect(foundationIds).not.toContain('softmax-and-distributions-lab');
     expect(llmIds).not.toContain('comparing-answers-lab');
     expect(llmIds).not.toContain('rubrics-and-criteria-lab');
     expect(getLesson('comparing-answers-lab')?.optional).toBe(true);
@@ -148,7 +159,7 @@ describe('curriculum', () => {
     ]);
   });
 
-  it('orders retrieval labs before first-evaluation-lab', () => {
+  it('orders retrieval labs before outside practice and harness labs', () => {
     const live = getLiveLessons();
     const evalLabIndex = live.findIndex((lesson) => lesson.id === 'first-evaluation-lab');
     const llmSlice = live
@@ -166,6 +177,7 @@ describe('curriculum', () => {
       'semantic-search-lab',
       'rag-playground-lab',
       'faithfulness-and-hallucinations',
+      'outside-eval-practice',
     ]);
   });
 
@@ -173,7 +185,9 @@ describe('curriculum', () => {
     expect(getLesson('semantic-search-lab')?.route).toBe('/learn/labs/semantic-search');
     expect(getLesson('rag-playground-lab')?.route).toBe('/learn/labs/rag-playground');
     expect(getLesson('semantic-search-lab')?.prerequisites).toEqual(['semantic-memory']);
-    expect(getLesson('first-evaluation-lab')?.prerequisites).toEqual(['faithfulness-and-hallucinations']);
+    expect(getLesson('first-evaluation-lab')?.prerequisites).toEqual(['outside-eval-practice']);
+    expect(getLesson('support-bot-decision-lab')?.prerequisites).toEqual(['first-evaluation-lab']);
+    expect(getLesson('regression-evals')?.prerequisites).toEqual(['support-bot-decision-lab']);
     expect(getLesson('automation-and-judges')?.prerequisites).toEqual(['regression-evals']);
     expect(getLesson('comparing-answers')?.prerequisites).toEqual(['controlling-generation']);
   });
@@ -223,10 +237,11 @@ describe('curriculum', () => {
     expect(getLesson('building-eval-harnesses')?.prerequisites).toEqual(['production-concerns']);
   });
 
-  it('places activation-functions between bias-and-weights and the neural network lab', () => {
-    expect(getLesson('bias-and-weights')?.prerequisites).toEqual(['loss-and-updates']);
+  it('places activation-functions between bias-and-weights and softmax', () => {
+    expect(getLesson('bias-and-weights')?.prerequisites).toEqual(['learning-rate']);
     expect(getLesson('activation-functions')?.prerequisites).toEqual(['bias-and-weights']);
-    expect(getLesson('neural-network-lab')?.prerequisites).toEqual(['activation-functions']);
+    expect(getLesson('softmax-and-distributions')?.prerequisites).toEqual(['activation-functions']);
+    expect(getLesson('neural-network-lab')?.prerequisites).toEqual(['softmax-and-distributions']);
     expect(getOptionalLabForLesson('bias-and-weights')?.id).toBe('bias-and-weights-lab');
     expect(getOptionalLabForLesson('activation-functions')?.id).toBe('activation-functions-lab');
     expect(getOptionalLabForLesson('transformers-overview')?.id).toBe('transformers-lab');

@@ -28,13 +28,13 @@
         role="status"
       >
         <div class="flex-grow-1">
-          <strong>Learn lab.</strong> {{ learnBannerCopy }}
+          <strong>Learn lab.</strong> {{ learnBannerCopy() }}
           @if (highlightedEvaluationId(); as evalId) {
             <a class="alert-link ms-1" [routerLink]="['/evaluations', evalId, 'compare']">
               Compare answers
             </a>
           }
-          <a routerLink="/learn/labs/first-evaluation" class="alert-link ms-1">Back to lab</a>
+          <a [routerLink]="learnLabRoute()" class="alert-link ms-1">Back to lab</a>
         </div>
         <button
           type="button"

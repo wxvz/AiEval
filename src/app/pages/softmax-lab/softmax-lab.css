@@ -1,0 +1,4 @@
+/* Softmax lab uses shared learn-lab styles from global CSS. */
+:host {
+  display: contents;
+}

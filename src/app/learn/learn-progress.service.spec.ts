@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { LearnHandoffService } from './learn-handoff.service';
 import { LearnProgressService } from './learn-progress.service';
 
 describe('LearnProgressService', () => {
@@ -40,5 +41,16 @@ describe('LearnProgressService', () => {
     expect(service.canMarkComplete({ id: 'neural-network-lab', kind: 'interactive' } as never)).toBe(
       true,
     );
+  });
+
+  it('requires a handoff evaluation before marking a tool walkthrough complete', () => {
+    const handoff = TestBed.inject(LearnHandoffService);
+    const tool = {
+      id: 'first-evaluation-lab',
+      kind: 'tool',
+    } as never;
+    expect(service.canMarkComplete(tool)).toBe(false);
+    handoff.recordEvaluation('eval-1', 'first-evaluation-lab');
+    expect(service.canMarkComplete(tool)).toBe(true);
   });
 });

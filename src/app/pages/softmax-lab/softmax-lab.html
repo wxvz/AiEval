@@ -1,0 +1,89 @@
+<app-page-shell>
+  <main shellMain>
+    <p class="text-muted small mb-2">Optional lab</p>
+    <h1 class="h3 mb-3">Softmax</h1>
+    <p class="lead mb-3">
+      Adjust three raw scores and watch
+      <app-nn-term-hint term="softmax" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      turn them into an
+      <app-nn-term-hint term="output" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
+      distribution that sums to one.
+    </p>
+    @if (parentMeta) {
+      <p class="text-muted small mb-3">
+        Optional practice for
+        <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>
+        : make Dog the clear probability winner.
+      </p>
+    }
+    <div class="alert alert-light border mb-3" role="note">
+      Teaching shortcut: three class scores only. Production vocabularies have tens of thousands of
+      next-token options, with the same compete-and-normalize idea.
+    </div>
+    <p class="text-muted small mb-4">
+      Tip: raise the Dog score until its probability is largest and at least about 0.45.
+    </p>
+
+    @if (solved()) {
+      <div class="alert alert-success mb-4" role="status">
+        Solved: Dog owns the largest share of the distribution.
+      </div>
+    }
+
+    <div class="card mb-4">
+      <div class="card-body">
+        @for (label of labels; track label; let i = $index) {
+          <label class="form-label" [attr.for]="'softmax-score-' + i">{{ label }} score</label>
+          <input
+            class="form-range mb-2"
+            type="range"
+            min="-3"
+            max="3"
+            step="0.1"
+            [id]="'softmax-score-' + i"
+            [ngModel]="scores()[i]"
+            (ngModelChange)="setScore(i, $event)"
+          />
+          <p class="small text-muted mb-3">
+            {{ label }}: score {{ scores()[i] | number: '1.1-1' }} → probability
+            {{ probabilities()[i] | number: '1.0-3' }}
+          </p>
+          <div class="progress mb-3" style="height: 0.75rem">
+            <div
+              class="progress-bar"
+              role="progressbar"
+              [style.width.%]="probabilities()[i]! * 100"
+              [attr.aria-valuenow]="probabilities()[i]! * 100"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <section class="learn-lab-faq mb-4" aria-label="Common questions">
+      <h2 class="h6">Common questions</h2>
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Why must probabilities sum to one?</summary>
+        <p class="learn-lab-faq__answer">
+          Softmax models a single choice among options. The shares have to form a complete distribution.
+        </p>
+      </details>
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">Is this the same as the API temperature dial?</summary>
+        <p class="learn-lab-faq__answer">
+          Related maths, different layer. Softmax lives inside probability conversion. Product temperature is an outside sampling control you will lock for fair evals later.
+        </p>
+      </details>
+    </section>
+  </main>
+
+  <app-learn-lab-nav
+    shellRight
+    [lesson]="labMeta"
+    [parent]="parentMeta"
+    [completed]="labCompleted()"
+    (complete)="markLabComplete()"
+  />
+</app-page-shell>

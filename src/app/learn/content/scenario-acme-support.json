@@ -1,0 +1,78 @@
+{
+  "brief": "Acme wants a support bot that answers only from policy docs about refunds, shipping and plan prices. Your job on the outside is to judge answers with a golden set and a rubric, not with vibes.",
+  "prompts": {
+    "vague": "Help the customer with their issue.",
+    "constrained": "You are Acme support. Answer using only the provided policy context. Use short plain sentences. If the policy is silent, say you do not have that information. Never invent prices, windows or coverage."
+  },
+  "goldenQuestions": [
+    {
+      "id": "refund-14",
+      "question": "I bought headphones 10 days ago. Can I get a full refund?",
+      "failureMode": "wrong-window"
+    },
+    {
+      "id": "eu-returns",
+      "question": "What is the return window for EU customers?",
+      "failureMode": "missing-policy"
+    },
+    {
+      "id": "angry-refund",
+      "question": "This is ridiculous. Refund me now or I will sue.",
+      "failureMode": "tone"
+    },
+    {
+      "id": "plan-price",
+      "question": "How much is Plan Basic per month?",
+      "failureMode": "price-hallucination"
+    },
+    {
+      "id": "shipping-sla",
+      "question": "When will my standard order arrive?",
+      "failureMode": "shipping-sla"
+    },
+    {
+      "id": "not-covered",
+      "question": "Do you cover accidental damage on day 40?",
+      "failureMode": "over-claim"
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accuracy",
+      "name": "Accuracy",
+      "anchors": {
+        "1": "Contradicts policy or invents facts",
+        "3": "Mostly right with a minor slip",
+        "5": "Matches policy facts exactly"
+      }
+    },
+    {
+      "id": "tone",
+      "name": "Tone",
+      "anchors": {
+        "1": "Rude, sarcastic or escalating",
+        "3": "Neutral but stiff",
+        "5": "Calm, clear and respectful"
+      }
+    },
+    {
+      "id": "faithfulness",
+      "name": "Faithfulness",
+      "anchors": {
+        "1": "Adds claims absent from context",
+        "3": "Mostly grounded with a soft extra",
+        "5": "Every claim supported or clearly refused"
+      }
+    }
+  ],
+  "cannedAnswers": {
+    "strong": "Plan Basic is $9 per month according to the policy context. If you need another plan's price, ask and I will check the same docs.",
+    "weak": "Plan Basic is probably around $15 and you can always get a refund whenever you want."
+  },
+  "policySnippets": {
+    "refund": "Acme refunds unused items within 14 days of delivery with proof of purchase.",
+    "eu": "EU return windows follow local consumer rules. If policy text is silent on a country, say you do not have that information.",
+    "price": "Plan Basic costs $9 per month.",
+    "shipping": "Standard shipping arrives in 3 to 5 business days inside the service region."
+  }
+}

@@ -17,6 +17,7 @@ import { LeaveDuringAutomationComponent } from '../../components/leave-during-au
 import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-badge';
 import { CriteriaMode } from '../../models';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { getLesson } from '../../learn/curriculum';
 import { EvaluationService } from '../../services/evaluation.service';
 import { TemplateService } from '../../services/template.service';
 
@@ -52,7 +53,14 @@ export class EditEvaluationPage {
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
   protected readonly showLearnBackLink = computed(() => {
     this.learnHandoff.highlightedEvaluationId();
-    return this.learnHandoff.highlightedEvaluationId() === this.evaluationId;
+    return this.learnHandoff.lessonIdForEvaluation(this.evaluationId) !== null;
+  });
+  protected readonly learnLabRoute = computed(() => {
+    const lessonId = this.learnHandoff.lessonIdForEvaluation(this.evaluationId);
+    if (!lessonId) {
+      return '/learn';
+    }
+    return getLesson(lessonId)?.route ?? '/learn';
   });
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {

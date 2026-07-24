@@ -1,6 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 
 import { getKnownLessonIds, type LearnLessonMeta } from './curriculum';
+import { LearnHandoffService } from './learn-handoff.service';
 import { lessonHasBody } from './learn-content';
 import { walkthroughHasSteps } from './walkthrough-content';
 
@@ -9,6 +10,7 @@ const STORAGE_KEY = 'aieval-learn-progress';
 @Injectable({ providedIn: 'root' })
 export class LearnProgressService {
   private readonly revision = signal(0);
+  private readonly handoff = inject(LearnHandoffService);
 
   completedIds(): Set<string> {
     this.revision();
@@ -40,7 +42,9 @@ export class LearnProgressService {
       return true;
     }
     if (lesson.kind === 'tool') {
-      return walkthroughHasSteps();
+      // Require a real AiEval handoff for this lab, not only step JSON.
+      this.handoff.highlightedEvaluationId();
+      return walkthroughHasSteps(lesson.id) && this.handoff.hasHandoffForLesson(lesson.id);
     }
     return lessonHasBody(lesson.id);
   }

@@ -10,11 +10,15 @@
       <app-token-usage-badge [usage]="displayTokenUsage()" [live]="automating()" />
     </div>
 
-    @if (fromLearn() && learnHint) {
+    @if (fromLearn() && learnHint()) {
       <div class="alert alert-info mb-3" role="status">
-        <strong>Learn lab.</strong> {{ learnHint }}
-        <a routerLink="/learn/labs/first-evaluation" class="alert-link ms-1">Back to lab</a>
+        <strong>Learn lab.</strong> {{ learnHint() }}
+        <a [routerLink]="learnLabRoute()" class="alert-link ms-1">Back to lab</a>
       </div>
+    }
+
+    @if (learnCreateError(); as createError) {
+      <div class="alert alert-danger mb-3" role="alert">{{ createError }}</div>
     }
 
     <p class="text-muted small mb-3">

@@ -48,7 +48,7 @@ describe('DashboardPage', () => {
   });
 
   it('shows learn banner when handoff is active', () => {
-    learnHandoff.recordEvaluation('eval-learn');
+    learnHandoff.recordEvaluation('eval-learn', 'first-evaluation-lab');
     evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-learn')]);
     evaluationService['loadingSignal'].set(false);
     fixture.detectChanges();
@@ -59,7 +59,7 @@ describe('DashboardPage', () => {
   });
 
   it('hides learn banner after dismiss', () => {
-    learnHandoff.recordEvaluation('eval-learn');
+    learnHandoff.recordEvaluation('eval-learn', 'first-evaluation-lab');
     evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-learn')]);
     evaluationService['loadingSignal'].set(false);
     fixture.detectChanges();
@@ -72,7 +72,7 @@ describe('DashboardPage', () => {
   });
 
   it('highlights evaluation card from learn handoff', () => {
-    learnHandoff.recordEvaluation('eval-highlight');
+    learnHandoff.recordEvaluation('eval-highlight', 'first-evaluation-lab');
     evaluationService['evaluationsSignal'].set([
       sampleEvaluation('other'),
       sampleEvaluation('eval-highlight'),
@@ -88,7 +88,7 @@ describe('DashboardPage', () => {
   it('defaults to the highlighted Learn evaluation day when it is available', () => {
     const newest = sampleEvaluation('newest', new Date(2025, 5, 20, 12).toISOString());
     const highlighted = sampleEvaluation('eval-highlight', new Date(2025, 4, 10, 12).toISOString());
-    learnHandoff.recordEvaluation(highlighted.id);
+    learnHandoff.recordEvaluation(highlighted.id, 'first-evaluation-lab');
     evaluationService['evaluationsSignal'].set([newest, highlighted]);
     evaluationService['loadingSignal'].set(false);
 

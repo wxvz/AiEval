@@ -1,9 +1,9 @@
 {
-  "subtitle": "Start with Foundation, then LLM systems, then Systems & production.",
+  "subtitle": "Inside the model, then outside behavior, then the eval harness. Finish able to inspect how a model computes and to judge what it produces with evidence.",
   "toolsLabel": "AiEval: compare model answers",
   "tracks": {
-    "foundation": "Core ideas every AI engineer should have.",
-    "llm-systems": "Language models, retrieval, evaluation and agents.",
-    "systems-production": "Ship, monitor and scale AI with eval harnesses."
+    "foundation": "Inside the model: maths, activations and how data moves through the network. Side paths cover trees, rewards and GANs.",
+    "llm-systems": "Outside the model: prompts, generation behavior, retrieval and scoring answers with evidence.",
+    "systems-production": "Further out: the eval harness, automation and shipping with measurable quality."
   }
 }
