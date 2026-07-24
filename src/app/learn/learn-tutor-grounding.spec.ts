@@ -30,6 +30,33 @@ describe('learn-tutor-grounding', () => {
     expect(grounding.termHints[0]?.sense).toMatch(/sampling|random|token/i);
   });
 
+  it('hints dataset senses on the XOR dataset lab (parent lesson)', () => {
+    expect(resolveContentLessonId('what-is-a-dataset-lab')).toBe('what-is-a-dataset');
+
+    const grounding = getTutorPageGrounding('what-is-a-dataset-lab');
+    expect(grounding.lessonTitle).toBe('Build the XOR dataset');
+    expect(grounding.termHints.map((hint) => hint.term)).toEqual([
+      'dataset',
+      'input',
+      'target',
+      'labeledData',
+    ]);
+    expect(grounding.termHints[0]?.sense).toMatch(/input.?target|collection/i);
+    expect(grounding.termHints[0]?.sense).not.toMatch(/flash.?card|deck/i);
+  });
+
+  it('prefers literal dataset definition over flash-card analogy in excerpts', () => {
+    const { excerpts, sources } = getTutorExcerpts(
+      'what-is-a-dataset-lab',
+      'What is a dataset?',
+    );
+    expect(sources[0]?.route).toBe('/learn/lessons/what-is-a-dataset');
+    expect(excerpts.some((excerpt) => /collection of input-target pairs/i.test(excerpt.text))).toBe(
+      true,
+    );
+    expect(excerpts.every((excerpt) => !/whole deck of flash cards/i.test(excerpt.text))).toBe(true);
+  });
+
   it('hints semantic memory senses (not chat history)', () => {
     const grounding = getTutorPageGrounding('semantic-memory');
     expect(grounding.termHints.map((hint) => hint.term)).toEqual([

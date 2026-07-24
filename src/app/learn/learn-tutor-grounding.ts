@@ -43,6 +43,7 @@ export interface TutorExcerptResult {
 
 /** Overloaded lessons only — glossary senses the tutor must prefer on that page. */
 const LESSON_TERM_HINTS: Record<string, LearnGlossaryTerm[]> = {
+  'what-is-a-dataset': ['dataset', 'input', 'target', 'labeledData'],
   'bias-and-weights': ['bias', 'weights'],
   'deep-learning-approaches': ['inductiveBias'],
   'controlling-generation': ['temperature', 'topP', 'maxTokens'],
