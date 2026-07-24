@@ -8,11 +8,13 @@
   <button
     type="button"
     class="btn btn-primary btn-sm w-100"
-    [disabled]="completed() || completionDisabled()"
+    [disabled]="markCompleteDisabled()"
     (click)="complete.emit()"
   >
     @if (completed()) {
       Lab completed
+    } @else if (locked()) {
+      Locked
     } @else {
       Mark lab complete
     }

@@ -70,6 +70,12 @@ describe('LearnChatService', () => {
       'embedding',
     ]);
 
+    routerStub.url = '/learn/labs/softmax';
+    const softmax = service.contextFromRouter();
+    expect(softmax.lessonId).toBe('softmax-and-distributions-lab');
+    expect(softmax.lessonTitle).toBe('Softmax lab');
+    expect(softmax.lessonSummary).toBeTruthy();
+
     routerStub.url = '/learn';
     expect(service.contextFromRouter()).toEqual({
       lessonId: null,

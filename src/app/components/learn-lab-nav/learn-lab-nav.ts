@@ -1,7 +1,15 @@
-import { Component, computed, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { getAdjacentLessons, getLesson, getNavigableAdjacent, type LearnLessonMeta } from '../../learn/curriculum';
+import {
+  getAdjacentLessons,
+  getLesson,
+  getNavigableAdjacent,
+  isLessonLocked,
+  type LearnLessonMeta,
+} from '../../learn/curriculum';
+import { LearnProgressService } from '../../learn/learn-progress.service';
+import { SettingsService } from '../../services/settings.service';
 
 @Component({
   selector: 'app-learn-lab-nav',
@@ -10,11 +18,30 @@ import { getAdjacentLessons, getLesson, getNavigableAdjacent, type LearnLessonMe
   styleUrl: './learn-lab-nav.css',
 })
 export class LearnLabNav {
+  private readonly progress = inject(LearnProgressService);
+  private readonly settings = inject(SettingsService);
+
   readonly lesson = input<LearnLessonMeta | null | undefined>(null);
   readonly parent = input<LearnLessonMeta | null | undefined>(null);
   readonly completed = input(false);
   readonly completionDisabled = input(false);
   readonly complete = output<void>();
+
+  readonly locked = computed(() => {
+    this.progress.completedIds();
+    this.settings.learnUnlockAll();
+    const lesson = this.lesson();
+    if (!lesson) {
+      return false;
+    }
+    return isLessonLocked(lesson, this.progress.completedIds(), {
+      ignorePrerequisites: this.settings.learnUnlockAll(),
+    });
+  });
+
+  readonly markCompleteDisabled = computed(
+    () => this.completed() || this.locked() || this.completionDisabled(),
+  );
 
   readonly resolvedParent = computed(() => {
     const explicitParent = this.parent();

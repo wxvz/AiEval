@@ -12,6 +12,7 @@ describe('LearnWalkthroughPage', () => {
   beforeEach(async () => {
     localStorage.clear();
     sessionStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['outside-eval-practice']));
     await TestBed.configureTestingModule({
       imports: [LearnWalkthroughPage],
       providers: [

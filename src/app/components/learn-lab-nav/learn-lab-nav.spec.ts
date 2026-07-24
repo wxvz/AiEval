@@ -36,12 +36,22 @@ describe('LearnLabNav', () => {
     expect(el.querySelector('a[href="/learn/lessons/structured-outputs-for-judges"]')).toBeTruthy();
   });
 
-  it('emits completion from the sticky nav button', () => {
+  it('emits completion from the sticky nav button when unlocked', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['semantic-memory']));
     fixture.componentRef.setInput('lesson', getLesson('semantic-search-lab'));
     const emitSpy = vi.spyOn(fixture.componentInstance.complete, 'emit');
     fixture.detectChanges();
 
     (fixture.nativeElement.querySelector('button') as HTMLButtonElement).click();
     expect(emitSpy).toHaveBeenCalledOnce();
+  });
+
+  it('disables mark complete while lab prerequisites are missing', () => {
+    fixture.componentRef.setInput('lesson', getLesson('learning-rate-lab'));
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent?.trim()).toBe('Locked');
   });
 });

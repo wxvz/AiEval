@@ -9,6 +9,7 @@ describe('RagPlaygroundPage', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['semantic-search-lab']));
     await TestBed.configureTestingModule({
       imports: [RagPlaygroundPage],
       providers: [provideRouter([])],

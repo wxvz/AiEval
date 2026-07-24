@@ -982,6 +982,12 @@ export function getLesson(id: string): LearnLessonMeta | undefined {
   return LEARN_LESSONS.find((lesson) => lesson.id === id);
 }
 
+/** Resolve a curriculum lesson from a pathname (ignores query/hash; trims trailing slashes). */
+export function getLessonByRoute(pathname: string): LearnLessonMeta | undefined {
+  const route = pathname.split(/[?#]/, 2)[0].replace(/\/+$/, '') || '/';
+  return LEARN_LESSONS.find((lesson) => lesson.route === route);
+}
+
 export function getLessonsForTrack(trackId: LearnTrackId): LearnLessonMeta[] {
   return LEARN_LESSONS.filter((lesson) => lesson.trackId === trackId)
     .map((lesson, index) => ({ lesson, index }))

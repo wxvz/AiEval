@@ -3,14 +3,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { LearnHandoffService } from './learn-handoff.service';
 import { LearnProgressService } from './learn-progress.service';
+import { SettingsService } from '../services/settings.service';
 
 describe('LearnProgressService', () => {
   let service: LearnProgressService;
+  let settings: SettingsService;
 
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({});
     service = TestBed.inject(LearnProgressService);
+    settings = TestBed.inject(SettingsService);
+    settings.setLearnUnlockAll(false);
   });
 
   it('marks a known lesson complete and persists', () => {
@@ -29,6 +33,21 @@ describe('LearnProgressService', () => {
   it('does not persist unknown lesson ids on markComplete', () => {
     service.markComplete('not-a-lesson');
     expect(service.completedIds().size).toBe(0);
+  });
+
+  it('does not mark a locked lab complete until prerequisites are met', () => {
+    service.markComplete('learning-rate-lab');
+    expect(service.isComplete('learning-rate-lab')).toBe(false);
+
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-rate']));
+    service.markComplete('learning-rate-lab');
+    expect(service.isComplete('learning-rate-lab')).toBe(true);
+  });
+
+  it('allows marking a locked lab complete when unlock-all is enabled', () => {
+    settings.setLearnUnlockAll(true);
+    service.markComplete('learning-rate-lab');
+    expect(service.isComplete('learning-rate-lab')).toBe(true);
   });
 
   it('disables mark complete for read lessons without content', () => {

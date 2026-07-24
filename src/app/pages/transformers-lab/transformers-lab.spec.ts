@@ -11,6 +11,7 @@ describe('TransformersLabPage', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['transformers-overview']));
     await TestBed.configureTestingModule({
       imports: [TransformersLabPage],
       providers: [provideRouter([])],

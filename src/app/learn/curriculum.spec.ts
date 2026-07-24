@@ -4,6 +4,7 @@ import {
   getLiveLessons,
   getNextLesson,
   getLesson,
+  getLessonByRoute,
   getHubLessonsForTrack,
   getBranchSpurForLesson,
   getNavigableAdjacent,
@@ -395,6 +396,13 @@ describe('curriculum', () => {
     expect(lab).toBeTruthy();
     expect(isLessonLocked(lab!, new Set())).toBe(true);
     expect(isLessonLocked(lab!, new Set(['softmax-and-distributions']))).toBe(false);
+  });
+
+  it('resolves short lab routes to full lesson ids', () => {
+    expect(getLessonByRoute('/learn/labs/softmax')?.id).toBe('softmax-and-distributions-lab');
+    expect(getLessonByRoute('/learn/labs/softmax?x=1')?.id).toBe('softmax-and-distributions-lab');
+    expect(getLessonByRoute('/learn/labs/semantic-memory')?.id).toBe('semantic-memory-lab');
+    expect(getLessonByRoute('/learn/lessons/what-is-a-dataset')?.id).toBe('what-is-a-dataset');
   });
 
   it('ignores prerequisites when unlock option is set', () => {

@@ -115,6 +115,11 @@ describe('LearnTrackList', () => {
   });
 
   it('opens branch spur labs when prerequisites are complete', () => {
+    // Seed the lab's parent prereq so markComplete is allowed under lock gating.
+    localStorage.setItem(
+      'aieval-learn-progress',
+      JSON.stringify(['structured-outputs-for-judges']),
+    );
     const progress = TestBed.inject(LearnProgressService);
     progress.markComplete('semantic-memory');
     fixture.componentRef.setInput('trackId', 'llm-systems');

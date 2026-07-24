@@ -1,9 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 
-import { getKnownLessonIds, type LearnLessonMeta } from './curriculum';
+import { getKnownLessonIds, getLesson, isLessonLocked, type LearnLessonMeta } from './curriculum';
 import { LearnHandoffService } from './learn-handoff.service';
 import { lessonHasBody } from './learn-content';
 import { walkthroughHasSteps } from './walkthrough-content';
+import { SettingsService } from '../services/settings.service';
 
 const STORAGE_KEY = 'aieval-learn-progress';
 
@@ -11,6 +12,7 @@ const STORAGE_KEY = 'aieval-learn-progress';
 export class LearnProgressService {
   private readonly revision = signal(0);
   private readonly handoff = inject(LearnHandoffService);
+  private readonly settings = inject(SettingsService);
 
   completedIds(): Set<string> {
     this.revision();
@@ -26,7 +28,17 @@ export class LearnProgressService {
     if (!known.has(id)) {
       return;
     }
-    const next = new Set(this.readStored());
+    const lesson = getLesson(id);
+    const completed = this.readStored();
+    if (
+      lesson &&
+      isLessonLocked(lesson, completed, {
+        ignorePrerequisites: this.settings.learnUnlockAll(),
+      })
+    ) {
+      return;
+    }
+    const next = new Set(completed);
     next.add(id);
     this.writeStored(next);
     this.revision.update((value) => value + 1);

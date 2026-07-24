@@ -9,6 +9,7 @@ describe('SemanticSearchLabPage', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['semantic-memory']));
     await TestBed.configureTestingModule({
       imports: [SemanticSearchLabPage],
       providers: [provideRouter([])],
@@ -40,10 +41,10 @@ describe('SemanticSearchLabPage', () => {
     expect(button?.disabled).toBe(false);
   });
 
-  it('links back to learn hub', () => {
+  it('links back to the parent lesson from sticky nav', () => {
     const link: HTMLAnchorElement | null = fixture.nativeElement.querySelector(
-      'app-learn-lab-nav a[href="/learn"]',
+      'app-learn-lab-nav a[href="/learn/lessons/semantic-memory"]',
     );
-    expect(link?.getAttribute('href')).toBe('/learn');
+    expect(link?.getAttribute('href')).toBe('/learn/lessons/semantic-memory');
   });
 });
