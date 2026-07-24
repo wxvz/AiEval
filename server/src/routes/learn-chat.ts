@@ -76,17 +76,47 @@ export function shouldAttachLearnChatSources(message: string): boolean {
   if (!normalized) {
     return false;
   }
-  if (/\?/.test(normalized)) {
-    return true;
-  }
-  const words = normalized.split(' ');
-  if (words.length >= 4) {
-    return true;
-  }
-  // Short interrogatives / prompts without "?": "what is bias", "explain loss"
-  return /^(how|what|why|when|where|which|who|whom|whose|can|could|would|should|is|are|do|does|did|explain|tell|describe|define|compare|help)\b/i.test(
-    normalized,
-  );
+  // Strip trailing punctuation so "ok." / "thanks!" still count as social.
+  const bare = normalized.replace(/[!?.,…]+$/gu, '').trim().toLowerCase();
+  // Only suppress explicit closers/acks — short term prompts ("bias", "learning rate") keep chips.
+  const socialClosers = new Set([
+    'hi',
+    'hello',
+    'hey',
+    'hiya',
+    'yo',
+    'thanks',
+    'thank you',
+    'thank u',
+    'thx',
+    'ty',
+    'ok',
+    'okay',
+    'k',
+    'kk',
+    'cool',
+    'nice',
+    'great',
+    'awesome',
+    'perfect',
+    'got it',
+    'sounds good',
+    'makes sense',
+    'bye',
+    'goodbye',
+    'cheers',
+    'sure',
+    'yes',
+    'yep',
+    'yeah',
+    'yup',
+    'no',
+    'nope',
+    'nah',
+    'np',
+    'yw',
+  ]);
+  return !socialClosers.has(bare);
 }
 
 function wantsStream(req: Request): boolean {
@@ -350,7 +380,7 @@ function normalizeResponse(
   return {
     reply,
     sessionId,
-    // Short social turns (hi/ok/thanks) must not show lesson chips.
+    // Closers (hi/ok/thanks) must not show lesson chips; short term prompts may.
     sources: shouldAttachLearnChatSources(requestMessage) ? filtered : [],
   };
 }
