@@ -293,6 +293,84 @@ describe('curriculum', () => {
     expect(getLesson('building-eval-harnesses')?.prerequisites).toEqual(['production-concerns']);
   });
 
+  it('lists screenshot eval-gap lessons as planned stubs on the hub', () => {
+    const llmHub = getHubLessonsForTrack('llm-systems').map((lesson) => lesson.id);
+    expect(llmHub).toEqual([
+      'why-evaluation-matters',
+      'prompts-as-instructions',
+      'controlling-generation',
+      'comparing-answers',
+      'golden-test-cases',
+      'metrics-101',
+      'rubrics-and-criteria',
+      'structured-outputs-for-judges',
+      'semantic-memory',
+      'faithfulness-and-hallucinations',
+      'outside-eval-practice',
+      'error-analysis',
+      'regression-evals',
+      'statistical-significance',
+      'automation-and-judges',
+      'human-evaluation',
+      'eval-reports',
+      'evaluation-anti-patterns',
+      'transformers-overview',
+      'tool-calling',
+      'guardrails-and-safety',
+      'multi-turn-evaluation',
+      'mcp',
+      'multimodal-vector-databases',
+    ]);
+
+    const prodHub = getHubLessonsForTrack('systems-production').map((lesson) => lesson.id);
+    expect(prodHub).toEqual([
+      'production-concerns',
+      'building-eval-harnesses',
+      'data-quality-monitoring',
+      'monitoring-and-alerts',
+      'canary-and-rollout-evals',
+      'slos-for-ai-systems',
+      'scalable-ai-systems',
+    ]);
+
+    const plannedStubIds = [
+      'why-evaluation-matters',
+      'metrics-101',
+      'error-analysis',
+      'statistical-significance',
+      'human-evaluation',
+      'eval-reports',
+      'evaluation-anti-patterns',
+      'guardrails-and-safety',
+      'multi-turn-evaluation',
+      'data-quality-monitoring',
+      'monitoring-and-alerts',
+      'canary-and-rollout-evals',
+      'slos-for-ai-systems',
+    ];
+    for (const id of plannedStubIds) {
+      const lesson = getLesson(id);
+      expect(lesson?.status).toBe('planned');
+      expect(lesson?.contentFile).toBeNull();
+      expect(lesson?.kind).toBe('read');
+    }
+
+    const plannedIds = new Set(
+      LEARN_LESSONS.filter((lesson) => lesson.status === 'planned').map((lesson) => lesson.id),
+    );
+    for (const lesson of LEARN_LESSONS) {
+      if (lesson.status !== 'live') {
+        continue;
+      }
+      for (const prerequisiteId of lesson.prerequisites) {
+        expect(plannedIds.has(prerequisiteId)).toBe(false);
+      }
+    }
+
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('why-evaluation-matters');
+    expect(getLiveLessons().map((lesson) => lesson.id)).not.toContain('monitoring-and-alerts');
+  });
+
   it('places activation-functions between bias-and-weights and softmax', () => {
     expect(getLesson('bias-and-weights')?.prerequisites).toEqual(['learning-rate']);
     expect(getLesson('activation-functions')?.prerequisites).toEqual(['bias-and-weights']);
