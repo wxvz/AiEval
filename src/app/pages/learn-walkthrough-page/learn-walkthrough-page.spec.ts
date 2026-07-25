@@ -1,13 +1,19 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { DEFAULT_EVALUATION_CONFIG } from '../../models';
+import { EvaluationService } from '../../services/evaluation.service';
+import { FeedbackService } from '../../services/feedback.service';
 import { LearnWalkthroughPage } from './learn-walkthrough-page';
 
 describe('LearnWalkthroughPage', () => {
   let fixture: ComponentFixture<LearnWalkthroughPage>;
   let handoff: LearnHandoffService;
+  let evaluations: EvaluationService;
 
   beforeEach(async () => {
     localStorage.clear();
@@ -16,6 +22,10 @@ describe('LearnWalkthroughPage', () => {
     await TestBed.configureTestingModule({
       imports: [LearnWalkthroughPage],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        EvaluationService,
+        FeedbackService,
         provideRouter([
           {
             path: '**',
@@ -26,6 +36,7 @@ describe('LearnWalkthroughPage', () => {
       ],
     }).compileComponents();
     handoff = TestBed.inject(LearnHandoffService);
+    evaluations = TestBed.inject(EvaluationService);
     fixture = TestBed.createComponent(LearnWalkthroughPage);
     fixture.detectChanges();
   });
@@ -61,8 +72,22 @@ describe('LearnWalkthroughPage', () => {
     expect(button?.disabled).toBe(true);
   });
 
-  it('enables mark lab complete after handoff for this lesson', () => {
+  it('enables mark lab complete after an automated handoff for this lesson', () => {
     handoff.recordEvaluation('eval-learn', 'first-evaluation-lab');
+    evaluations['evaluationsSignal'].set([
+      {
+        id: 'eval-learn',
+        title: 'Learn eval',
+        prompt: 'Prompt',
+        criteriaMode: 'default',
+        criteria: [],
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+        answers: [],
+        automatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
     fixture.detectChanges();
     const button: HTMLButtonElement | null = fixture.nativeElement.querySelector(
       'app-learn-lab-nav button',

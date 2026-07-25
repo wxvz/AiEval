@@ -100,8 +100,15 @@ export class DashboardPage {
 
     effect(() => {
       const openCompare = this.queryParamMap().get('openCompare') === '1';
-      const evalId = this.highlightedEvaluationId();
-      if (!openCompare || !evalId) {
+      if (!openCompare) {
+        return;
+      }
+      // Resolve Compare from the requested lab — do not fall through to another lab's active handoff.
+      const lessonId = this.queryParamMap().get(LEARN_LESSON_QUERY);
+      const evalId = lessonId
+        ? this.learnHandoff.evaluationIdForLesson(lessonId)
+        : this.learnHandoff.highlightedEvaluationId();
+      if (!evalId) {
         return;
       }
       void this.router.navigate(['/evaluations', evalId, 'compare'], { replaceUrl: true });

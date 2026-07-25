@@ -667,6 +667,27 @@ describe('CreateEvaluationPage', () => {
     expect(learnHandoff.lessonId()).toBe('first-evaluation-lab');
   });
 
+  it('does not record learn handoff for a non-automated evaluation', async () => {
+    queryParamMap$.next(
+      convertToParamMap({ from: 'learn', learnLesson: 'first-evaluation-lab' }),
+    );
+    fixture.detectChanges();
+
+    page['applyAutomationResult']({
+      id: 'eval-manual',
+      title: 'Manual eval',
+      prompt: 'Prompt',
+      criteriaMode: 'default',
+      criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(learnHandoff.highlightedEvaluationId()).toBeNull();
+  });
+
   it('does not record learn handoff without from=learn', async () => {
     const created = {
       id: 'eval-plain',

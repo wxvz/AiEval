@@ -1,19 +1,29 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { DEFAULT_EVALUATION_CONFIG } from '../models';
+import { EvaluationService } from '../services/evaluation.service';
+import { FeedbackService } from '../services/feedback.service';
+import { SettingsService } from '../services/settings.service';
 import { LearnHandoffService } from './learn-handoff.service';
 import { LearnProgressService } from './learn-progress.service';
-import { SettingsService } from '../services/settings.service';
 
 describe('LearnProgressService', () => {
   let service: LearnProgressService;
   let settings: SettingsService;
+  let evaluations: EvaluationService;
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({});
+    sessionStorage.clear();
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting(), EvaluationService, FeedbackService],
+    });
     service = TestBed.inject(LearnProgressService);
     settings = TestBed.inject(SettingsService);
+    evaluations = TestBed.inject(EvaluationService);
     settings.setLearnUnlockAll(false);
   });
 
@@ -62,14 +72,51 @@ describe('LearnProgressService', () => {
     );
   });
 
-  it('requires a handoff evaluation before marking a tool walkthrough complete', () => {
+  it('requires an automated handoff evaluation before marking a tool walkthrough complete', () => {
     const handoff = TestBed.inject(LearnHandoffService);
     const tool = {
       id: 'first-evaluation-lab',
       kind: 'tool',
     } as never;
     expect(service.canMarkComplete(tool)).toBe(false);
+
     handoff.recordEvaluation('eval-1', 'first-evaluation-lab');
+    expect(service.canMarkComplete(tool)).toBe(false);
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['outside-eval-practice']));
+    service.markComplete('first-evaluation-lab');
+    expect(service.isComplete('first-evaluation-lab')).toBe(false);
+
+    evaluations['evaluationsSignal'].set([
+      {
+        id: 'eval-1',
+        title: 'Learn eval',
+        prompt: 'Prompt',
+        criteriaMode: 'default',
+        criteria: [],
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+        answers: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
+    expect(service.canMarkComplete(tool)).toBe(false);
+
+    evaluations['evaluationsSignal'].set([
+      {
+        id: 'eval-1',
+        title: 'Learn eval',
+        prompt: 'Prompt',
+        criteriaMode: 'default',
+        criteria: [],
+        evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+        answers: [],
+        automatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]);
     expect(service.canMarkComplete(tool)).toBe(true);
+    service.markComplete('first-evaluation-lab');
+    expect(service.isComplete('first-evaluation-lab')).toBe(true);
   });
 });

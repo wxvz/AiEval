@@ -4,6 +4,7 @@ import { getKnownLessonIds, getLesson, isLessonLocked, type LearnLessonMeta } fr
 import { LearnHandoffService } from './learn-handoff.service';
 import { lessonHasBody } from './learn-content';
 import { walkthroughHasSteps } from './walkthrough-content';
+import { EvaluationService } from '../services/evaluation.service';
 import { SettingsService } from '../services/settings.service';
 
 const STORAGE_KEY = 'aieval-learn-progress';
@@ -13,6 +14,7 @@ export class LearnProgressService {
   private readonly revision = signal(0);
   private readonly handoff = inject(LearnHandoffService);
   private readonly settings = inject(SettingsService);
+  private readonly evaluations = inject(EvaluationService);
 
   completedIds(): Set<string> {
     this.revision();
@@ -38,6 +40,10 @@ export class LearnProgressService {
     ) {
       return;
     }
+    // Enforce tool automation evidence (and other canMarkComplete rules) at persist time.
+    if (lesson && !this.canMarkComplete(lesson)) {
+      return;
+    }
     const next = new Set(completed);
     next.add(id);
     this.writeStored(next);
@@ -54,9 +60,17 @@ export class LearnProgressService {
       return true;
     }
     if (lesson.kind === 'tool') {
-      // Require a real AiEval handoff for this lab, not only step JSON.
+      // Require an automated run for this lab, not only a stored handoff / step JSON.
       this.handoff.highlightedEvaluationId();
-      return walkthroughHasSteps(lesson.id) && this.handoff.hasHandoffForLesson(lesson.id);
+      this.evaluations.evaluations();
+      if (!walkthroughHasSteps(lesson.id) || !this.handoff.hasHandoffForLesson(lesson.id)) {
+        return false;
+      }
+      const evaluationId = this.handoff.evaluationIdForLesson(lesson.id);
+      if (!evaluationId) {
+        return false;
+      }
+      return !!this.evaluations.getById(evaluationId)?.automatedAt;
     }
     return lessonHasBody(lesson.id);
   }

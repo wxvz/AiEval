@@ -424,7 +424,7 @@ export class CreateEvaluationPage {
 
   private applyAutomationResult(evaluation: Evaluation): void {
     this.rememberCompletedEvaluation(evaluation.id);
-    this.recordLearnHandoff(evaluation.id);
+    this.recordLearnHandoff(evaluation.id, evaluation);
     this.syncFormFromEvaluation(evaluation);
   }
 
@@ -555,12 +555,17 @@ export class CreateEvaluationPage {
     }
   }
 
-  private recordLearnHandoff(evaluationId: string): void {
+  private recordLearnHandoff(evaluationId: string, evaluation?: Evaluation): void {
     if (!this.fromLearn()) {
       return;
     }
     const lessonId = this.learnLessonId();
     if (!lessonId) {
+      return;
+    }
+    // Only automated runs unlock tool labs — manual create / cancelled status must not.
+    const resolved = evaluation ?? this.evaluationService.getById(evaluationId);
+    if (!resolved?.automatedAt) {
       return;
     }
     this.learnHandoff.recordEvaluation(evaluationId, lessonId);

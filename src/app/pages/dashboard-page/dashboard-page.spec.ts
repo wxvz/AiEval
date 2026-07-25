@@ -1,8 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DEFAULT_EVALUATION_CONFIG, Evaluation } from '../../models';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
@@ -28,9 +29,14 @@ describe('DashboardPage', () => {
   let fixture: ComponentFixture<DashboardPage>;
   let evaluationService: EvaluationService;
   let learnHandoff: LearnHandoffService;
+  let queryParamMap$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
+  let routerNavigate: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     sessionStorage.clear();
+    queryParamMap$ = new BehaviorSubject(convertToParamMap({}));
+    routerNavigate = vi.fn().mockResolvedValue(true);
+
     await TestBed.configureTestingModule({
       imports: [DashboardPage],
       providers: [
@@ -39,6 +45,19 @@ describe('DashboardPage', () => {
         provideHttpClientTesting(),
         EvaluationService,
         FeedbackService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            get snapshot() {
+              return { queryParamMap: queryParamMap$.value };
+            },
+            queryParamMap: queryParamMap$.asObservable(),
+          },
+        },
+        {
+          provide: Router,
+          useValue: { navigate: routerNavigate },
+        },
       ],
     }).compileComponents();
 
@@ -156,5 +175,37 @@ describe('DashboardPage', () => {
     const cards = fixture.nativeElement.querySelectorAll('app-evaluation-card');
     expect(cards).toHaveLength(1);
     expect(cards[0].textContent).toContain('Evaluation first-6');
+  });
+
+  it('opens Compare for the requested lab handoff, not another active lab', () => {
+    learnHandoff.recordEvaluation('eval-support', 'support-bot-decision-lab');
+    evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-support')]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    routerNavigate.mockClear();
+    queryParamMap$.next(
+      convertToParamMap({
+        from: 'learn',
+        learnLesson: 'first-evaluation-lab',
+        openCompare: '1',
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(routerNavigate).not.toHaveBeenCalled();
+
+    queryParamMap$.next(
+      convertToParamMap({
+        from: 'learn',
+        learnLesson: 'support-bot-decision-lab',
+        openCompare: '1',
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(routerNavigate).toHaveBeenCalledWith(['/evaluations', 'eval-support', 'compare'], {
+      replaceUrl: true,
+    });
   });
 });
