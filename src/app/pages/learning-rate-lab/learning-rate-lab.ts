@@ -29,6 +29,8 @@ export class LearningRateLabPage {
   readonly rateValues = LEARNING_RATE_VALUES;
 
   readonly selected = signal<LearningRateChoice>('medium');
+  /** Rates the learner has explicitly selected (not just the default view). */
+  readonly inspectedRates = signal<ReadonlySet<LearningRateChoice>>(new Set());
   readonly openTermId = signal<string | null>(null);
 
   readonly labCompleted = computed(() => {
@@ -48,6 +50,11 @@ export class LearningRateLabPage {
   });
 
   readonly solved = computed(() => {
+    const inspected = this.inspectedRates();
+    // Require comparing medium vs huge before showing success (default view alone is not enough).
+    if (!inspected.has('medium') || !inspected.has('huge')) {
+      return false;
+    }
     const { mediumFinal, hugeFinal } = this.comparisons();
     return isLearningRateLabSolved(mediumFinal, hugeFinal);
   });
@@ -58,6 +65,7 @@ export class LearningRateLabPage {
 
   selectRate(rate: LearningRateChoice): void {
     this.selected.set(rate);
+    this.inspectedRates.update((prev) => new Set([...prev, rate]));
   }
 
   markLabComplete(): void {
