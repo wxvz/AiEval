@@ -1,9 +1,11 @@
 /* Design tokens – light mode (default): cool slate + steel blue */
 :root,
 [data-bs-theme='light'] {
-  --aieval-page-bg: #f1f5f9;
+  color-scheme: light;
+  --aieval-page-bg: #e8eef5;
   --aieval-surface: #ffffff;
-  --aieval-border: #d8e0ea;
+  --aieval-border: #b8c4d4;
+  --aieval-divider: #9aabbf;
   --aieval-shadow: 0 1px 2px rgb(15 23 42 / 5%), 0 1px 3px rgb(15 23 42 / 4%);
   --aieval-shadow-hover: 0 2px 6px rgb(15 23 42 / 8%), 0 4px 12px rgb(15 23 42 / 5%);
   --aieval-primary: #1e4e8c;
@@ -11,7 +13,10 @@
   --aieval-primary-rgb: 30, 78, 140;
   --aieval-radius: 0.5rem;
   --aieval-ink: #0f172a;
-  --aieval-muted: #64748b;
+  --aieval-muted: #526379;
+  --aieval-rail-width-expanded: 15rem;
+  --aieval-rail-width: var(--aieval-rail-width-expanded);
+  --aieval-rail-width-collapsed: 3.75rem;
 
   --bs-font-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --bs-body-font-family: var(--bs-font-sans-serif);
@@ -43,9 +48,11 @@
 
 /* Dark: near-black page, elevated charcoal surfaces, brighter steel blue */
 [data-bs-theme='dark'] {
+  color-scheme: dark;
   --aieval-page-bg: #0b1220;
   --aieval-surface: #151d2e;
-  --aieval-border: #2a3548;
+  --aieval-border: #3a4860;
+  --aieval-divider: #4a5a74;
   --aieval-shadow: 0 1px 2px rgb(0 0 0 / 35%), 0 2px 8px rgb(11 18 32 / 45%);
   --aieval-shadow-hover: 0 2px 8px rgb(0 0 0 / 45%), 0 6px 16px rgb(11 18 32 / 55%);
   --aieval-primary: #6b9fd4;
@@ -53,9 +60,12 @@
   --aieval-primary-rgb: 107, 159, 212;
   --aieval-ink: #e8eef6;
   --aieval-muted: #94a3b8;
+  --aieval-rail-width-expanded: 15rem;
+  --aieval-rail-width: var(--aieval-rail-width-expanded);
+  --aieval-rail-width-collapsed: 3.75rem;
 
   --bs-body-bg: var(--aieval-page-bg);
-  --bs-body-color: #c5d0de;
+  --bs-body-color: var(--aieval-ink);
   --bs-secondary-color: var(--aieval-muted);
   --bs-primary: var(--aieval-primary);
   --bs-primary-rgb: var(--aieval-primary-rgb);
@@ -74,6 +84,17 @@
   --aieval-term-bg-open: rgb(107 159 212 / 20%);
   --aieval-term-popover-border: rgb(107 159 212 / 28%);
   --aieval-term-popover-accent: var(--aieval-primary);
+}
+
+html.app-rail-collapsed {
+  --aieval-rail-width: var(--aieval-rail-width-collapsed);
+}
+
+/* Collapse is desktop-only; keep the mobile drawer at full rail width. */
+@media (max-width: 991.98px) {
+  html.app-rail-collapsed {
+    --aieval-rail-width: var(--aieval-rail-width-expanded);
+  }
 }
 
 body {
@@ -116,11 +137,10 @@ body {
 }
 
 /*
- * Buttons — soft “tint” primary (not solid Bootstrap blocks),
- * ghost outlines, taller padding so CTAs read differently at a glance.
+ * Buttons — solid primary CTAs, bordered outlines, tighter radius (L-shell / Learn theory).
  */
 .btn {
-  --bs-btn-border-radius: 0.625rem;
+  --bs-btn-border-radius: 0.5rem;
   --bs-btn-padding-x: 1.15rem;
   --bs-btn-padding-y: 0.55rem;
   font-weight: 600;
@@ -135,7 +155,7 @@ body {
 }
 
 .btn-sm {
-  --bs-btn-border-radius: 0.5rem;
+  --bs-btn-border-radius: 0.375rem;
   --bs-btn-padding-x: 0.85rem;
   --bs-btn-padding-y: 0.35rem;
   font-weight: 600;
@@ -155,21 +175,20 @@ body {
   text-underline-offset: 0.15em;
 }
 
-/* Light primary: steel tint fill + steel label (not a solid navy slab) */
 :root .btn-primary,
 [data-bs-theme='light'] .btn-primary {
-  --bs-btn-color: var(--aieval-primary-hover);
-  --bs-btn-bg: color-mix(in srgb, var(--aieval-primary) 14%, var(--aieval-surface));
-  --bs-btn-border-color: color-mix(in srgb, var(--aieval-primary) 28%, var(--aieval-border));
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--aieval-primary);
+  --bs-btn-border-color: var(--aieval-primary);
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: var(--aieval-primary);
-  --bs-btn-hover-border-color: var(--aieval-primary);
+  --bs-btn-hover-bg: var(--aieval-primary-hover);
+  --bs-btn-hover-border-color: var(--aieval-primary-hover);
   --bs-btn-active-color: #fff;
   --bs-btn-active-bg: var(--aieval-primary-hover);
   --bs-btn-active-border-color: var(--aieval-primary-hover);
-  --bs-btn-disabled-color: var(--aieval-primary);
-  --bs-btn-disabled-bg: color-mix(in srgb, var(--aieval-primary) 10%, var(--aieval-surface));
-  --bs-btn-disabled-border-color: var(--aieval-border);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: color-mix(in srgb, var(--aieval-primary) 55%, var(--aieval-border));
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--aieval-primary) 55%, var(--aieval-border));
   --bs-btn-focus-shadow-rgb: var(--aieval-primary-rgb);
 }
 
@@ -190,31 +209,34 @@ body {
 :root .btn-outline-primary,
 [data-bs-theme='light'] .btn-outline-primary {
   --bs-btn-color: var(--aieval-primary);
-  --bs-btn-bg: transparent;
-  --bs-btn-border-color: transparent;
+  --bs-btn-bg: var(--aieval-surface);
+  --bs-btn-border-color: color-mix(in srgb, var(--aieval-primary) 45%, var(--aieval-border));
   --bs-btn-hover-color: var(--aieval-primary-hover);
   --bs-btn-hover-bg: color-mix(in srgb, var(--aieval-primary) 10%, var(--aieval-surface));
-  --bs-btn-hover-border-color: transparent;
+  --bs-btn-hover-border-color: var(--aieval-primary);
   --bs-btn-active-color: var(--aieval-primary-hover);
   --bs-btn-active-bg: color-mix(in srgb, var(--aieval-primary) 16%, var(--aieval-surface));
-  --bs-btn-active-border-color: transparent;
+  --bs-btn-active-border-color: var(--aieval-primary-hover);
   --bs-btn-disabled-color: var(--aieval-muted);
-  --bs-btn-disabled-border-color: transparent;
+  --bs-btn-disabled-bg: var(--aieval-surface);
+  --bs-btn-disabled-border-color: var(--aieval-border);
   --bs-btn-focus-shadow-rgb: var(--aieval-primary-rgb);
 }
 
 :root .btn-outline-secondary,
 [data-bs-theme='light'] .btn-outline-secondary,
 [data-bs-theme='dark'] .btn-outline-secondary {
-  --bs-btn-color: var(--aieval-muted);
-  --bs-btn-bg: transparent;
-  --bs-btn-border-color: transparent;
+  --bs-btn-color: var(--aieval-ink);
+  --bs-btn-bg: var(--aieval-surface);
+  --bs-btn-border-color: var(--aieval-border);
   --bs-btn-hover-color: var(--aieval-ink);
   --bs-btn-hover-bg: color-mix(in srgb, var(--aieval-page-bg) 70%, var(--aieval-border));
-  --bs-btn-hover-border-color: transparent;
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--aieval-border) 80%, var(--aieval-muted));
   --bs-btn-active-color: var(--aieval-ink);
   --bs-btn-active-bg: color-mix(in srgb, var(--aieval-primary) 8%, var(--aieval-surface));
-  --bs-btn-active-border-color: transparent;
+  --bs-btn-active-border-color: var(--aieval-border);
+  --bs-btn-disabled-color: var(--aieval-muted);
+  --bs-btn-disabled-border-color: var(--aieval-border);
   --bs-btn-focus-shadow-rgb: var(--aieval-primary-rgb);
 }
 
@@ -222,21 +244,18 @@ body {
 [data-bs-theme='light'] .btn-outline-danger,
 [data-bs-theme='dark'] .btn-outline-danger {
   --bs-btn-color: var(--bs-danger);
-  --bs-btn-bg: transparent;
-  --bs-btn-border-color: transparent;
+  --bs-btn-bg: var(--aieval-surface);
+  --bs-btn-border-color: color-mix(in srgb, var(--bs-danger) 45%, var(--aieval-border));
   --bs-btn-hover-color: var(--bs-danger);
-  --bs-btn-hover-bg: color-mix(in srgb, var(--bs-danger) 12%, transparent);
-  --bs-btn-hover-border-color: transparent;
+  --bs-btn-hover-bg: color-mix(in srgb, var(--bs-danger) 12%, var(--aieval-surface));
+  --bs-btn-hover-border-color: var(--bs-danger);
   --bs-btn-active-color: var(--bs-danger);
-  --bs-btn-active-bg: color-mix(in srgb, var(--bs-danger) 18%, transparent);
-  --bs-btn-active-border-color: transparent;
+  --bs-btn-active-bg: color-mix(in srgb, var(--bs-danger) 18%, var(--aieval-surface));
+  --bs-btn-active-border-color: var(--bs-danger);
   --bs-btn-focus-shadow-rgb: 220, 53, 69;
 }
 
-/* Settings segmented controls keep a visible border */
 .settings-aside__segmented .btn-outline-primary {
-  --bs-btn-border-color: var(--aieval-border);
-  --bs-btn-hover-border-color: color-mix(in srgb, var(--aieval-primary) 45%, var(--aieval-border));
   border-radius: var(--aieval-radius) !important;
 }
 
@@ -254,20 +273,19 @@ body {
   box-shadow: none;
 }
 
-/* Dark primary: soft steel wash → solid on hover */
 [data-bs-theme='dark'] .btn-primary {
-  --bs-btn-color: var(--aieval-primary-hover);
-  --bs-btn-bg: color-mix(in srgb, var(--aieval-primary) 18%, var(--aieval-surface));
-  --bs-btn-border-color: color-mix(in srgb, var(--aieval-primary) 35%, var(--aieval-border));
+  --bs-btn-color: #0b1220;
+  --bs-btn-bg: var(--aieval-primary);
+  --bs-btn-border-color: var(--aieval-primary);
   --bs-btn-hover-color: #0b1220;
-  --bs-btn-hover-bg: var(--aieval-primary);
-  --bs-btn-hover-border-color: var(--aieval-primary);
+  --bs-btn-hover-bg: var(--aieval-primary-hover);
+  --bs-btn-hover-border-color: var(--aieval-primary-hover);
   --bs-btn-active-color: #0b1220;
   --bs-btn-active-bg: var(--aieval-primary-hover);
   --bs-btn-active-border-color: var(--aieval-primary-hover);
-  --bs-btn-disabled-color: var(--aieval-primary);
-  --bs-btn-disabled-bg: color-mix(in srgb, var(--aieval-primary) 12%, var(--aieval-surface));
-  --bs-btn-disabled-border-color: var(--aieval-border);
+  --bs-btn-disabled-color: #0b1220;
+  --bs-btn-disabled-bg: color-mix(in srgb, var(--aieval-primary) 45%, var(--aieval-border));
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--aieval-primary) 45%, var(--aieval-border));
   --bs-btn-focus-shadow-rgb: var(--aieval-primary-rgb);
 }
 
@@ -286,16 +304,17 @@ body {
 
 [data-bs-theme='dark'] .btn-outline-primary {
   --bs-btn-color: var(--aieval-primary);
-  --bs-btn-bg: transparent;
-  --bs-btn-border-color: transparent;
+  --bs-btn-bg: var(--aieval-surface);
+  --bs-btn-border-color: color-mix(in srgb, var(--aieval-primary) 50%, var(--aieval-border));
   --bs-btn-hover-color: var(--aieval-primary-hover);
   --bs-btn-hover-bg: color-mix(in srgb, var(--aieval-primary) 14%, var(--aieval-surface));
-  --bs-btn-hover-border-color: transparent;
+  --bs-btn-hover-border-color: var(--aieval-primary);
   --bs-btn-active-color: var(--aieval-primary-hover);
   --bs-btn-active-bg: color-mix(in srgb, var(--aieval-primary) 20%, var(--aieval-surface));
-  --bs-btn-active-border-color: transparent;
+  --bs-btn-active-border-color: var(--aieval-primary-hover);
   --bs-btn-disabled-color: var(--aieval-muted);
-  --bs-btn-disabled-border-color: transparent;
+  --bs-btn-disabled-bg: var(--aieval-surface);
+  --bs-btn-disabled-border-color: var(--aieval-border);
   --bs-btn-focus-shadow-rgb: var(--aieval-primary-rgb);
 }
 
@@ -305,8 +324,19 @@ body {
   border-color: var(--aieval-primary);
 }
 
-[data-bs-theme='dark'] .settings-aside__segmented .btn-outline-primary {
-  --bs-btn-border-color: var(--aieval-border);
+.form-control,
+.form-select {
+  border-color: var(--aieval-border);
+  background-color: var(--aieval-surface);
+  color: var(--aieval-ink);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--aieval-primary);
+  background-color: var(--aieval-surface);
+  color: var(--aieval-ink);
+  box-shadow: 0 0 0 0.2rem rgb(var(--aieval-primary-rgb) / 20%);
 }
 
 .app-shell {
@@ -326,7 +356,7 @@ body {
 
 .learn-sticky-panel {
   position: sticky;
-  top: 5rem;
+  top: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -407,6 +437,23 @@ body {
 .learn-callout--danger {
   border-color: color-mix(in srgb, var(--bs-danger) 40%, var(--aieval-border));
   background: color-mix(in srgb, var(--bs-danger) 10%, var(--aieval-surface));
+}
+
+.learn-lab-excerpt {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--bs-border-radius);
+  background: color-mix(in srgb, var(--aieval-muted) 5%, var(--aieval-surface));
+}
+
+pre.learn-lab-excerpt {
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.aieval-table-head {
+  background: color-mix(in srgb, var(--aieval-muted) 8%, var(--aieval-surface));
+  border-bottom: 1px solid var(--aieval-border);
 }
 
 .learn-lab-faq {

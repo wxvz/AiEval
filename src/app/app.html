@@ -1,9 +1,13 @@
-<app-navbar />
-<app-settings-aside />
-<app-status-alert />
-<main class="container app-shell py-4">
-  <router-outlet />
-</main>
-@if (isLearnRoute()) {
-  <app-learn-chat-fab />
-}
+<div class="app-layout">
+  <app-navbar />
+  <div class="app-layout__main">
+    <app-settings-aside />
+    <app-status-alert />
+    <main class="container app-shell py-4">
+      <router-outlet />
+    </main>
+    @if (isLearnRoute()) {
+      <app-learn-chat-fab />
+    }
+  </div>
+</div>

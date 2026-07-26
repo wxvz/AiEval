@@ -49,6 +49,10 @@
   transition: transform 0.2s ease;
 }
 
+.day-rail__month-button[aria-expanded='true'] {
+  border-bottom: 1px solid var(--aieval-border);
+}
+
 .day-rail__month-button[aria-expanded='true'] .day-rail__chevron {
   transform: rotate(-135deg);
 }
@@ -67,7 +71,7 @@
   gap: 0.75rem;
   padding: 0.5rem 0.625rem;
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--aieval-border) 75%, transparent);
   border-radius: var(--bs-border-radius);
   font-size: 0.875rem;
 }

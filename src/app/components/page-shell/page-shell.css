@@ -1,7 +1,19 @@
+/*
+ * Full-bleed within the main column (right of the app rail), not the whole
+ * viewport — otherwise content slides under the fixed L-rail.
+ */
 :host {
   display: block;
   width: 100vw;
   margin-left: calc(50% - 50vw);
+}
+
+@media (min-width: 992px) {
+  :host {
+    --page-shell-span: calc(100vw - var(--aieval-rail-width, 15rem));
+    width: var(--page-shell-span);
+    margin-left: calc(50% - var(--page-shell-span) / 2);
+  }
 }
 
 .page-shell {
@@ -9,6 +21,8 @@
   grid-template-columns: minmax(12rem, 1fr) minmax(0, 46rem) minmax(12rem, 1fr);
   gap: clamp(1rem, 3vw, 2.5rem);
   width: 100%;
+  min-height: calc(100dvh - 2rem);
+  align-items: stretch;
   padding-inline: clamp(1rem, 2vw, 2rem);
 }
 
@@ -16,16 +30,17 @@
 .page-shell__main,
 .page-shell__right {
   min-width: 0;
+  min-height: 100%;
 }
 
 .page-shell__left:not(:empty) {
-  border-right: 1px solid var(--aieval-border);
-  padding-right: clamp(0.75rem, 2vw, 1.25rem);
+  border-right: 2px solid var(--aieval-divider, color-mix(in srgb, var(--aieval-muted) 35%, var(--aieval-border)));
+  padding-right: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .page-shell__right:not(:empty) {
-  border-left: 1px solid var(--aieval-border);
-  padding-left: clamp(0.75rem, 2vw, 1.25rem);
+  border-left: 2px solid var(--aieval-divider, color-mix(in srgb, var(--aieval-muted) 35%, var(--aieval-border)));
+  padding-left: clamp(1rem, 2.5vw, 1.5rem);
 }
 
 .page-shell--wide-main .page-shell__left {
@@ -91,16 +106,16 @@
   .page-shell__left:not(:empty) {
     border-right: 0;
     padding-right: 0;
-    border-bottom: 1px solid var(--aieval-border);
-    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--aieval-divider, color-mix(in srgb, var(--aieval-muted) 35%, var(--aieval-border)));
+    padding-bottom: 1.25rem;
     margin-bottom: 0.25rem;
   }
 
   .page-shell__right:not(:empty) {
     border-left: 0;
     padding-left: 0;
-    border-top: 1px solid var(--aieval-border);
-    padding-top: 1rem;
+    border-top: 2px solid var(--aieval-divider, color-mix(in srgb, var(--aieval-muted) 35%, var(--aieval-border)));
+    padding-top: 1.25rem;
     margin-top: 0.25rem;
   }
 }

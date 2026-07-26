@@ -97,7 +97,7 @@
           <app-learn-term-hint term="token" hintId="token-context" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />'s
           meaning vector.
         </p>
-        <p class="font-monospace mb-0 bg-light border rounded p-3">
+        <p class="learn-lab-excerpt font-monospace mb-0">
           [
           @for (v of result().context; track $index; let last = $last) {
             {{ v | number: '1.2-2' }}@if (!last) {

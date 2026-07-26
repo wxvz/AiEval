@@ -2,14 +2,9 @@
   display: block;
 }
 
-.learn-hub-rail {
-  position: sticky;
-  top: 5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  max-height: calc(100vh - 6rem);
-  overflow: auto;
+.learn-hub-main-brand {
+  text-align: center;
+  margin-bottom: 1.25rem;
 }
 
 .learn-hub-main-brand__title {
@@ -25,53 +20,6 @@
   font-size: 0.9rem;
   font-weight: 450;
   line-height: 1.45;
-}
-
-.learn-hub-tracks__list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.learn-hub-tracks__link {
-  display: grid;
-  grid-template-columns: 1.1rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px solid transparent;
-  border-left: 3px solid transparent;
-  border-radius: var(--aieval-radius);
-  text-decoration: none;
-  color: inherit;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
-}
-
-.learn-hub-tracks__link:hover {
-  background: color-mix(in srgb, var(--aieval-primary) 6%, transparent);
-}
-
-.learn-hub-tracks__link--active {
-  background: color-mix(in srgb, var(--aieval-primary) 10%, var(--aieval-surface));
-  border-left-color: var(--aieval-primary);
-}
-
-.learn-hub-tracks__icon {
-  display: inline-flex;
-  color: var(--aieval-primary);
-}
-
-.learn-hub-tracks__title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.3;
-  min-width: 0;
-}
-
-.learn-hub-tracks__frac {
-  font-size: 0.75rem;
-  color: var(--aieval-muted);
-  font-variant-numeric: tabular-nums;
 }
 
 .learn-tracks__grid {
@@ -215,24 +163,6 @@
 }
 
 @media (max-width: 991.98px) {
-  .learn-hub-rail {
-    position: static;
-    max-height: none;
-    overflow: visible;
-    margin-bottom: 0.5rem;
-    gap: 1rem;
-  }
-
-  .learn-hub-tracks__list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .learn-hub-tracks__link {
-    min-width: 10rem;
-  }
-
   .learn-tracks__grid {
     grid-template-columns: minmax(0, 1fr);
     max-height: none;

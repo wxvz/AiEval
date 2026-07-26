@@ -1,0 +1,15 @@
+.app-layout {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-layout__main {
+  min-width: 0;
+}
+
+@media (min-width: 992px) {
+  .app-layout__main {
+    margin-left: var(--aieval-rail-width, 15rem);
+    transition: margin-left 0.22s ease;
+  }
+}

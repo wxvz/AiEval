@@ -1,5 +1,32 @@
-.create-page__primary-actions {
-  margin-bottom: 0.25rem;
+.create-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.create-page__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  color: var(--aieval-ink);
+  line-height: 1.25;
+}
+
+.create-page__subtitle {
+  font-size: 0.9rem;
+  font-weight: 450;
+}
+
+.create-page__aside-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.05rem;
+  background: var(--aieval-surface);
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
 }
 
 .create-page__completed {
@@ -14,20 +41,22 @@
 }
 
 .create-page__completed-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.create-page__eval-bubble {
-  background: var(--aieval-surface);
   border: 1px solid var(--aieval-border);
   border-radius: var(--aieval-radius);
-  box-shadow: var(--aieval-shadow);
-  padding: 0.875rem 1rem;
+  background: var(--aieval-surface);
+  overflow: hidden;
 }
 
-.create-page__eval-bubble-title {
+.create-page__eval-row {
+  padding: 0.875rem 1rem;
+  border-top: 1px solid var(--aieval-border);
+}
+
+.create-page__completed-list > .create-page__eval-row:first-child {
+  border-top: 0;
+}
+
+.create-page__eval-row-title {
   font-weight: 600;
   margin: 0 0 0.625rem;
   overflow: hidden;
@@ -35,7 +64,7 @@
   white-space: nowrap;
 }
 
-.create-page__eval-bubble-actions {
+.create-page__eval-row-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;

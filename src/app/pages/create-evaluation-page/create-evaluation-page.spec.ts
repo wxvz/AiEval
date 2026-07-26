@@ -56,6 +56,53 @@ describe('CreateEvaluationPage', () => {
     fixture.detectChanges();
   });
 
+  it('projects Create manually submit into the evaluation form (aside layout)', async () => {
+    const host = fixture.nativeElement as HTMLElement;
+    const form = host.querySelector('form');
+    const submit = host.querySelector(
+      '.create-page__aside-actions button[type="submit"]',
+    ) as HTMLButtonElement | null;
+
+    expect(form).toBeTruthy();
+    expect(submit).toBeTruthy();
+    expect(submit?.textContent?.trim()).toBe('Create manually');
+    expect(form?.contains(submit)).toBe(true);
+
+    const evaluationForm = page['evaluationForm']();
+    expect(evaluationForm).toBeTruthy();
+    evaluationForm!.form.controls.title.setValue('Manual create title');
+    evaluationForm!.form.controls.prompt.setValue('A detailed prompt for comparing model answers.');
+    fixture.detectChanges();
+
+    const created = {
+      id: 'eval-manual',
+      title: 'Manual create title',
+      prompt: 'A detailed prompt for comparing model answers.',
+      criteriaMode: 'default' as const,
+      criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const createSpy = vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
+
+    submit!.click();
+    await fixture.whenStable();
+
+    expect(createSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Manual create title',
+        prompt: 'A detailed prompt for comparing model answers.',
+      }),
+      expect.objectContaining({
+        success: 'Evaluation created.',
+        error: 'Could not create evaluation.',
+      }),
+    );
+    expect(routerNavigate).toHaveBeenCalledWith(['/evaluations', 'eval-manual', 'edit']);
+  });
+
   it('onRunFullAutomation creates stub evaluation when form is empty', async () => {
     const created = {
       id: 'eval-new',
