@@ -56,8 +56,12 @@
           (termSelect)="onTermSelect($event)"
         />
       </p>
-      @if (aside.route; as route) {
-        <a class="btn btn-outline-primary btn-sm mt-3" [routerLink]="route">
+      @if (asideRoutePath(); as path) {
+        <a
+          class="btn btn-outline-primary btn-sm mt-3"
+          [routerLink]="path"
+          [queryParams]="asideRouteQueryParams()"
+        >
           {{ asideActionLabel() }}
         </a>
       }

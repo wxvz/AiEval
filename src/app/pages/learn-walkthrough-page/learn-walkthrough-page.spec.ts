@@ -120,5 +120,9 @@ describe('LearnWalkthroughPage', () => {
         '/?from=learn&learnLesson=first-evaluation-lab&openCompare=1',
       ),
     ).toEqual({ from: 'learn', learnLesson: 'first-evaluation-lab', openCompare: '1' });
+    expect(
+      fixture.componentInstance.actionQueryParams('/evaluations/new?from=learn#frag'),
+    ).toEqual({ from: 'learn' });
   });
 });
+

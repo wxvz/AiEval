@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import type { LessonAside, LessonContent } from '../../learn/learn-content';
 import type { LearnLessonMeta } from '../../learn/curriculum';
 import type { LearnGlossaryTerm } from '../../learn/learn-glossary';
+import { pathFromLearnRoute, queryParamsFromLearnRoute } from '../../learn/learn-route';
 import { LearnLessonText } from '../learn-lesson-text/learn-lesson-text';
 
 @Component({
@@ -62,6 +63,17 @@ export class LearnLessonAside {
       return null;
     }
     return aside.actionLabel?.trim() || 'Open in AiEval';
+  });
+
+  /** Path without query/hash so `[routerLink]` does not encode `?`. */
+  readonly asideRoutePath = computed(() => {
+    const route = this.activeAside()?.route;
+    return route ? pathFromLearnRoute(route) : null;
+  });
+
+  readonly asideRouteQueryParams = computed(() => {
+    const route = this.activeAside()?.route;
+    return route ? queryParamsFromLearnRoute(route) : {};
   });
 
   onTermSelect(term: LearnGlossaryTerm): void {

@@ -110,4 +110,49 @@ describe('validateLessonContent', () => {
     const issues = validateLessonContent('prompts-as-instructions', broken);
     expect(issues.some((issue) => issue.message.includes('aside title is empty'))).toBe(true);
   });
+
+  it('allows tip asides with from=learn and no learnLesson', () => {
+    const content = loadLessonContent('prompts-as-instructions') as LessonContent;
+    const withTip: LessonContent = {
+      ...content,
+      sections: content.sections.map((section, index) =>
+        index === 0
+          ? {
+              ...section,
+              aside: {
+                title: 'Try in AiEval',
+                body: 'Create an evaluation.',
+                route: '/evaluations/new?from=learn',
+              },
+            }
+          : section,
+      ),
+    };
+    const issues = validateLessonContent('prompts-as-instructions', withTip);
+    expect(issues.some((issue) => issue.message.includes('aside'))).toBe(false);
+  });
+
+  it('flags aside learnLesson that is not a tool lesson', () => {
+    const content = loadLessonContent('prompts-as-instructions') as LessonContent;
+    const broken: LessonContent = {
+      ...content,
+      sections: content.sections.map((section, index) =>
+        index === 0
+          ? {
+              ...section,
+              aside: {
+                title: 'Try in AiEval',
+                body: 'Create an evaluation.',
+                route: '/evaluations/new?from=learn&learnLesson=what-is-a-dataset',
+              },
+            }
+          : section,
+      ),
+    };
+    const issues = validateLessonContent('prompts-as-instructions', broken);
+    expect(
+      issues.some((issue) => issue.message.includes('learnLesson must be a tool lesson id')),
+    ).toBe(true);
+  });
 });
+

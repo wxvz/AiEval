@@ -56,6 +56,11 @@ describe('LearnLessonAside', () => {
     expect(el.querySelector('a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
     expect(el.textContent).toContain('Try in AiEval');
     expect(el.textContent).toContain('New evaluation');
+    const tipLink = el.querySelector(
+      'a[href="/evaluations/new?from=learn"]',
+    ) as HTMLAnchorElement | null;
+    expect(tipLink).toBeTruthy();
+    expect(tipLink?.getAttribute('href')).not.toContain('%3F');
     expect(el.querySelector('button.learn-lesson-aside__complete-btn')?.textContent).toContain(
       'Mark complete',
     );

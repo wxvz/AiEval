@@ -1,3 +1,6 @@
+import { getLesson } from './curriculum';
+import { LEARN_FROM_QUERY, LEARN_LESSON_QUERY } from './learn-handoff.service';
+import { pathFromLearnRoute, queryParamsFromLearnRoute } from './learn-route';
 import { normalizeCheckAnswer } from './check-answer';
 import activationFunctions from './content/activation-functions.json';
 import automationAndJudges from './content/automation-and-judges.json';
@@ -218,6 +221,26 @@ function validateAside(aside: LessonAside | undefined, label: string): string | 
   }
   if (!isNonEmptyString(aside.body)) {
     return `${label} aside body is empty`;
+  }
+  if (aside.route !== undefined) {
+    if (!isNonEmptyString(aside.route)) {
+      return `${label} aside route is empty`;
+    }
+    const path = pathFromLearnRoute(aside.route);
+    if (!path.startsWith('/')) {
+      return `${label} aside route path must start with /`;
+    }
+    const params = queryParamsFromLearnRoute(aside.route);
+    const learnLesson = params[LEARN_LESSON_QUERY];
+    if (learnLesson) {
+      const lesson = getLesson(learnLesson);
+      if (!lesson || lesson.kind !== 'tool') {
+        return `${label} aside learnLesson must be a tool lesson id`;
+      }
+      if (params['from'] !== LEARN_FROM_QUERY) {
+        return `${label} aside learnLesson requires from=${LEARN_FROM_QUERY}`;
+      }
+    }
   }
   return null;
 }
