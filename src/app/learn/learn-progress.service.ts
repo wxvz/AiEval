@@ -57,6 +57,7 @@ export class LearnProgressService {
 
   canMarkComplete(lesson: LearnLessonMeta): boolean {
     if (lesson.kind === 'interactive') {
+      // Solve/success gates live on the lab page (completionDisabled + markLabComplete).
       return true;
     }
     if (lesson.kind === 'tool') {

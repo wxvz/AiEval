@@ -9,6 +9,7 @@
     type="button"
     class="btn btn-primary btn-sm w-100"
     [disabled]="markCompleteDisabled()"
+    [attr.title]="markCompleteTitle()"
     (click)="complete.emit()"
   >
     @if (completed()) {

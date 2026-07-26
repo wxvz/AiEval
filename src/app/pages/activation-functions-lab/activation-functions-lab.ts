@@ -75,6 +75,9 @@ export class ActivationFunctionsLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('activation-functions-lab');
   }
 }

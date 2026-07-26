@@ -177,6 +177,7 @@
     [lesson]="labMeta"
     [parent]="prereqMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

@@ -43,6 +43,19 @@ export class LearnLabNav {
     () => this.completed() || this.locked() || this.completionDisabled(),
   );
 
+  readonly markCompleteTitle = computed(() => {
+    if (this.completed()) {
+      return 'Lab already completed';
+    }
+    if (this.locked()) {
+      return 'Complete prerequisites first';
+    }
+    if (this.completionDisabled()) {
+      return 'Finish the lab goal before marking complete';
+    }
+    return null;
+  });
+
   readonly resolvedParent = computed(() => {
     const explicitParent = this.parent();
     if (explicitParent) {

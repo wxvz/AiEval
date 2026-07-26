@@ -184,6 +184,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!result().success"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

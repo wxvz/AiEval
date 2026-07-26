@@ -71,6 +71,9 @@ export class MultimodalVectorLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('multimodal-vector-databases-lab');
   }
 }

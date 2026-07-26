@@ -53,5 +53,18 @@ describe('LearnLabNav', () => {
     const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.textContent?.trim()).toBe('Locked');
+    expect(button.getAttribute('title')).toBe('Complete prerequisites first');
+  });
+
+  it('explains why mark complete is disabled when the lab goal is unfinished', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-rate']));
+    fixture.componentRef.setInput('lesson', getLesson('learning-rate-lab'));
+    fixture.componentRef.setInput('completionDisabled', true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('title')).toBe('Finish the lab goal before marking complete');
   });
 });
+

@@ -70,6 +70,9 @@ export class ReinforcementLearningLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('reinforcement-learning-lab');
   }
 }

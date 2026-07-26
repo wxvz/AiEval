@@ -50,4 +50,32 @@ describe('WhatIsADatasetLabPage', () => {
     component.setLabel(3, 1);
     expect(component.checked()).toBe(false);
   });
+
+  it('disables mark complete until all XOR labels are correct', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['what-is-a-dataset']));
+    const unlocked = TestBed.createComponent(WhatIsADatasetLabPage);
+    const unlockedPage = unlocked.componentInstance;
+    unlocked.detectChanges();
+
+    const button = unlocked.nativeElement.querySelector(
+      'app-learn-lab-nav button',
+    ) as HTMLButtonElement;
+    expect(unlockedPage.solved()).toBe(false);
+    expect(button.disabled).toBe(true);
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(false);
+
+    unlockedPage.setLabel(0, 0);
+    unlockedPage.setLabel(1, 1);
+    unlockedPage.setLabel(2, 1);
+    unlockedPage.setLabel(3, 0);
+    unlockedPage.check();
+    unlocked.detectChanges();
+
+    expect(unlockedPage.solved()).toBe(true);
+    expect(button.disabled).toBe(false);
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(true);
+  });
 });
+

@@ -53,6 +53,9 @@ export class SoftmaxLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('softmax-and-distributions-lab');
   }
 }

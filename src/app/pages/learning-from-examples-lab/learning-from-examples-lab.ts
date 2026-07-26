@@ -59,6 +59,10 @@ export class LearningFromExamplesLabPage {
       Object.entries(this.matches()).filter(([inputId, targetId]) => inputId === targetId).length,
   );
 
+  readonly solved = computed(
+    () => this.checked() && this.correctCount() === this.examples.length,
+  );
+
   setOpenTermId(id: string | null): void {
     this.openTermId.set(id);
   }
@@ -115,6 +119,9 @@ export class LearningFromExamplesLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('learning-from-examples-lab');
   }
 }
