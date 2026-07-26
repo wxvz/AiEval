@@ -1,6 +1,7 @@
 .settings-aside {
   --bs-offcanvas-width: min(26rem, 100vw);
-  transition: transform 0.25s ease-in-out;
+  /* Smooth sheet ease — finish network work after `shown.bs.offcanvas`, not mid-slide. */
+  --bs-offcanvas-transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .settings-aside.offcanvas.hiding,

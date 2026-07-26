@@ -44,8 +44,16 @@ export class ServerSettingsService {
     writeStoredApiToken(token);
   }
 
-  async load(): Promise<void> {
-    this.loadingSignal.set(true);
+  /**
+   * @param options.soft When true, refresh without toggling the loading flag
+   * (background / panel open — avoids disabling the Models UI).
+   */
+  async load(options?: { soft?: boolean }): Promise<void> {
+    const soft = options?.soft === true;
+
+    if (!soft) {
+      this.loadingSignal.set(true);
+    }
     this.errorSignal.set(null);
 
     try {
@@ -56,7 +64,9 @@ export class ServerSettingsService {
         messageFromHttpError(error, 'Could not load server settings.'),
       );
     } finally {
-      this.loadingSignal.set(false);
+      if (!soft) {
+        this.loadingSignal.set(false);
+      }
     }
   }
 

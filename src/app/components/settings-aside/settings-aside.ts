@@ -90,6 +90,12 @@ export class SettingsAside {
   protected readonly statusRefreshing = signal(false);
   protected readonly statusError = signal<string | null>(null);
   protected readonly status = signal<AppStatus | null>(null);
+  /** Guards overlapping /api/status calls without driving the Refresh button UI. */
+  private statusRequestInFlight = false;
+  /** User clicked Refresh while a silent status request was still in flight. */
+  private pendingUserStatusRefresh = false;
+  /** Dedupe shown-event + already-visible fallback loads for the current open. */
+  private panelDataLoadedForOpen = false;
 
   protected readonly evaluationCount = this.evaluationService.count;
   protected readonly evaluationsLoading = this.evaluationService.loading;
@@ -174,13 +180,21 @@ export class SettingsAside {
       }
 
       untracked(() => {
-        this.ensureEvaluationsLoaded();
-        void this.serverSettingsService.load().then(() => {
-          const stored = this.serverSettingsService.getApiToken() ?? '';
-          this.apiTokenDraft.set(stored);
-          this.hasStoredApiToken.set(!!stored);
-        });
-        this.refreshStatus();
+        this.panelDataLoadedForOpen = false;
+
+        // Local token is available immediately — don't wait on the network.
+        const stored = this.serverSettingsService.getApiToken() ?? '';
+        this.apiTokenDraft.set(stored);
+        this.hasStoredApiToken.set(!!stored);
+
+        // If the panel is already visible, `show()` is skipped and `shown` may not re-fire.
+        const element = this.offcanvasElement()?.nativeElement;
+        if (
+          element &&
+          (element.classList.contains('show') || element.classList.contains('showing'))
+        ) {
+          this.ensurePanelDataForCurrentOpen();
+        }
       });
     });
 
@@ -191,19 +205,29 @@ export class SettingsAside {
         return;
       }
 
+      const open = this.settingsService.isOpen();
       const instance = bootstrap.Offcanvas.getOrCreateInstance(element);
+      const visible =
+        element.classList.contains('show') || element.classList.contains('showing');
 
-      if (this.settingsService.isOpen()) {
-        instance.show();
+      if (open) {
+        if (!visible) {
+          instance.show();
+        } else {
+          this.ensurePanelDataForCurrentOpen();
+        }
         return;
       }
 
-      if (element.classList.contains('show')) {
+      if (visible) {
         instance.hide();
       }
     });
 
     afterNextRender(() => {
+      // Prefetch so the first open already has a cached preset (no Models disable flash).
+      void this.serverSettingsService.load({ soft: true });
+
       const element = this.offcanvasElement()?.nativeElement;
 
       if (!element) {
@@ -216,9 +240,16 @@ export class SettingsAside {
         }
       };
 
+      // Prefer loading after the slide finishes so status/settings updates don't jank it.
+      const onShown = () => {
+        this.ensurePanelDataForCurrentOpen();
+      };
+
       element.addEventListener('hidden.bs.offcanvas', onHidden);
+      element.addEventListener('shown.bs.offcanvas', onShown);
       this.destroyRef.onDestroy(() => {
         element.removeEventListener('hidden.bs.offcanvas', onHidden);
+        element.removeEventListener('shown.bs.offcanvas', onShown);
       });
     });
   }
@@ -300,7 +331,12 @@ export class SettingsAside {
   }
 
   protected refreshStatus(showToast = false): void {
-    if (this.statusRefreshing()) {
+    if (this.statusRequestInFlight) {
+      if (showToast) {
+        // Keep the button responsive: show busy state and run a real refresh when the silent one ends.
+        this.pendingUserStatusRefresh = true;
+        this.statusRefreshing.set(true);
+      }
       return;
     }
 
@@ -310,7 +346,11 @@ export class SettingsAside {
       this.statusError.set(null);
     }
 
-    this.statusRefreshing.set(true);
+    this.statusRequestInFlight = true;
+    // Only the explicit Refresh click should toggle the button — silent open/reloads must not stutter it.
+    if (showToast) {
+      this.statusRefreshing.set(true);
+    }
 
     this.http
       .get<AppStatus>('/api/status')
@@ -319,6 +359,15 @@ export class SettingsAside {
         next: (body) => {
           this.status.set(body);
           this.statusError.set(null);
+          this.statusRequestInFlight = false;
+
+          if (this.pendingUserStatusRefresh) {
+            this.pendingUserStatusRefresh = false;
+            this.statusRefreshing.set(false);
+            this.refreshStatus(true);
+            return;
+          }
+
           this.statusRefreshing.set(false);
 
           if (showToast) {
@@ -328,6 +377,15 @@ export class SettingsAside {
         error: () => {
           if (!hadStatus) {
             this.statusError.set('Could not load server status.');
+          }
+
+          this.statusRequestInFlight = false;
+
+          if (this.pendingUserStatusRefresh) {
+            this.pendingUserStatusRefresh = false;
+            this.statusRefreshing.set(false);
+            this.refreshStatus(true);
+            return;
           }
 
           this.statusRefreshing.set(false);
@@ -408,5 +466,17 @@ export class SettingsAside {
 
     this.evaluationsLoadRequested = true;
     void this.evaluationService.loadFromApi();
+  }
+
+  /** Load panel data once per open (shown event and already-visible fallback share this). */
+  private ensurePanelDataForCurrentOpen(): void {
+    if (!this.settingsService.isOpen() || this.panelDataLoadedForOpen) {
+      return;
+    }
+
+    this.panelDataLoadedForOpen = true;
+    this.ensureEvaluationsLoaded();
+    void this.serverSettingsService.load({ soft: true });
+    this.refreshStatus(false);
   }
 }

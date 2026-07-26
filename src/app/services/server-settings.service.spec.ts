@@ -45,6 +45,45 @@ describe('ServerSettingsService', () => {
     expect(service.error()).toBeNull();
   });
 
+  it('soft load refreshes without toggling loading when cached', async () => {
+    const first = service.load();
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await first;
+    expect(service.loading()).toBe(false);
+
+    const soft = service.load({ soft: true });
+    expect(service.loading()).toBe(false);
+
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'fast',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await soft;
+
+    expect(service.llmPreset()).toBe('fast');
+    expect(service.loading()).toBe(false);
+  });
+
+  it('soft load skips loading flag even without a cached preset', async () => {
+    const soft = service.load({ soft: true });
+    expect(service.loading()).toBe(false);
+
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await soft;
+
+    expect(service.llmPreset()).toBe('balanced');
+    expect(service.loading()).toBe(false);
+  });
+
   it('getApiToken / setApiToken round-trip via localStorage', () => {
     localStorage.clear();
     expect(service.getApiToken()).toBeNull();
