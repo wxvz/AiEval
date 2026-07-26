@@ -344,7 +344,11 @@ export class EvaluationService {
     return optimistic;
   }
 
-  delete(id: string, operationFeedback?: OperationFeedback): boolean {
+  delete(
+    id: string,
+    operationFeedback?: OperationFeedback,
+    onSuccess?: () => void,
+  ): boolean {
     const current = this.getById(id);
 
     if (!current) {
@@ -354,6 +358,7 @@ export class EvaluationService {
     this.removeEvaluationFromList(id);
     this.http.delete(`${API}/${id}`).subscribe({
       next: () => {
+        onSuccess?.();
         if (operationFeedback) {
           this.feedback.success(operationFeedback.success);
         }

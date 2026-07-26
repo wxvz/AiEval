@@ -1,5 +1,5 @@
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
@@ -29,6 +29,7 @@ describe('DashboardPage', () => {
   let fixture: ComponentFixture<DashboardPage>;
   let evaluationService: EvaluationService;
   let learnHandoff: LearnHandoffService;
+  let httpMock: HttpTestingController;
   let queryParamMap$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let routerNavigate: ReturnType<typeof vi.fn>;
 
@@ -63,6 +64,7 @@ describe('DashboardPage', () => {
 
     evaluationService = TestBed.inject(EvaluationService);
     learnHandoff = TestBed.inject(LearnHandoffService);
+    httpMock = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(DashboardPage);
   });
 
@@ -239,5 +241,38 @@ describe('DashboardPage', () => {
     expect(fixture.componentInstance['showLearnBanner']()).toBe(false);
     expect(fixture.componentInstance['highlightedEvaluationId']()).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('From Learn lab');
+  });
+
+  it('keeps Learn handoff when evaluation delete fails', () => {
+    const evaluation = sampleEvaluation('eval-learn');
+    learnHandoff.recordEvaluation(evaluation.id, 'first-evaluation-lab');
+    evaluationService['evaluationsSignal'].set([evaluation]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['deleteTargetId'].set(evaluation.id);
+    fixture.componentInstance['confirmDelete']();
+
+    expect(learnHandoff.hasHandoffForLesson('first-evaluation-lab')).toBe(true);
+    httpMock
+      .expectOne(`/api/evaluations/${evaluation.id}`)
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+    expect(learnHandoff.hasHandoffForLesson('first-evaluation-lab')).toBe(true);
+    expect(learnHandoff.evaluationIdForLesson('first-evaluation-lab')).toBe(evaluation.id);
+  });
+
+  it('clears Learn handoff only after evaluation delete succeeds', () => {
+    const evaluation = sampleEvaluation('eval-learn');
+    learnHandoff.recordEvaluation(evaluation.id, 'first-evaluation-lab');
+    evaluationService['evaluationsSignal'].set([evaluation]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    fixture.componentInstance['deleteTargetId'].set(evaluation.id);
+    fixture.componentInstance['confirmDelete']();
+
+    expect(learnHandoff.hasHandoffForLesson('first-evaluation-lab')).toBe(true);
+    httpMock.expectOne(`/api/evaluations/${evaluation.id}`).flush(null);
+    expect(learnHandoff.hasHandoffForLesson('first-evaluation-lab')).toBe(false);
   });
 });

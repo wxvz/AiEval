@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { DEFAULT_CRITERIA, DEFAULT_EVALUATION_CONFIG, Evaluation, RubricCriterion } from '../models';
 import { EvaluationService } from './evaluation.service';
@@ -296,13 +297,47 @@ describe('EvaluationService criteria modes', () => {
     });
     expect(feedback.feedback()).toEqual({ type: 'success', message: 'Changes saved.' });
 
-    service.delete(evaluation.id, {
-      success: 'Evaluation deleted.',
-      error: 'Could not delete evaluation.',
-    });
+    const onDeleteSuccess = vi.fn();
+    service.delete(
+      evaluation.id,
+      {
+        success: 'Evaluation deleted.',
+        error: 'Could not delete evaluation.',
+      },
+      onDeleteSuccess,
+    );
     const deleteRequest = httpMock.expectOne(`/api/evaluations/${evaluation.id}`);
     deleteRequest.flush(null);
+    expect(onDeleteSuccess).toHaveBeenCalledOnce();
     expect(feedback.feedback()).toEqual({ type: 'success', message: 'Evaluation deleted.' });
+  });
+
+  it('restores evaluation and skips onSuccess when delete fails', async () => {
+    const evaluation = savedEvaluation();
+    const service = await createService([evaluation]);
+    const feedback = TestBed.inject(FeedbackService);
+    const onDeleteSuccess = vi.fn();
+
+    service.delete(
+      evaluation.id,
+      {
+        success: 'Evaluation deleted.',
+        error: 'Could not delete evaluation.',
+      },
+      onDeleteSuccess,
+    );
+    expect(service.getById(evaluation.id)).toBeUndefined();
+
+    httpMock
+      .expectOne(`/api/evaluations/${evaluation.id}`)
+      .flush({ message: 'boom' }, { status: 500, statusText: 'Server Error' });
+
+    expect(onDeleteSuccess).not.toHaveBeenCalled();
+    expect(service.getById(evaluation.id)?.id).toBe(evaluation.id);
+    expect(feedback.feedback()).toEqual({
+      type: 'danger',
+      message: 'boom',
+    });
   });
 
   it('shows server error message from API response body on create failure', async () => {

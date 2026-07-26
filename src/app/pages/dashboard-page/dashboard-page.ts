@@ -213,15 +213,20 @@ export class DashboardPage {
   protected confirmDelete(): void {
     const id = this.deleteTargetId();
 
-      if (id) {
-      this.evaluationService.delete(id, {
-        success: 'Evaluation deleted.',
-        error: 'Could not delete evaluation.',
-      });
+    if (id) {
       const lessonForEval = this.learnHandoff.lessonIdForEvaluation(id);
-      if (lessonForEval) {
-        this.learnHandoff.clearLesson(lessonForEval);
-      }
+      this.evaluationService.delete(
+        id,
+        {
+          success: 'Evaluation deleted.',
+          error: 'Could not delete evaluation.',
+        },
+        () => {
+          if (lessonForEval) {
+            this.learnHandoff.clearLesson(lessonForEval);
+          }
+        },
+      );
     }
 
     this.deleteTargetId.set(null);
