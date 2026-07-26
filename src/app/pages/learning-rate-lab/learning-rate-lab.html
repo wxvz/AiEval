@@ -86,6 +86,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

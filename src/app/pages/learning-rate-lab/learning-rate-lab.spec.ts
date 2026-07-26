@@ -40,4 +40,27 @@ describe('LearningRateLabPage', () => {
     expect(page.solved()).toBe(true);
     expect(el.textContent).toContain('Pattern confirmed');
   });
+
+  it('disables mark complete until the comparison pattern is confirmed', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-rate']));
+    const unlocked = TestBed.createComponent(LearningRateLabPage);
+    const unlockedPage = unlocked.componentInstance;
+    unlocked.detectChanges();
+
+    const button = unlocked.nativeElement.querySelector(
+      'app-learn-lab-nav button',
+    ) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(false);
+
+    unlockedPage.selectRate('medium');
+    unlockedPage.selectRate('huge');
+    unlocked.detectChanges();
+
+    expect(button.disabled).toBe(false);
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(true);
+  });
 });

@@ -69,6 +69,9 @@ export class LearningRateLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('learning-rate-lab');
   }
 }
