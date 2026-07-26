@@ -84,6 +84,109 @@ describe('ServerSettingsService', () => {
     expect(service.loading()).toBe(false);
   });
 
+  it('joins concurrent soft loads onto one GET', async () => {
+    const first = service.load({ soft: true });
+    const second = service.load({ soft: true });
+
+    const req = httpMock.expectOne('/api/settings');
+    req.flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+
+    await Promise.all([first, second]);
+    httpMock.expectNone('/api/settings');
+    expect(service.llmPreset()).toBe('balanced');
+  });
+
+  it('skipIfCached soft load is a no-op when a preset is already cached', async () => {
+    const warm = service.load({ soft: true });
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await warm;
+
+    await service.load({ soft: true, skipIfCached: true });
+    httpMock.expectNone('/api/settings');
+    expect(service.llmPreset()).toBe('balanced');
+  });
+
+  it('does not let a stale soft load overwrite a newer preset PATCH', async () => {
+    const warm = service.load({ soft: true });
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await warm;
+
+    const stale = service.load({ soft: true });
+    const staleReq = httpMock.expectOne('/api/settings');
+
+    const patchPromise = service.setLlmPreset('fast');
+    const patchReq = httpMock.expectOne('/api/settings');
+    expect(patchReq.request.method).toBe('PATCH');
+    patchReq.flush({
+      llmPreset: 'fast',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await patchPromise;
+    expect(service.llmPreset()).toBe('fast');
+
+    // Late GET still reports the pre-PATCH value — must not win.
+    staleReq.flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await stale;
+
+    expect(service.llmPreset()).toBe('fast');
+  });
+
+  it('keeps the newer preset when overlapping PATCHes resolve out of order', async () => {
+    const warm = service.load({ soft: true });
+    httpMock.expectOne('/api/settings').flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await warm;
+
+    const first = service.setLlmPreset('fast');
+    const second = service.setLlmPreset('balanced');
+
+    const patches = httpMock.match(
+      (req) => req.url === '/api/settings' && req.method === 'PATCH',
+    );
+    expect(patches).toHaveLength(2);
+    expect(patches[0].request.body).toEqual({ llmPreset: 'fast' });
+    expect(patches[1].request.body).toEqual({ llmPreset: 'balanced' });
+
+    // Older PATCH resolves last — must not overwrite the newer optimistic/server value.
+    patches[1].flush({
+      llmPreset: 'balanced',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    await second;
+    expect(service.llmPreset()).toBe('balanced');
+
+    patches[0].flush({
+      llmPreset: 'fast',
+      envDefaultLlmPreset: 'balanced',
+      apiTokenRequired: false,
+    });
+    const firstChanged = await first;
+    expect(firstChanged).toBe(false);
+    expect(service.llmPreset()).toBe('balanced');
+    expect(service.patching()).toBe(false);
+  });
+
   it('getApiToken / setApiToken round-trip via localStorage', () => {
     localStorage.clear();
     expect(service.getApiToken()).toBeNull();
