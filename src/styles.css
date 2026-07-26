@@ -16,7 +16,7 @@
   --aieval-muted: #526379;
   --aieval-rail-width-expanded: 15rem;
   --aieval-rail-width: var(--aieval-rail-width-expanded);
-  --aieval-rail-width-collapsed: 3.75rem;
+  --aieval-rail-width-collapsed: 3rem;
 
   --bs-font-sans-serif: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --bs-body-font-family: var(--bs-font-sans-serif);
@@ -62,7 +62,7 @@
   --aieval-muted: #94a3b8;
   --aieval-rail-width-expanded: 15rem;
   --aieval-rail-width: var(--aieval-rail-width-expanded);
-  --aieval-rail-width-collapsed: 3.75rem;
+  --aieval-rail-width-collapsed: 3rem;
 
   --bs-body-bg: var(--aieval-page-bg);
   --bs-body-color: var(--aieval-ink);

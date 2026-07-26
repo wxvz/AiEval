@@ -300,6 +300,46 @@ button.app-rail__link:hover:not(:disabled) {
   flex-shrink: 0;
 }
 
+.app-rail__collapsed-foot {
+  display: none;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.app-rail__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--bs-border-radius-sm);
+  background: var(--aieval-surface);
+  color: var(--aieval-muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.app-rail__icon-btn:hover {
+  color: var(--aieval-ink);
+  border-color: color-mix(in srgb, var(--aieval-primary) 40%, var(--aieval-border));
+  background: color-mix(in srgb, var(--aieval-primary) 6%, var(--aieval-surface));
+}
+
+.app-rail__icon-btn:focus-visible {
+  outline: 2px solid var(--aieval-primary);
+  outline-offset: 2px;
+}
+
+.app-rail__icon-btn--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 991.98px) {
   .app-topbar {
     display: flex;
@@ -376,7 +416,7 @@ button.app-rail__link:hover:not(:disabled) {
   }
 
   .app-rail--collapsed .app-rail__inner {
-    padding-inline: 0.55rem;
+    padding-inline: 0.45rem;
     align-items: center;
   }
 
@@ -411,5 +451,11 @@ button.app-rail__link:hover:not(:disabled) {
     overflow: hidden;
     max-height: 0;
     gap: 0;
+  }
+
+  .app-rail--collapsed .app-rail__collapsed-foot {
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 }
