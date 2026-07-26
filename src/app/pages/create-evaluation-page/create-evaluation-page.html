@@ -5,15 +5,20 @@
   (submitted)="onSubmit($event)"
 >
   <div evaluationFormBefore>
-    <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
-      <h1 class="h3 mb-0">Create Evaluation</h1>
+    <div class="create-page__header mb-3">
+      <div class="create-page__heading">
+        <h1 class="create-page__title">New Evaluation</h1>
+        <p class="create-page__subtitle text-muted mb-0">
+          Write a prompt, then run the full pipeline.
+        </p>
+      </div>
       <app-token-usage-badge [usage]="displayTokenUsage()" [live]="automating()" />
     </div>
 
     @if (fromLearn() && learnHint()) {
-      <div class="alert alert-info mb-3" role="status">
+      <div class="learn-callout learn-callout--info mb-3" role="status">
         <strong>Learn lab.</strong> {{ learnHint() }}
-        <a [routerLink]="learnLabRoute()" class="alert-link ms-1">Back to lab</a>
+        <a [routerLink]="learnLabRoute()" class="ms-1">Back to lab</a>
       </div>
     }
 
@@ -21,16 +26,14 @@
       <div class="alert alert-danger mb-3" role="alert">{{ createError }}</div>
     }
 
-    <p class="text-muted small mb-3">
-      <strong>Run full automation</strong> is the main path: it creates an evaluation, generates a title and prompt when
-      needed, then runs answers, scoring and an improved answer. Use <strong>Generate prompt</strong> to preview title and
-      prompt first. <strong>Create manually</strong> saves the form and opens the edit page for a hands-on setup.
-    </p>
-
     @if (templates().length > 0) {
       <div class="mb-3">
         <label class="form-label" for="create-template-picker">Start from template</label>
-        <select id="create-template-picker" class="form-select form-select-sm" (change)="applyTemplate($any($event.target).value)">
+        <select
+          id="create-template-picker"
+          class="form-select form-select-sm"
+          (change)="applyTemplate($any($event.target).value)"
+        >
           <option value="">Choose a template…</option>
           @for (template of templates(); track template.id) {
             <option [value]="template.id">{{ template.name }}</option>
@@ -38,63 +41,73 @@
         </select>
       </div>
     }
+  </div>
 
-    <div class="d-flex flex-wrap gap-2 mb-3 create-page__primary-actions">
-      @if (!showFullAutomationRerun()) {
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          [disabled]="!canRunFullAutomation()"
-          (click)="onRunFullAutomation()"
-        >
-          @if (creating()) {
-            Creating…
-          } @else if (automationBlocksActions()) {
-            Running full automation…
-          } @else {
-            Run full automation
-          }
-        </button>
-      } @else {
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          [disabled]="!canRunNewFullAutomation()"
-          (click)="onRunNewFullAutomation()"
-        >
-          @if (creating()) {
-            Creating…
-          } @else if (automationBlocksActions()) {
-            Running full automation…
-          } @else {
-            Rerun full automation
-          }
-        </button>
-      }
+  <div evaluationFormAside class="create-page__aside-actions">
+    <p class="learn-eyebrow learn-eyebrow--accent mb-2">Run</p>
+
+    @if (!showFullAutomationRerun()) {
       <button
         type="button"
-        class="btn btn-outline-secondary btn-sm"
-        [disabled]="generatingPrompt() || creating() || automationBlocksActions()"
-        (click)="onGeneratePrompt()"
+        class="btn btn-primary w-100"
+        [disabled]="!canRunFullAutomation()"
+        (click)="onRunFullAutomation()"
       >
-        @if (generatingPrompt()) {
-          Generating prompt…
+        @if (creating()) {
+          Creating…
+        } @else if (automationBlocksActions()) {
+          Running full automation…
         } @else {
-          Generate prompt
+          Run full automation
         }
       </button>
-    </div>
+    } @else {
+      <button
+        type="button"
+        class="btn btn-primary w-100"
+        [disabled]="!canRunNewFullAutomation()"
+        (click)="onRunNewFullAutomation()"
+      >
+        @if (creating()) {
+          Creating…
+        } @else if (automationBlocksActions()) {
+          Running full automation…
+        } @else {
+          Rerun full automation
+        }
+      </button>
+    }
+
+    <button
+      type="button"
+      class="btn btn-outline-secondary w-100"
+      [disabled]="generatingPrompt() || creating() || automationBlocksActions()"
+      (click)="onGeneratePrompt()"
+    >
+      @if (generatingPrompt()) {
+        Generating prompt…
+      } @else {
+        Generate prompt
+      }
+    </button>
+
+    <button
+      type="submit"
+      class="btn btn-outline-secondary w-100"
+      [disabled]="generatingPrompt() || creating() || automationBlocksActions()"
+    >
+      Create manually
+    </button>
 
     @if (hasPartialFormForAutomation()) {
-      <p class="text-muted small mb-3">
+      <p class="text-muted small mb-0">
         Fill both title and prompt, or leave both empty, before running full automation.
       </p>
     }
 
     @if (showFullAutomationRerun()) {
-      <p class="text-muted small mb-3">
-        When a run finishes, Compare and Edit links appear in the completed list below. Use <strong>Rerun full automation</strong> to
-        start another full pipeline on a fresh evaluation.
+      <p class="text-muted small mb-0">
+        When a run finishes, use Compare and Edit below. Rerun starts a fresh evaluation.
       </p>
     }
   </div>
@@ -125,12 +138,12 @@
     @if (completedEvaluationIds().length > 0) {
       <section class="create-page__completed">
         <h2 class="create-page__completed-heading">Completed evaluations</h2>
-        <div class="create-page__completed-list">
+        <ul class="create-page__completed-list list-unstyled mb-0">
           @for (completedId of completedEvaluationIds(); track completedId) {
             @if (getEvaluation(completedId); as completed) {
-              <div class="create-page__eval-bubble">
-                <p class="create-page__eval-bubble-title">{{ completed.title }}</p>
-                <div class="create-page__eval-bubble-actions">
+              <li class="create-page__eval-row">
+                <p class="create-page__eval-row-title">{{ completed.title }}</p>
+                <div class="create-page__eval-row-actions">
                   <a
                     class="btn btn-outline-primary btn-sm"
                     [routerLink]="['/evaluations', completedId, 'compare']"
@@ -144,10 +157,10 @@
                     Edit evaluation
                   </a>
                 </div>
-              </div>
+              </li>
             }
           }
-        </div>
+        </ul>
       </section>
     }
   </div>

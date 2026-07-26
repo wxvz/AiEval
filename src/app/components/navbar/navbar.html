@@ -1,80 +1,224 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-body border-bottom sticky-top app-navbar">
-  <div class="container app-shell">
+<div class="app-chrome">
+  <header class="app-topbar">
     @if (automating()) {
-      <span class="navbar-brand fw-semibold disabled" aria-disabled="true">AiEval</span>
+      <span class="app-rail__brand app-rail__brand--disabled" aria-disabled="true">
+        <span class="app-rail__mark" aria-hidden="true"></span>
+        AiEval
+      </span>
     } @else {
-      <a class="navbar-brand fw-semibold" routerLink="/">AiEval</a>
+      <a class="app-rail__brand" routerLink="/" (click)="closeMenu()">
+        <span class="app-rail__mark" aria-hidden="true"></span>
+        AiEval
+      </a>
     }
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#mainNavbar"
-      aria-controls="mainNavbar"
-      aria-expanded="false"
-      aria-label="Toggle navigation"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
-        <li class="nav-item">
+
+    <div class="app-topbar__actions">
+      @if (automating()) {
+        <span class="btn btn-primary btn-sm app-topbar__cta disabled" aria-disabled="true">New Evaluation</span>
+      } @else {
+        <a class="btn btn-primary btn-sm app-topbar__cta" routerLink="/evaluations/new" (click)="closeMenu()">
+          New Evaluation
+        </a>
+      }
+      <button
+        type="button"
+        class="app-topbar__menu-btn"
+        (click)="toggleMenu()"
+        [attr.aria-expanded]="menuOpen()"
+        aria-controls="appRailPanel"
+        aria-label="Toggle navigation"
+      >
+        <span class="app-topbar__menu-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  @if (menuOpen()) {
+    <button type="button" class="app-rail__backdrop" (click)="closeMenu()" aria-label="Close navigation"></button>
+  }
+
+  <aside
+    id="appRailPanel"
+    class="app-rail"
+    [class.app-rail--open]="menuOpen()"
+    [class.app-rail--collapsed]="railCollapsed()"
+    aria-label="Main navigation"
+  >
+    <div class="app-rail__inner">
+      <div class="app-rail__brand-row">
+        @if (automating()) {
+          <span class="app-rail__brand app-rail__brand--disabled" aria-disabled="true">
+            <span class="app-rail__mark" aria-hidden="true"></span>
+            <span class="app-rail__brand-text">AiEval</span>
+          </span>
+        } @else {
+          <a class="app-rail__brand" routerLink="/" (click)="closeMenu()">
+            <span class="app-rail__mark" aria-hidden="true"></span>
+            <span class="app-rail__brand-text">AiEval</span>
+          </a>
+        }
+        <button
+          type="button"
+          class="app-rail__collapse-btn"
+          (click)="toggleRailCollapsed()"
+          [attr.aria-expanded]="!railCollapsed()"
+          [attr.aria-label]="railCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
+          [attr.title]="railCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
+        >
+          <span class="app-rail__collapse-chevron" aria-hidden="true"></span>
+        </button>
+        <button
+          type="button"
+          class="app-rail__close-btn"
+          (click)="closeMenu()"
+          aria-label="Close navigation"
+        >
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+
+      <div class="app-rail__body" [attr.inert]="railCollapsed() ? '' : null">
+        <nav class="app-rail__nav" aria-label="Primary">
+          <ul class="app-rail__list">
+            <li>
+              @if (automating()) {
+                <span class="app-rail__link app-rail__link--disabled" aria-disabled="true">Dashboard</span>
+              } @else {
+                <a
+                  class="app-rail__link"
+                  routerLink="/"
+                  routerLinkActive="app-rail__link--active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  (click)="closeMenu()"
+                >
+                  Dashboard
+                </a>
+              }
+            </li>
+            <li>
+              @if (automating()) {
+                <span class="app-rail__link app-rail__link--disabled" aria-disabled="true">Learn</span>
+              } @else {
+                <a
+                  class="app-rail__link"
+                  routerLink="/learn"
+                  routerLinkActive="app-rail__link--active"
+                  (click)="closeMenu()"
+                >
+                  Learn
+                </a>
+              }
+            </li>
+            <li>
+              @if (automating()) {
+                <span class="app-rail__link app-rail__link--disabled" aria-disabled="true">About</span>
+              } @else {
+                <a
+                  class="app-rail__link"
+                  routerLink="/about"
+                  routerLinkActive="app-rail__link--active"
+                  (click)="closeMenu()"
+                >
+                  About
+                </a>
+              }
+            </li>
+          </ul>
+        </nav>
+
+        @if (onLearn()) {
+          <nav class="app-rail__tracks" aria-label="Tracks">
+            <p class="learn-eyebrow">Tracks</p>
+            <ul class="app-rail__list">
+              @for (track of trackIndex(); track track.id) {
+                <li>
+                  @if (automating()) {
+                    <span
+                      class="app-rail__link app-rail__link--track app-rail__link--disabled"
+                      [class.app-rail__link--active]="track.id === activeTrackId()"
+                      aria-disabled="true"
+                    >
+                      <span class="app-rail__track-title">{{ track.title }}</span>
+                      <span class="app-rail__track-frac">{{ track.done }}/{{ track.total }}</span>
+                    </span>
+                  } @else {
+                    <a
+                      class="app-rail__link app-rail__link--track"
+                      [class.app-rail__link--active]="track.id === activeTrackId()"
+                      routerLink="/learn"
+                      [fragment]="track.anchor"
+                      (click)="closeMenu()"
+                    >
+                      <span class="app-rail__track-title">{{ track.title }}</span>
+                      <span class="app-rail__track-frac">{{ track.done }}/{{ track.total }}</span>
+                    </a>
+                  }
+                </li>
+              }
+            </ul>
+          </nav>
+        }
+
+        <div class="app-rail__cta">
           @if (automating()) {
-            <span class="nav-link disabled" aria-disabled="true">Dashboard</span>
+            <span class="btn btn-primary w-100 disabled" aria-disabled="true">New Evaluation</span>
           } @else {
-            <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-              Dashboard
+            <a
+              class="btn btn-primary w-100"
+              routerLink="/evaluations/new"
+              routerLinkActive="active"
+              (click)="closeMenu()"
+            >
+              New Evaluation
             </a>
           }
-        </li>
-        <li class="nav-item">
+        </div>
+
+        <div class="app-rail__foot">
           @if (automating()) {
-            <span class="nav-link disabled" aria-disabled="true">New Evaluation</span>
-          } @else {
-            <a class="nav-link" routerLink="/evaluations/new" routerLinkActive="active">New Evaluation</a>
-          }
-        </li>
-        <li class="nav-item">
-          @if (automating()) {
-            <span class="nav-link disabled" aria-disabled="true">Learn</span>
-          } @else {
-            <a class="nav-link" routerLink="/learn" routerLinkActive="active">Learn</a>
-          }
-        </li>
-        <li class="nav-item">
-          @if (automating()) {
-            <span class="nav-link disabled" aria-disabled="true">About</span>
-          } @else {
-            <a class="nav-link" routerLink="/about" routerLinkActive="active">About</a>
-          }
-        </li>
-        <li class="nav-item">
-          @if (automating()) {
-            <span
-              class="btn btn-link nav-link settings-toggle px-2 disabled"
-              aria-disabled="true"
-              aria-label="Settings"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M8 4.754a3.25 3.25 0 1 0 0 6.492 3.25 3.25 0 0 0 0-6.492M5.25 8a2.75 2.75 0 1 1 5.5 0 2.75 2.75 0 0 1-5.5 0"/>
-                <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-1.865 4.63A3.75 3.75 0 0 0 8 12.75a3.75 3.75 0 0 0 3.07-5.777"/>
+            <span class="app-rail__link app-rail__link--disabled" aria-disabled="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
               </svg>
+              Settings
             </span>
           } @else {
-            <button
-              type="button"
-              class="btn btn-link nav-link settings-toggle px-2"
-              (click)="openSettings()"
-              aria-label="Open settings"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M8 4.754a3.25 3.25 0 1 0 0 6.492 3.25 3.25 0 0 0 0-6.492M5.25 8a2.75 2.75 0 1 1 5.5 0 2.75 2.75 0 0 1-5.5 0"/>
-                <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-1.865 4.63A3.75 3.75 0 0 0 8 12.75a3.75 3.75 0 0 0 3.07-5.777"/>
+            <button type="button" class="app-rail__link app-rail__settings" (click)="openSettings()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
               </svg>
+              Settings
             </button>
           }
-        </li>
-      </ul>
+        </div>
+      </div>
+
+      <div class="app-rail__collapsed-foot">
+        @if (automating()) {
+          <span
+            class="app-rail__icon-btn app-rail__icon-btn--disabled"
+            aria-disabled="true"
+            aria-label="Settings"
+            title="Settings"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+            </svg>
+          </span>
+        } @else {
+          <button
+            type="button"
+            class="app-rail__icon-btn"
+            (click)="openSettings()"
+            aria-label="Open settings"
+            title="Settings"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+            </svg>
+          </button>
+        }
+      </div>
     </div>
-  </div>
-</nav>
+  </aside>
+</div>

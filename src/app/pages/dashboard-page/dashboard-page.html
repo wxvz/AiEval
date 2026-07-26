@@ -12,14 +12,9 @@
   }
 
   <div shellMain>
-    <header
-      class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3"
-    >
-      <div>
-        <h1 class="page-header__title">Evaluations</h1>
-        <p class="page-header__subtitle">Compare AI answers side by side.</p>
-      </div>
-      <a routerLink="/evaluations/new" class="btn btn-primary px-4">New Evaluation</a>
+    <header class="page-header dashboard-page__header">
+      <h1 class="page-header__title">Evaluations</h1>
+      <p class="page-header__subtitle">Compare AI answers side by side.</p>
     </header>
 
     @if (openCompareMiss(); as compareMiss) {

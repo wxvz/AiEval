@@ -17,19 +17,13 @@ describe('LearnPage', () => {
     fixture.detectChanges();
   });
 
-  it('uses the full-width shell with Learn brand, track index, sticky Continue and Dashboard navigation', () => {
+  it('uses the shell with Learn brand, sticky Continue and Dashboard navigation', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('app-page-shell')).toBeTruthy();
-    expect(el.querySelector('[shellleft].learn-hub-rail')).toBeTruthy();
-    expect(el.querySelector('[shellleft] .learn-hub-rail__title')).toBeNull();
+    expect(el.querySelector('[shellleft].learn-hub-rail')).toBeNull();
     expect(el.querySelector('[shellmain] .learn-hub-main-brand__title')?.textContent?.trim()).toBe(
       'Learn',
     );
-    expect(el.querySelector('[shellleft] .learn-hub-tracks')).toBeTruthy();
-    expect(el.querySelector('[shellleft] a[href="/learn#track-foundation"]')).toBeTruthy();
-    expect(
-      el.querySelector('[shellleft] a.learn-hub-tracks__link--active[href="/learn#track-foundation"]'),
-    ).toBeTruthy();
     expect(el.querySelector('[shellmain] .page-header')).toBeNull();
     expect(el.querySelector('[shellmain] app-learn-roadmap')).toBeTruthy();
     expect(el.querySelector('[shellmain] .learn-more__list')).toBeTruthy();

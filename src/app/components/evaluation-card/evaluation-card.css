@@ -48,6 +48,11 @@
   color: var(--bs-secondary-color);
 }
 
+.evaluation-card__actions {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--aieval-border);
+}
+
 .evaluation-card__actions .btn {
   border-radius: var(--bs-border-radius-sm);
 }

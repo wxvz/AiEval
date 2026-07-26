@@ -36,7 +36,7 @@
     </div>
 
     @if (selectedSample(); as sample) {
-      <pre class="bg-light border rounded p-3 small mb-3">{{ sample.raw }}</pre>
+      <pre class="learn-lab-excerpt small mb-3">{{ sample.raw }}</pre>
       @if (parseResult(); as result) {
         @if (result.ok) {
           <p class="text-success mb-2">Parse succeeded: {{ result.scores.length }} score row(s).</p>

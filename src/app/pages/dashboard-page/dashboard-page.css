@@ -2,8 +2,23 @@
   display: block;
 }
 
+.dashboard-page__header {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.dashboard-page__header .page-header__title {
+  margin-bottom: 0.35rem;
+}
+
+.dashboard-page__header .page-header__subtitle {
+  margin-bottom: 0;
+}
+
 .evaluation-day__title {
   margin-bottom: 1rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--aieval-border);
   color: var(--bs-secondary-color);
   font-size: 0.875rem;
   font-weight: 600;
