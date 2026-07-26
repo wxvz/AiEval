@@ -17,7 +17,7 @@
         : a tiny attention drill after the read lesson.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: this is a hand-tuned toy, not a real transformer. There are no learned query/key matrices;
       you set the
       <app-learn-term-hint term="attention" hintId="attention-honesty" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -133,13 +133,13 @@
     </div>
 
     @if (result().success) {
-      <div class="alert alert-success mb-4" role="status">
+      <div class="learn-callout learn-callout--success mb-4" role="status">
         Target ranking achieved: <strong>{{ targetRanking.join(' → ') }}</strong>.
         Focusing on <span class="font-monospace">sat</span> pulled the context toward the posture meaning, so
         <span class="font-monospace">quietly</span> scored highest.
       </div>
     } @else {
-      <div class="alert alert-light border mb-4" role="status">
+      <div class="learn-callout mb-4" role="status">
         Goal: match ranking <strong>{{ targetRanking.join(' → ') }}</strong>.
         Try raising attention on <span class="font-monospace">sat</span>.
       </div>
@@ -184,6 +184,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!result().success"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

@@ -67,13 +67,13 @@
         "One pass through every training row is one {{epoch}}. A single {{epoch}} is rarely enough for hard puzzles like XOR. The {{model}} needs many chances to refine {{weights}}.",
         "In the lab you will see a {{loss}} chart over time. A healthy training run usually shows {{loss}} trending down, even if it wiggles step to step.",
         "If {{loss}} hits zero on the training rows, the {{model}} may have memorized them. Remember the {{trainSet}} vs {{testSet}} lesson when you interpret results.",
-        "The neural network lab lets you change hidden size, activation, dataset and {{learningRate}}. Your goal is not magic numbers; it is to connect \"I changed a setting\" to \"{{loss}} and {{prediction}}s changed.\"",
-        "Try the optional **Loss and updates lab** from this lesson to watch {{loss}} fall as you train. Then open the **Neural network lab** for full controls on XOR and more datasets."
+        "The neural network lab later lets you change hidden size, activation, dataset and {{learningRate}}. Your goal is not magic numbers; it is to connect \"I changed a setting\" to \"{{loss}} and {{prediction}}s changed.\"",
+        "Try the optional **Loss and updates lab** from this lesson to watch {{loss}} fall as you train. Next spine lesson: **Learning rate**, where the step-size dial becomes the main topic."
       ],
       "bullets": [
         "{{epoch}}: one full sweep through the training data.",
         "Watch {{loss}}: your main feedback while training.",
-        "Then try the lab: connect formulas to a network you control."
+        "Next: Learning rate, then Bias and weights."
       ],
       "check": {
         "prompt": "In one short phrase: what is training trying to do to {{loss}}?",

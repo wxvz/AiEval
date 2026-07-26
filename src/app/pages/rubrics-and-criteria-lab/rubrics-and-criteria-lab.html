@@ -13,7 +13,7 @@
         Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: one canned answer and a ±1 agreement band. In AiEval a
       <app-learn-term-hint term="judge" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       applies the rubric to every model answer automatically.
@@ -65,7 +65,7 @@
     </div>
 
     @if (checked()) {
-      <div class="alert alert-info mb-4" role="status">
+      <div class="learn-callout learn-callout--info mb-4" role="status">
         Within ±1 of the reference on {{ agreementCount() }} of {{ rubric.length }} criteria. Anchored scales keep two
         honest scorers this close. That is the whole point of anchors.
       </div>

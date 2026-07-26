@@ -45,4 +45,32 @@ describe('LearningFromExamplesLabPage', () => {
     component.assignTarget('photo');
     expect(component.matches()).toEqual({ ticket: 'photo' });
   });
+
+  it('disables mark complete until all pairs are correct', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-from-examples']));
+    const unlocked = TestBed.createComponent(LearningFromExamplesLabPage);
+    const unlockedPage = unlocked.componentInstance;
+    unlocked.detectChanges();
+
+    const button = unlocked.nativeElement.querySelector(
+      'app-learn-lab-nav button',
+    ) as HTMLButtonElement;
+    expect(unlockedPage.solved()).toBe(false);
+    expect(button.disabled).toBe(true);
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(false);
+
+    for (const example of unlockedPage.examples) {
+      unlockedPage.selectInput(example.id);
+      unlockedPage.assignTarget(example.id);
+    }
+    unlockedPage.check();
+    unlocked.detectChanges();
+
+    expect(unlockedPage.solved()).toBe(true);
+    expect(button.disabled).toBe(false);
+    unlockedPage.markLabComplete();
+    expect(unlockedPage.labCompleted()).toBe(true);
+  });
 });
+

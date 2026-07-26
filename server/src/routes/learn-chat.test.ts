@@ -20,7 +20,7 @@ vi.mock('../logging/logger.js', () => ({
 }));
 
 import { logEvent } from '../logging/logger.js';
-import { createLearnChatRouter, resetLearnChatRateLimitState } from './learn-chat.js';
+import { createLearnChatRouter, resetLearnChatRateLimitState, shouldAttachLearnChatSources } from './learn-chat.js';
 
 async function postLearnChat(
   body: unknown,
@@ -206,6 +206,106 @@ describe('POST /api/learn-chat', () => {
         }),
       }),
     );
+  });
+
+  it('strips response sources for short social turns', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'Sounds good. Let me know if you have any more questions.',
+          sessionId: 's-social',
+          sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    for (const message of ['okay', 'hi', 'thanks']) {
+      const { status, body } = await postLearnChat({
+        message,
+        sessionId: 's-social',
+        sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        curriculumCatalog: [
+          { title: 'Learning rate', route: '/learn/lessons/learning-rate' },
+        ],
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({
+        reply: 'Sounds good. Let me know if you have any more questions.',
+        sessionId: 's-social',
+        sources: [],
+      });
+    }
+  });
+
+  it('keeps response sources for short term prompts', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'Bias is a shared baseline shift.',
+          sessionId: 's-term',
+          sources: [{ title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    for (const message of ['bias', 'softmax', 'learning rate']) {
+      const { status, body } = await postLearnChat({
+        message,
+        sessionId: 's-term',
+        sources: [{ title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' }],
+        curriculumCatalog: [
+          { title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' },
+        ],
+      });
+
+      expect(status).toBe(200);
+      expect(body).toEqual({
+        reply: 'Bias is a shared baseline shift.',
+        sessionId: 's-term',
+        sources: [{ title: 'Bias and weights', route: '/learn/lessons/bias-and-weights' }],
+      });
+    }
+  });
+
+  it('classifies social closers vs short term prompts for source chips', () => {
+    expect(shouldAttachLearnChatSources('hi')).toBe(false);
+    expect(shouldAttachLearnChatSources('thanks!')).toBe(false);
+    expect(shouldAttachLearnChatSources('ok.')).toBe(false);
+    expect(shouldAttachLearnChatSources('bias')).toBe(true);
+    expect(shouldAttachLearnChatSources('learning rate')).toBe(true);
+    expect(shouldAttachLearnChatSources('softmax')).toBe(true);
+  });
+
+  it('keeps response sources for substantive asks', async () => {
+    stubWebhookFetch(async () =>
+      new Response(
+        JSON.stringify({
+          reply: 'Learning rate scales each weight update.',
+          sessionId: 's-ask',
+          sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+
+    const { status, body } = await postLearnChat({
+      message: 'how does learning rate as a value work?',
+      sessionId: 's-ask',
+      sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+      curriculumCatalog: [
+        { title: 'Learning rate', route: '/learn/lessons/learning-rate' },
+      ],
+    });
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      reply: 'Learning rate scales each weight update.',
+      sessionId: 's-ask',
+      sources: [{ title: 'Learning rate', route: '/learn/lessons/learning-rate' }],
+    });
   });
 
   it('drops all response sources when curriculum catalog is empty', async () => {
@@ -485,7 +585,7 @@ describe('POST /api/learn-chat', () => {
   it('aborts the n8n fetch when the client disconnects', async () => {
     let webhookSignal: AbortSignal | undefined;
     stubWebhookFetch(async (_input, init) => {
-      webhookSignal = init?.signal;
+      webhookSignal = init?.signal ?? undefined;
       return new Promise<Response>(() => {
         // Never resolve — client abort should cancel this wait.
       });

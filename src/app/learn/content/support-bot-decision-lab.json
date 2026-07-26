@@ -1,0 +1,44 @@
+{
+  "handoffCopy": {
+    "createPageHint": "Support bot decision lab: use the constrained Acme prompt, paste at least three golden questions (price, refund window, angry tone) and score Accuracy, Tone and Faithfulness. Your evaluation will be highlighted when automation finishes.",
+    "dashboardBanner": "Your Support bot decision lab evaluation is highlighted. Open Compare, decide ship / ship-other / neither with rubric evidence, then return to the lab."
+  },
+  "steps": [
+    {
+      "title": "Create the Acme decision evaluation",
+      "body": "Open create and title it \"Acme support decision\". Paste the constrained prompt: You are Acme support. Answer using only the provided policy context. Use short plain sentences. If the policy is silent, say you do not have that information. Never invent prices, windows or coverage. Include policy notes for 14-day refunds, Plan Basic at $9 per month and 3 to 5 day standard shipping.",
+      "actionLabel": "Create evaluation",
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=support-bot-decision-lab"
+    },
+    {
+      "title": "Load three golden cases",
+      "body": "Add at least: (1) How much is Plan Basic per month? (2) I bought headphones 10 days ago. Can I get a full refund? (3) This is ridiculous. Refund me now or I will sue. Tag them mentally as price, refund-window and tone failures.",
+      "actionLabel": "Go to create page",
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=support-bot-decision-lab"
+    },
+    {
+      "title": "Attach the three-row rubric",
+      "body": "Use Accuracy, Tone and Faithfulness with 1 / 3 / 5 anchors from Outside eval practice. If the UI offers custom criteria, mirror those names so Compare stays readable.",
+      "actionLabel": "Go to create page",
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=support-bot-decision-lab"
+    },
+    {
+      "title": "Run automation with two models",
+      "body": "Select two models and run full automation. Lock sampling if the UI exposes temperature so the comparison stays fair. Wait for generate and score to finish. The Learn highlight appears after automation finishes.",
+      "actionLabel": "Go to create page",
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=support-bot-decision-lab"
+    },
+    {
+      "title": "Compare and read inside the answers",
+      "body": "Open Compare. Note the winner per criterion. Spot one unfaithful or weak sentence (invented price, wrong window or escalating tone). That close read is still outside evaluation, informed by what you know about fluent-but-wrong model behavior.",
+      "actionLabel": "Open Compare",
+      "actionRoute": "/?from=learn&learnLesson=support-bot-decision-lab&openCompare=1"
+    },
+    {
+      "title": "Make the ship call",
+      "body": "Decide ship model A, ship model B or neither. Write one sentence that cites a rubric row (for example: \"Neither: both fail Faithfulness on the price case.\"). Then return here and mark the lab complete.",
+      "actionLabel": "Open dashboard",
+      "actionRoute": "/?from=learn&learnLesson=support-bot-decision-lab"
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "sections": [
+    {
+      "title": "Judge the outside, not the weight matrices",
+      "paragraphs": [
+        "Inside lessons taught how scores, steps and vectors work. Outside evaluation asks a different question: given this {{prompt}} and these answers, which behavior is acceptable?",
+        "Acme wants a support bot grounded in policy docs. Your outside job is to freeze the task, freeze failure modes and score answers with a {{rubric}}.",
+        "A {{goldenSet}} is the deck of reusable {{testCase}}s you will rerun. Start from refunds, EU returns, angry tone, plan price, shipping and uncovered damage.",
+        "Vague instructions like \"help the customer\" invite invention. Constrained instructions name format, refusal rules and the ban on invented prices.",
+        "This lesson is dedicated outside practice. You are not training {{weights}} here. You are building evidence for a later harness run in AiEval."
+      ],
+      "bullets": [
+        "Outside focus: prompts, answers, scores.",
+        "Shared problem: Acme support bot.",
+        "Artifact: a small {{goldenSet}} plus {{rubric}}."
+      ],
+      "check": {
+        "prompt": "A PM says the new model \"feels nicer\" in Slack. What outside artifact is still missing?",
+        "answer": "A golden set and rubric with scored evidence",
+        "choices": [
+          "A golden set and rubric with scored evidence",
+          "A larger softmax table only",
+          "Deleting the learning rate",
+          "A new GAN for refunds"
+        ],
+        "explanation": "Feelings are not an evaluation. Outside craft needs fixed {{testCase}}s and anchored {{criterion}} rows so you can defend a decision."
+      }
+    },
+    {
+      "title": "Build the deck and the anchors",
+      "paragraphs": [
+        "Write at least these failure tags into your deck: wrong refund window, missing EU policy, angry tone, price hallucination, shipping SLA and over-claim on coverage.",
+        "Use three {{criterion}} rows: Accuracy, Tone and Faithfulness. Anchor 1 / 3 / 5 so two reviewers can argue with the same language.",
+        "Compare two canned replies to the plan-price question. The strong reply cites $9 from policy. The weak reply invents $15 and an unlimited refund.",
+        "Click each reveal. Score the weak reply low on Accuracy and Faithfulness even if the tone sounds friendly.",
+        "When context is missing, a faithful answer may refuse. Do not punish honest \"I do not have that information\" when the docs are silent."
+      ],
+      "reveals": [
+        {
+          "prompt": "Strong canned reply on Plan Basic.",
+          "reveal": "States $9 from policy and stays inside the docs. High Accuracy and Faithfulness."
+        },
+        {
+          "prompt": "Weak canned reply on Plan Basic.",
+          "reveal": "Invented $15 and unlimited refunds. Fail Accuracy and Faithfulness even if tone is warm."
+        },
+        {
+          "prompt": "Angry refund demand with no policy match.",
+          "reveal": "Stay calm, state the 14-day rule if it applies and avoid matching the customer's heat."
+        }
+      ],
+      "aside": {
+        "title": "Keep the Acme deck",
+        "body": "You will paste these {{testCase}}s into AiEval in the next labs. Keep Accuracy, Tone and Faithfulness as your starter {{rubric}}.",
+        "route": "/evaluations/new?from=learn",
+        "actionLabel": "Preview create page"
+      },
+      "check": {
+        "prompt": "Which canned Plan Basic answer should win on Faithfulness?",
+        "answer": "The reply that states $9 from policy without extras",
+        "choices": [
+          "The reply that states $9 from policy without extras",
+          "The reply that invents $15 and unlimited refunds",
+          "Any reply that uses exclamation marks",
+          "A reply that ignores the question entirely"
+        ],
+        "explanation": "Faithfulness rewards claims supported by context. Invented prices fail even when the tone is cheerful."
+      }
+    },
+    {
+      "title": "Hand the deck to the harness",
+      "paragraphs": [
+        "You now have an outside artifact: constrained Acme instructions, six {{testCase}} ideas and a three-row {{rubric}}.",
+        "Branch spur on the Learn hub: First evaluation lab warms up AiEval's generate → score → compare loop. Support bot decision lab asks for a ship / ship-other / neither call.",
+        "Those harness labs are not required for Continue. Use them when you want the live tool loop.",
+        "That is the perspective shift: models are computable inside and measurable outside. The harness is how you repeat the measurement.",
+        "Next spine step: **Regression evals**. Re-run a golden set after changes to catch quality drops."
+      ],
+      "bullets": [
+        "Artifact ready: prompt, cases, {{rubric}}.",
+        "Branch: First evaluation lab and Support bot decision lab on the hub spur.",
+        "Next spine step: Regression evals."
+      ],
+      "check": {
+        "prompt": "In a short phrase, what should you carry into the harness labs?",
+        "answer": "Constrained prompt, golden cases and rubric",
+        "accept": [
+          "prompt cases and rubric",
+          "acme prompt with golden set",
+          "fixed cases and score anchors",
+          "golden set plus rubric anchors"
+        ],
+        "wordBank": [
+          "Constrained",
+          "prompt",
+          "golden",
+          "cases",
+          "and",
+          "rubric",
+          "softmax",
+          "only"
+        ],
+        "explanation": "The harness needs your outside artifacts. Without a fixed {{prompt}}, {{goldenSet}} and {{rubric}}, automation cannot produce a defendable decision."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "What is the main job of this outside practice lesson?",
+      "answer": "Build evidence artifacts to judge Acme support answers",
+      "choices": [
+        "Build evidence artifacts to judge Acme support answers",
+        "Derive backprop by hand for Acme",
+        "Train a GAN on refund PDFs",
+        "Replace tokenization with a spreadsheet"
+      ],
+      "explanation": "Outside eval practice produces a {{goldenSet}} and {{rubric}} for the Acme bot so later harness runs have something real to score."
+    },
+    {
+      "prompt": "A friendly answer invents a price. Which criteria should suffer first?",
+      "answer": "Accuracy and faithfulness",
+      "accept": [
+        "accuracy and faithfulness",
+        "faithfulness and accuracy",
+        "accuracy plus faithfulness",
+        "both accuracy and faithfulness"
+      ],
+      "wordBank": [
+        "Accuracy",
+        "and",
+        "faithfulness",
+        "tone",
+        "only",
+        "latency"
+      ],
+      "explanation": "Invented facts fail Accuracy and Faithfulness. Tone can still look fine, which is why multi-criteria {{rubric}}s matter."
+    }
+  ]
+}

@@ -16,6 +16,7 @@ export type LearnGlossaryTerm =
   | 'sigmoid'
   | 'relu'
   | 'tanh'
+  | 'softmax'
   | 'memorization'
   | 'classifier'
   | 'hyperparameters'
@@ -164,6 +165,11 @@ export const LEARN_GLOSSARY: Record<LearnGlossaryTerm, LearnGlossaryEntry> = {
     label: 'tanh',
     explanation:
       'Hyperbolic tangent activation that squeezes scores into (−1, 1), centered at zero.',
+  },
+  softmax: {
+    label: 'softmax',
+    explanation:
+      'Turns a list of raw scores into probabilities that sum to one so options compete. Common for multi-class heads and next-token distributions.',
   },
   memorization: {
     label: 'memorization',

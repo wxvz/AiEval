@@ -1,32 +1,38 @@
 {
   "handoffCopy": {
-    "createPageHint": "You are creating an evaluation as part of the First evaluation lab. Run full automation or create manually. Your evaluation will be highlighted on the dashboard when you return.",
-    "dashboardBanner": "Your evaluation from the First evaluation lab is highlighted below. Open Compare to see scored answers or return to the lab when you are done."
+    "createPageHint": "First evaluation lab (Acme warm-up): paste the constrained support prompt below, add one Plan Basic price question, then run full automation. Your evaluation will be highlighted on the dashboard when automation finishes.",
+    "dashboardBanner": "Your First evaluation lab run is highlighted. Open Compare, then return to the lab when you are done."
   },
   "steps": [
     {
-      "title": "Open the create page",
-      "body": "Start by opening AiEval's create page. You can leave title and prompt empty and use Run full automation or fill them in yourself.",
+      "title": "Open create with the Acme warm-up",
+      "body": "Open AiEval create. Title the evaluation \"Acme support warm-up\". Paste this constrained prompt: You are Acme support. Answer using only the provided policy context. Use short plain sentences. If the policy is silent, say you do not have that information. Never invent prices, windows or coverage. Add context note: Plan Basic costs $9 per month.",
       "actionLabel": "Create evaluation",
-      "actionRoute": "/evaluations/new?from=learn"
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=first-evaluation-lab"
+    },
+    {
+      "title": "Add one golden question",
+      "body": "Use the question: How much is Plan Basic per month? Keep sampling settings default so this warm-up stays simple. You will expand the deck in the decision lab.",
+      "actionLabel": "Go to create page",
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=first-evaluation-lab"
     },
     {
       "title": "Run full automation",
-      "body": "On the create page, click Run full automation. AiEval will generate answers, score them against the default rubric and draft an improved response. This may take a few minutes.",
+      "body": "Click Run full automation so AiEval generates answers, scores them and stores the run. This may take a few minutes depending on providers. The Learn highlight appears after automation finishes.",
       "actionLabel": "Go to create page",
-      "actionRoute": "/evaluations/new?from=learn"
+      "actionRoute": "/evaluations/new?from=learn&learnLesson=first-evaluation-lab"
     },
     {
-      "title": "Find your evaluation on the dashboard",
-      "body": "When automation finishes, open the dashboard. Your lab evaluation is highlighted so you can spot it among other evaluations.",
+      "title": "Find the run on the dashboard",
+      "body": "Open the dashboard. Your lab evaluation is highlighted so you can spot it among other evaluations.",
       "actionLabel": "Open dashboard",
-      "actionRoute": "/?from=learn"
+      "actionRoute": "/?from=learn&learnLesson=first-evaluation-lab"
     },
     {
-      "title": "Compare the answers",
-      "body": "Open Compare on your evaluation to read each model answer and see how the rubric scores line up. Notice which answer won and why.",
-      "actionLabel": "Open dashboard",
-      "actionRoute": "/?from=learn"
+      "title": "Skim Compare once",
+      "body": "Open Compare from the Learn banner (or the highlighted card) and note which answer looks more faithful on the price question. This warm-up proves the harness loop. The next lab asks for a full ship decision.",
+      "actionLabel": "Open Compare",
+      "actionRoute": "/?from=learn&learnLesson=first-evaluation-lab&openCompare=1"
     }
   ]
 }

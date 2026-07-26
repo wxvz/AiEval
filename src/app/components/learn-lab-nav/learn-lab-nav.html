@@ -1,4 +1,4 @@
-<nav class="learn-lab-nav card-elevated" aria-label="Learn navigation">
+<nav class="learn-lab-nav learn-sticky-panel" aria-label="Learn navigation">
   @if (resolvedParent(); as parentLesson) {
     <a class="learn-lab-nav__back small" [routerLink]="parentLesson.route">← {{ parentLesson.title }}</a>
   } @else {
@@ -8,11 +8,14 @@
   <button
     type="button"
     class="btn btn-primary btn-sm w-100"
-    [disabled]="completed() || completionDisabled()"
+    [disabled]="markCompleteDisabled()"
+    [attr.title]="markCompleteTitle()"
     (click)="complete.emit()"
   >
     @if (completed()) {
       Lab completed
+    } @else if (locked()) {
+      Locked
     } @else {
       Mark lab complete
     }

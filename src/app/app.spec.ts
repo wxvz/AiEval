@@ -2,7 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { App } from './app';
+import { App, isLearnAppPath } from './app';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -26,5 +26,16 @@ describe('App', () => {
     expect(compiled.querySelector('app-settings-aside')).toBeTruthy();
     expect(compiled.querySelector('app-status-alert')).toBeTruthy();
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
+  });
+});
+
+describe('isLearnAppPath', () => {
+  it('keeps hub track fragment URLs as learn routes', () => {
+    expect(isLearnAppPath('/learn')).toBe(true);
+    expect(isLearnAppPath('/learn#track-foundation')).toBe(true);
+    expect(isLearnAppPath('/learn#track-llm-systems')).toBe(true);
+    expect(isLearnAppPath('/learn?from=nav')).toBe(true);
+    expect(isLearnAppPath('/learn/lessons/learning-from-examples')).toBe(true);
+    expect(isLearnAppPath('/evaluations')).toBe(false);
   });
 });

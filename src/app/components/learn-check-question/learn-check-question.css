@@ -1,3 +1,52 @@
+.learn-check-question__shell {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: color-mix(in srgb, var(--aieval-primary) 5%, var(--aieval-surface));
+}
+
+.learn-check-question__prompt-label {
+  margin-bottom: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--aieval-muted);
+}
+
+.learn-check-question__prompt-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.learn-check-question__prompt-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.learn-check-question__check {
+  flex-shrink: 0;
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--aieval-primary);
+  --bs-btn-border-color: var(--aieval-primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--aieval-primary-hover);
+  --bs-btn-hover-border-color: var(--aieval-primary-hover);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--aieval-primary-hover);
+  --bs-btn-active-border-color: var(--aieval-primary-hover);
+}
+
+[data-bs-theme='dark'] .learn-check-question__check {
+  --bs-btn-color: #0b1220;
+  --bs-btn-hover-color: #0b1220;
+  --bs-btn-active-color: #0b1220;
+}
+
 .learn-check-question__choices {
   border: 0;
   padding: 0;
@@ -10,14 +59,16 @@
   gap: 0.5rem;
   padding: 0.625rem 0.75rem;
   margin-bottom: 0.5rem;
-  border: 1px solid var(--bs-border-color);
-  border-radius: 0.5rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .learn-check-question__choice:has(input:checked) {
-  border-color: var(--bs-primary);
-  background: rgba(var(--bs-primary-rgb), 0.06);
+  border-color: color-mix(in srgb, var(--aieval-primary) 45%, var(--aieval-border));
+  background: color-mix(in srgb, var(--aieval-primary) 8%, var(--aieval-surface));
 }
 
 .learn-check-question__choice input {
@@ -32,8 +83,9 @@
   align-items: center;
   min-height: 2.5rem;
   padding: 0.375rem 0.5rem;
-  border: 1px dashed var(--bs-border-color);
-  border-radius: 0.5rem;
+  border: 1px dashed var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
 }
 
 .learn-check-question__bank {
@@ -43,10 +95,10 @@
 }
 
 .learn-check-question__chip {
-  border: 1px solid var(--bs-border-color);
+  border: 1px solid var(--aieval-border);
   border-radius: 999px;
-  background: var(--bs-body-bg);
-  color: var(--bs-body-color);
+  background: var(--aieval-surface);
+  color: var(--aieval-ink);
   padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
   line-height: 1.4;
@@ -54,7 +106,7 @@
 }
 
 .learn-check-question__chip:hover:not(:disabled) {
-  border-color: var(--bs-primary);
+  border-color: var(--aieval-primary);
 }
 
 .learn-check-question__chip:disabled {
@@ -62,7 +114,6 @@
   cursor: default;
 }
 
-/* Assembled answer: plain clickable words (not pills); bank chips keep chip look. */
 .learn-check-question__chip--assembled {
   border: none;
   border-radius: 0.25rem;
@@ -108,7 +159,9 @@
   font-weight: 500;
 }
 
-.learn-check-question__explanation {
-  border-color: var(--bs-success-border-subtle);
-  background: rgba(var(--bs-success-rgb), 0.06);
+.learn-check-question__answer-card {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--aieval-border);
+  border-radius: var(--aieval-radius);
+  background: var(--aieval-surface);
 }

@@ -15,7 +15,7 @@
         Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: canned answers and one reference verdict. In AiEval a
       <app-learn-term-hint term="judge" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       scores real model outputs and reasonable judges can disagree.
@@ -83,7 +83,7 @@
     </div>
 
     @if (checked()) {
-      <div class="alert alert-info mb-4" role="status">
+      <div class="learn-callout learn-callout--info mb-4" role="status">
         You agreed with the reference on {{ agreementCount() }} of {{ criteria.length }} criteria.
         Disagreement is not failure; it is a reason to sharpen the criterion wording.
       </div>

@@ -77,7 +77,7 @@
         "When collection is limited, prioritize gaps that could change the choice. Another thousand common password resets may barely affect confidence, while fifty carefully reviewed account-recovery cases could expose a release-blocking failure.",
         "Document where rows came from, when fields become available, how labels were assigned and which split each row belongs to. This record helps future teammates distinguish real {{generalization}} from leakage, label noise or a shifted distribution.",
         "The practical decision is whether the available data is fit for the claim. If important groups are absent, labels are inconsistent or future information leaks into inputs, pause the model choice and improve the evidence. If coverage and labels match the decision, proceed and state the limits.",
-        "Next, **Decision trees** turn input features into readable split rules. Data literacy comes first because even a transparent tree learns misleading rules from distorted rows; after trees, the Foundation path continues toward deep learning and the LLM systems you will evaluate in AiEval."
+        "Next, optional **Decision trees** sit as a side path if you want readable split rules. The Continue spine goes to **Deep learning approaches**, then tokenization and the outside LLM track you will evaluate in AiEval."
       ],
       "bullets": [
         "State the product or model decision before collecting more rows.",
@@ -85,6 +85,12 @@
         "Record source, label rule, timing and split membership.",
         "Proceed only when the evidence fits the claim and report remaining limits."
       ],
+      "aside": {
+        "title": "Branch on the hub",
+        "body": "Decision trees peel off this lesson as a Branch spur on the Learn hub. They are not required for Continue.",
+        "route": "/learn/lessons/decision-trees",
+        "actionLabel": "Open decision trees"
+      },
       "check": {
         "prompt": "Your eval lacks a safety-critical user group and its labels conflict. In a short phrase, what should the team decide?",
         "answer": "Improve the data before choosing",

@@ -1,13 +1,14 @@
 {
   "sections": [
     {
-      "title": "A dataset is a stack of flash cards",
+      "title": "A dataset is labeled rows",
       "paragraphs": [
-        "Think of a {{dataset}} as a whole deck of flash cards, not a single card. One card is an example: an {{input}} on the front and a {{target}} on the back. The deck is every card you are willing to teach from.",
-        "In {{supervisedLearning}}, that deck is what the {{model}} studies. Each row pairs something you show the {{model}} with the answer you want it to learn. Without a full set of pairs, there is nothing to practice on.",
+        "A supervised {{dataset}} is the full collection of {{input}}-{{target}} pairs (labeled rows) the {{model}} trains on. Each {{dataset}} row is one example: something you show the {{model}}, plus the answer you want it to learn.",
+        "In {{supervisedLearning}}, that collection is what the {{model}} studies. Without a full set of pairs, there is nothing to practice on.",
         "A {{dataset}} can be tiny or huge. The four XOR {{input}} pairs ((0,0), (0,1), (1,0) and (1,1)) form a {{dataset}}. Ten thousand labeled emails form a {{dataset}}. The shape stays the same: rows of {{labeledData}}.",
         "People sometimes say \"data\" when they mean raw files with no answers. That pile is not yet a supervised {{dataset}}. You still need agreed {{target}}s before training can start.",
-        "When the Neural network lab asks you to pick a {{dataset}}, it is offering different decks of cards. The idea stays the same as flash cards; only the puzzle on each card changes."
+        "Optional picture: some people compare each row to a flash card ({{input}} on the front, {{target}} on the back) and the {{dataset}} to the whole deck. You do not need that picture. The literal idea is many labeled rows, not one lonely example.",
+        "When the Neural network lab asks you to pick a {{dataset}}, it is offering different puzzles with the same row shape. Only the pattern of {{target}}s changes."
       ],
       "bullets": [
         "{{dataset}}: the full collection of training rows.",
@@ -37,9 +38,9 @@
       "paragraphs": [
         "Every built-in {{dataset}} in the lab uses the same row shape: two numbers as the {{input}} and a {{target}} the {{model}} should predict.",
         "Plot those two numbers as a point on a graph and the four pairs (0,0), (0,1), (1,0) and (1,1) sit at the corners of a square. That is why people call each pair a corner.",
-        "AND is the easy deck. Only the corner (1,1) maps to {{target}} 1; the other three corners map to 0. A simple straight boundary can separate the answers.",
-        "XOR is the classic hard deck. Corners where the inputs differ ((0,1) and (1,0)) map to 1; matching corners (0,0) and (1,1) map to 0. No single straight line separates them, so a tiny network usually needs a hidden layer.",
-        "The 3-class deck teaches a different kind of {{target}}: pick one class among three instead of a yes/no style answer. Softmax output fits that multi-class setup.",
+        "AND is the easier puzzle. Only the corner (1,1) maps to {{target}} 1; the other three corners map to 0. A simple straight boundary can separate the answers.",
+        "XOR is the classic harder puzzle. Corners where the inputs differ ((0,1) and (1,0)) map to 1; matching corners (0,0) and (1,1) map to 0. No single straight line separates them, so a tiny network usually needs a hidden layer.",
+        "The 3-class set teaches a different kind of {{target}}: pick one class among three instead of a yes/no style answer. Softmax output fits that multi-class setup.",
         "Click each puzzle below. The {{input}} corners look similar while the {{target}} pattern (and the teaching point) changes."
       ],
       "reveals": [
@@ -71,11 +72,11 @@
     {
       "title": "Custom rows and what comes next",
       "paragraphs": [
-        "Custom mode lets you invent your own {{dataset}}: type {{input}} numbers and {{target}}s, then train on those rows. You are building the flash-card deck yourself.",
+        "Custom mode lets you invent your own {{dataset}}: type {{input}} numbers and {{target}}s, then train on those rows. You are building the labeled collection yourself.",
         "Keep the same discipline as any supervised set. Every row needs a clear {{target}}. Mix-ups (wrong labels, missing answers or inconsistent rules) teach the {{model}} the wrong lesson.",
         "Teaching shortcut in the Neural network lab: it often trains on every row you provide. That is fine for learning how training feels but real projects do not stop there.",
         "Next lesson: **Train vs test**. It explains why we hold some rows out of the {{dataset}} as a {{testSet}} so we can measure {{generalization}} honestly.",
-        "After that, the **Neural network lab** is where you pick AND, XOR, 3-class or custom and watch a tiny {{model}} learn from the deck you chose."
+        "After that, the **Neural network lab** is where you pick AND, XOR, 3-class or custom and watch a tiny {{model}} learn from the {{dataset}} you chose."
       ],
       "bullets": [
         "Custom rows: your own {{input}} / {{target}} pairs.",
@@ -127,7 +128,7 @@
         "XOR does not need targets",
         "AND cannot be stored as rows"
       ],
-      "explanation": "Both puzzles use input-target rows. AND is easier (linearly separable); XOR shows when a hidden layer helps. Different decks, same idea of a {{dataset}}."
+      "explanation": "Both puzzles use input-target rows. AND is easier (linearly separable); XOR shows when a hidden layer helps. Different puzzles, same idea of a {{dataset}}."
     }
   ]
 }

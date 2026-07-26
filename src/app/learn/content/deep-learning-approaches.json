@@ -75,7 +75,7 @@
         "Build a simple baseline first: a rule, decision tree, linear model or provider model used with a fixed {{prompt}}. Then compare realistic candidates on the same {{trainSet}}, {{validationSet}} and protected {{testSet}}. Tune each approach without letting test results guide repeated changes.",
         "Slice results by the relationships each architecture claims to handle. For vision, vary object position and lighting; for sequences, vary length and delayed effects; for language, include long-range instructions and distractors. Report latency and memory beside task quality so the winner is deployable, not merely accurate.",
         "Watch for {{overfitting}} at both model and decision levels. A large network can memorize scarce labels, while a team can also overfit architecture choices to one benchmark. Re-run on shifted conditions and compare confidence, calibration and important failure groups before making a release claim.",
-        "The next lesson, **Reinforcement learning**, changes the learning signal rather than only the network shape. Instead of learning from a fixed correct target for every row, an agent acts, receives rewards and learns from consequences. Understanding how structure guides supervised learning prepares you to see what changes next."
+        "The next spine lesson, **Tokenization inside models**, shows how text becomes tokens and embedding lookups before the network runs. A Branch spur on the Learn hub covers reinforcement learning and GANs if you want other learning styles. They are not required for Continue."
       ],
       "bullets": [
         "State data and operating constraints before selecting a model family.",
@@ -83,6 +83,12 @@
         "Test slices that exercise local, sequential and long-range relationships.",
         "Measure task quality, latency, memory and costly failure modes together."
       ],
+      "aside": {
+        "title": "Branch on the hub",
+        "body": "Want a different learning signal than labeled targets? Open Reinforcement learning from this lesson's Branch spur on the Learn hub.",
+        "route": "/learn/lessons/reinforcement-learning",
+        "actionLabel": "Open reinforcement learning"
+      },
       "check": {
         "prompt": "Complete the architecture-selection rule in one short phrase.",
         "answer": "Match structure, constraints and evidence",

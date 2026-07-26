@@ -88,6 +88,9 @@ export class DecisionTreesLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('decision-trees-lab');
   }
 }

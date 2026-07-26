@@ -68,6 +68,9 @@ export class TransformersLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.result().success) {
+      return;
+    }
     this.progress.markComplete('transformers-lab');
   }
 }

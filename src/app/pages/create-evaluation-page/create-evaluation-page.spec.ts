@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 
 import {
   AUTOMATION_METADATA_STUB_PROMPT,
@@ -20,10 +21,12 @@ describe('CreateEvaluationPage', () => {
   let evaluationService: EvaluationService;
   let learnHandoff: LearnHandoffService;
   let routerNavigate: ReturnType<typeof vi.fn>;
+  let queryParamMap$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
 
   beforeEach(() => {
     sessionStorage.clear();
     routerNavigate = vi.fn().mockResolvedValue(true);
+    queryParamMap$ = new BehaviorSubject(convertToParamMap({}));
 
     TestBed.configureTestingModule({
       imports: [CreateEvaluationPage],
@@ -36,7 +39,12 @@ describe('CreateEvaluationPage', () => {
         { provide: Router, useValue: { navigate: routerNavigate } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+          useValue: {
+            get snapshot() {
+              return { queryParamMap: queryParamMap$.value };
+            },
+            queryParamMap: queryParamMap$.asObservable(),
+          },
         },
       ],
     });
@@ -634,8 +642,11 @@ describe('CreateEvaluationPage', () => {
     expect(form!.getValue().prompt).toBe('Keep this prompt text as written.');
   });
 
-  it('records learn handoff when creating from learn context', async () => {
-    page['fromLearn'].set(true);
+  it('records learn handoff when automation finishes from learn context', async () => {
+    queryParamMap$.next(
+      convertToParamMap({ from: 'learn', learnLesson: 'first-evaluation-lab' }),
+    );
+    fixture.detectChanges();
 
     const created = {
       id: 'eval-learn',
@@ -645,15 +656,36 @@ describe('CreateEvaluationPage', () => {
       criteria: [],
       evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
+      automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
-
-    await page['onRunFullAutomation']();
+    page['applyAutomationResult'](created);
 
     expect(learnHandoff.highlightedEvaluationId()).toBe('eval-learn');
+    expect(learnHandoff.lessonId()).toBe('first-evaluation-lab');
+  });
+
+  it('does not record learn handoff for a non-automated evaluation', async () => {
+    queryParamMap$.next(
+      convertToParamMap({ from: 'learn', learnLesson: 'first-evaluation-lab' }),
+    );
+    fixture.detectChanges();
+
+    page['applyAutomationResult']({
+      id: 'eval-manual',
+      title: 'Manual eval',
+      prompt: 'Prompt',
+      criteriaMode: 'default',
+      criteria: [],
+      evaluationConfig: DEFAULT_EVALUATION_CONFIG,
+      answers: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(learnHandoff.highlightedEvaluationId()).toBeNull();
   });
 
   it('does not record learn handoff without from=learn', async () => {
@@ -665,14 +697,27 @@ describe('CreateEvaluationPage', () => {
       criteria: [],
       evaluationConfig: DEFAULT_EVALUATION_CONFIG,
       answers: [],
+      automatedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    vi.spyOn(evaluationService, 'create').mockResolvedValue(created);
-
-    await page['onRunFullAutomation']();
+    page['applyAutomationResult'](created);
 
     expect(learnHandoff.highlightedEvaluationId()).toBeNull();
+  });
+
+  it('updates learnLesson when query params change on the same create route', () => {
+    queryParamMap$.next(
+      convertToParamMap({ from: 'learn', learnLesson: 'first-evaluation-lab' }),
+    );
+    fixture.detectChanges();
+    expect(page['learnLessonId']()).toBe('first-evaluation-lab');
+
+    queryParamMap$.next(
+      convertToParamMap({ from: 'learn', learnLesson: 'support-bot-decision-lab' }),
+    );
+    fixture.detectChanges();
+    expect(page['learnLessonId']()).toBe('support-bot-decision-lab');
   });
 });

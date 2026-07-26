@@ -41,9 +41,18 @@ describe('LearnLessonPage', () => {
       'aieval-learn-progress',
       JSON.stringify([
         'learning-from-examples',
+        'what-is-a-dataset',
         'train-vs-test',
         'loss-and-updates',
+        'learning-rate',
+        'bias-and-weights',
+        'activation-functions',
+        'softmax-and-distributions',
         'neural-network-lab',
+        'embeddings-and-votes',
+        'data-literacy',
+        'deep-learning-approaches',
+        'tokenization-inside-models',
       ]),
     );
     setLessonId('prompts-as-instructions');
@@ -55,13 +64,13 @@ describe('LearnLessonPage', () => {
     expect(el.querySelector('app-learn-lesson-section')).toBeTruthy();
   });
 
-  it('renders section checks and recap without legacy Check yourself heading', () => {
+  it('renders section checks and recap with Check yourself prompts', () => {
     setLessonId('learning-from-examples');
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('Recap');
-    expect(el.textContent).not.toContain('Check yourself');
+    expect(el.textContent).toContain('Check yourself');
     expect(el.querySelector('app-learn-lesson-section')).toBeTruthy();
     expect(el.querySelectorAll('app-learn-check-question').length).toBeGreaterThan(0);
   });
@@ -70,17 +79,16 @@ describe('LearnLessonPage', () => {
     setLessonId('learning-from-examples');
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
-    const buttons = Array.from(
-      fixture.nativeElement.querySelectorAll('.learn-lesson-footer button.btn-primary'),
-    ) as HTMLButtonElement[];
-    const markButton = buttons.find((button) => button.textContent?.includes('Mark complete'));
+    const markButton = fixture.nativeElement.querySelector(
+      'app-learn-lesson-aside button.learn-lesson-aside__complete-btn',
+    ) as HTMLButtonElement;
     expect(markButton?.disabled).toBe(true);
     expect(fixture.nativeElement.textContent).toContain(
       'Answer all section checks and recap questions first',
     );
   });
 
-  it('shows optional lab link in sidebar on train-vs-test lesson', () => {
+  it('does not show aside optional lab cards for branch practice labs', () => {
     localStorage.setItem(
       'aieval-learn-progress',
       JSON.stringify(['learning-from-examples', 'what-is-a-dataset']),
@@ -89,9 +97,8 @@ describe('LearnLessonPage', () => {
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('Optional — try it yourself');
-    expect(el.querySelector('app-learn-lesson-aside a[href="/learn/labs/train-vs-test"]')).toBeTruthy();
-    expect(el.querySelector('.learn-lesson-footer a[href="/learn/labs/train-vs-test"]')).toBeFalsy();
+    expect(el.textContent).not.toContain('Optional · try it yourself');
+    expect(el.querySelector('app-learn-lesson-aside a[href="/learn/labs/train-vs-test"]')).toBeFalsy();
   });
 
   it('uses the three-column shell with lesson rail and aside', () => {
@@ -99,9 +106,18 @@ describe('LearnLessonPage', () => {
       'aieval-learn-progress',
       JSON.stringify([
         'learning-from-examples',
+        'what-is-a-dataset',
         'train-vs-test',
         'loss-and-updates',
+        'learning-rate',
+        'bias-and-weights',
+        'activation-functions',
+        'softmax-and-distributions',
         'neural-network-lab',
+        'embeddings-and-votes',
+        'data-literacy',
+        'deep-learning-approaches',
+        'tokenization-inside-models',
       ]),
     );
     setLessonId('prompts-as-instructions');
@@ -117,13 +133,13 @@ describe('LearnLessonPage', () => {
     expect(el.textContent).toContain('Try in AiEval');
   });
 
-  it('keeps completion in the main column and navigation only in the aside', () => {
+  it('keeps completion and navigation in the aside', () => {
     setLessonId('learning-from-examples');
     fixture = TestBed.createComponent(LearnLessonPage);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelector('[shellmain] .learn-lesson-footer button')).toBeTruthy();
-    expect(el.querySelector('.learn-lesson-footer a')).toBeFalsy();
+    expect(el.querySelector('[shellmain] .learn-lesson-footer')).toBeFalsy();
+    expect(el.querySelector('app-learn-lesson-aside button.learn-lesson-aside__complete-btn')).toBeTruthy();
     expect(el.querySelector('app-learn-lesson-aside nav[aria-label="Lesson navigation"]')).toBeTruthy();
   });
 
@@ -147,15 +163,12 @@ describe('LearnLessonPage', () => {
     trigger.click();
     fixture.detectChanges();
 
-    const rail = fixture.nativeElement.querySelector('.learn-lesson-rail__key-terms');
-    expect(rail).toBeTruthy();
-    expect(rail.textContent).toContain('Key terms');
-    const toggle = rail.querySelector('.learn-lesson-rail__key-term-toggle') as HTMLButtonElement;
-    expect(toggle).toBeTruthy();
-    toggle.click();
-    fixture.detectChanges();
-    expect(rail.querySelector('.learn-lesson-rail__key-term-body')).toBeTruthy();
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    const rail = fixture.nativeElement.querySelector('app-learn-lesson-rail');
+    expect(rail?.textContent).toContain('Key terms');
+    expect(rail?.querySelector('.learn-lesson-rail__term-body')).toBeTruthy();
+
+    const aside = fixture.nativeElement.querySelector('app-learn-lesson-aside');
+    expect(aside?.textContent).not.toContain('Key terms');
 
     const savedMentions = fixture.nativeElement.querySelectorAll('.learn-term-hint__saved');
     expect(savedMentions.length).toBeGreaterThan(0);

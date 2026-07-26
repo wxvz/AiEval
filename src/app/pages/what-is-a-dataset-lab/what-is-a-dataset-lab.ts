@@ -48,6 +48,10 @@ export class WhatIsADatasetLabPage {
     () => this.labels().filter((label, index) => label === this.corners[index]!.target).length,
   );
 
+  readonly solved = computed(
+    () => this.checked() && this.correctCount() === this.corners.length,
+  );
+
   setOpenTermId(id: string | null): void {
     this.openTermId.set(id);
   }
@@ -73,6 +77,9 @@ export class WhatIsADatasetLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('what-is-a-dataset-lab');
   }
 }

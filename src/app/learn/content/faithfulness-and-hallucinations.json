@@ -6,7 +6,7 @@
         "In an open-book exam you may only use pages provided. Anything else is cheating. RAG systems face the same rule: answers should come from retrieved {{chunk}}s, not whatever the {{largeLanguageModel}} remembers from training.",
         "{{faithfulness}} means staying grounded: citing supplied context, qualifying uncertainty or refusing when evidence is thin. The opposite is {{hallucination}}: confident facts that never appeared in the {{prompt}} or {{retrieval}} results.",
         "Users forgive awkward wording; they do not forgive invented refund policies or fake citations. Faithfulness criteria belong in your {{rubric}} beside clarity and tone.",
-        "The RAG playground showed extractive stub answers. Real {{model}}s still invent details if the {{prompt}} does not forbid it, so evaluation must catch that.",
+        "The RAG playground Branch spur showed extractive stub answers. Real {{model}}s still invent details if the {{prompt}} does not forbid it, so evaluation must catch that.",
         "Next: how to score grounding in practice."
       ],
       "bullets": [
@@ -69,14 +69,17 @@
     {
       "title": "Bridge to hands-on evaluation",
       "paragraphs": [
-        "You now have prompts, rubrics, retrieval and grounding vocabulary. The First evaluation lab walks through creating a real {{evaluation}} in AiEval. You generate answers, score with a {{judge}} and compare winners.",
+        "You now have prompts, rubrics, retrieval and grounding vocabulary. **Outside eval practice** builds an Acme support golden set and rubric before you touch the harness.",
         "Carry faithfulness forward: include at least one {{testCase}} where the correct behavior depends on supplied context, not general knowledge.",
-        "Next: First evaluation lab, where you run full automation on your own golden prompts."
+        "Branch spur later: First evaluation lab and Support bot decision lab peel off Outside eval practice on the Learn hub.",
+        "Keep refusing when context is empty. A high Faithfulness score on invented policy is a failed eval, not a win.",
+        "Next: Outside eval practice."
       ],
       "bullets": [
         "Faithful answers respect retrieved {{chunk}}s.",
         "Score grounding explicitly in the {{rubric}}.",
-        "Refusal can be the correct faithful behavior."
+        "Refusal can be the correct faithful behavior.",
+        "Next: Outside eval practice."
       ],
       "check": {
         "prompt": "In one short phrase: what is {{hallucination}} in a RAG system?",

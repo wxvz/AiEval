@@ -70,6 +70,55 @@ function asOptionalString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** True when the learner message looks like a real ask (not hi/ok/thanks). */
+export function shouldAttachLearnChatSources(message: string): boolean {
+  const normalized = message.trim().replace(/\s+/g, ' ');
+  if (!normalized) {
+    return false;
+  }
+  // Strip trailing punctuation so "ok." / "thanks!" still count as social.
+  const bare = normalized.replace(/[!?.,…]+$/gu, '').trim().toLowerCase();
+  // Only suppress explicit closers/acks — short term prompts ("bias", "learning rate") keep chips.
+  const socialClosers = new Set([
+    'hi',
+    'hello',
+    'hey',
+    'hiya',
+    'yo',
+    'thanks',
+    'thank you',
+    'thank u',
+    'thx',
+    'ty',
+    'ok',
+    'okay',
+    'k',
+    'kk',
+    'cool',
+    'nice',
+    'great',
+    'awesome',
+    'perfect',
+    'got it',
+    'sounds good',
+    'makes sense',
+    'bye',
+    'goodbye',
+    'cheers',
+    'sure',
+    'yes',
+    'yep',
+    'yeah',
+    'yup',
+    'no',
+    'nope',
+    'nah',
+    'np',
+    'yw',
+  ]);
+  return !socialClosers.has(bare);
+}
+
 function wantsStream(req: Request): boolean {
   const accept = String(req.headers.accept ?? '');
   if (accept.includes('text/event-stream')) {
@@ -318,6 +367,7 @@ function normalizeResponse(
   fallbackSessionId: string,
   catalog: CatalogEntry[] = [],
   requestSources: LearnChatSource[] = [],
+  requestMessage = '',
 ): LearnChatResponse {
   const record =
     payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {};
@@ -325,11 +375,13 @@ function normalizeResponse(
   const reply = asOptionalString(record['reply']) ?? 'No reply generated.';
   const sessionId = asOptionalString(record['sessionId']) ?? fallbackSessionId;
   const rawSources = normalizeSources(record['sources']).items;
+  const filtered = filterSourcesToCatalog(rawSources, catalog, requestSources);
 
   return {
     reply,
     sessionId,
-    sources: filterSourcesToCatalog(rawSources, catalog, requestSources),
+    // Closers (hi/ok/thanks) must not show lesson chips; short term prompts may.
+    sources: shouldAttachLearnChatSources(requestMessage) ? filtered : [],
   };
 }
 
@@ -643,7 +695,13 @@ export function createLearnChatRouter(): Router {
           });
           return;
         }
-        const normalized = normalizeResponse(payload, sessionId, curriculumCatalog, sources);
+        const normalized = normalizeResponse(
+          payload,
+          sessionId,
+          curriculumCatalog,
+          sources,
+          message ?? '',
+        );
         const status = upstream.status === 403 || upstream.status === 401 ? upstream.status : 502;
         sendChatResult(
           res,
@@ -701,7 +759,7 @@ export function createLearnChatRouter(): Router {
       sendChatResult(
         res,
         200,
-        normalizeResponse(payload, sessionId, curriculumCatalog, sources),
+        normalizeResponse(payload, sessionId, curriculumCatalog, sources, message ?? ''),
         stream,
       );
     } catch (error) {

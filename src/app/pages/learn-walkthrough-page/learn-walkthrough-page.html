@@ -1,26 +1,22 @@
 <app-page-shell>
   <main shellMain>
-    @if (meta) {
-      <p class="text-muted small mb-2">{{ trackLabel() }} · Lab {{ meta.order }} of {{ trackLabCount }}</p>
-      <h1 class="h3 mb-2">{{ meta.title }}</h1>
-      <p class="lead mb-3">
-        You will create an evaluation in AiEval, run full automation to generate and score model answers, then
-        open Compare to see which response won and why.
-      </p>
-      @if (prereqMeta) {
+    @if (meta(); as lesson) {
+      <p class="text-muted small mb-2">{{ trackLabel() }} · Lab {{ lesson.order }} of {{ trackLabCount }}</p>
+      <h1 class="h3 mb-2">{{ lesson.title }}</h1>
+      <p class="lead mb-3">{{ leadText() }}</p>
+      @if (prereqMeta(); as prereq) {
         <p class="text-muted small mb-3">
-          Builds on <a [routerLink]="prereqMeta.route">{{ prereqMeta.title }}</a>. You saw how retrieval feeds
-          context; now judge real model answers with a rubric.
+          Builds on <a [routerLink]="prereq.route">{{ prereq.title }}</a>. Bring your outside artifacts into the
+          AiEval harness loop.
         </p>
       }
-      <div class="alert alert-light border mb-3" role="note">
-        Teaching shortcut: automation uses AI judges to score answers. The next read lesson,
-        @if (nextLessonMeta) {
-          <a [routerLink]="nextLessonMeta.route">{{ nextLessonMeta.title }}</a>,
-        } @else {
-          Automation and judges,
+      <div class="learn-callout mb-3" role="note">
+        Teaching shortcut: automation uses AI judges to score answers. Keep a human eye on Faithfulness when
+        prices or policy windows matter.
+        @if (nextLessonMeta(); as next) {
+          Next on the spine:
+          <a [routerLink]="next.route">{{ next.title }}</a>.
         }
-        covers when to double-check those scores.
       </div>
     }
 
@@ -44,15 +40,15 @@
         </defs>
       </svg>
       <figcaption class="small text-muted mt-2 mb-0">
-        Walkthrough path: create an evaluation, run automation, find it on the dashboard, then compare scores.
+        Harness path: create an evaluation, run automation, find it on the dashboard, then compare scores.
       </figcaption>
     </figure>
 
-    @if (!hasSteps) {
-      <div class="alert alert-light border" role="status">Walkthrough steps coming soon.</div>
+    @if (!hasSteps()) {
+      <div class="learn-callout" role="status">Walkthrough steps coming soon.</div>
     } @else {
       <ol class="list-group list-group-numbered mb-4">
-        @for (step of content.steps; track $index) {
+        @for (step of content().steps; track $index) {
           <li class="list-group-item learn-walkthrough-step">
             <h2 class="h6 mb-2">{{ step.title }}</h2>
             <p class="text-muted mb-3">{{ step.body }}</p>
@@ -67,9 +63,9 @@
     }
 
     <p class="text-muted small mb-4">
-      Review: <a routerLink="/learn/labs/rag-playground">RAG playground</a> ·
-      @if (nextLessonMeta) {
-        Next: <a [routerLink]="nextLessonMeta.route">{{ nextLessonMeta.title }}</a>, when to trust AI scores.
+      Review: <a routerLink="/learn/lessons/outside-eval-practice">Outside eval practice</a>
+      @if (nextLessonMeta(); as next) {
+        · Next: <a [routerLink]="next.route">{{ next.title }}</a>
       }
     </p>
 
@@ -77,26 +73,34 @@
       <h2 class="h5 mb-3">Common questions</h2>
 
       <details class="learn-lab-faq" open>
-        <summary class="learn-lab-faq__question">Do I need to fill in title and prompt?</summary>
+        <summary class="learn-lab-faq__question">Do I need the Acme prompt text from the steps?</summary>
         <p class="mb-0 text-muted">
-          No for your first run. You can leave them empty and click Run full automation. AiEval will draft a
-          title, prompt and answers for you.
+          Yes for this path. Paste the constrained support prompt and golden questions from the steps so the
+          harness run matches Outside eval practice.
         </p>
       </details>
 
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">What does Run full automation do?</summary>
         <p class="mb-0 text-muted">
-          It generates answers from multiple models, scores them against the default rubric, picks a winner and
-          drafts an improved response. This may take a few minutes.
+          It generates answers from multiple models, scores them against your rubric, picks a winner and can
+          draft an improved response. This may take a few minutes.
         </p>
       </details>
 
       <details class="learn-lab-faq">
         <summary class="learn-lab-faq__question">Why is my evaluation highlighted on the dashboard?</summary>
         <p class="mb-0 text-muted">
-          Links from this lab include <code>?from=learn</code>. AiEval highlights your lab evaluation so you can
-          spot it among other evaluations when you return from automation.
+          After automation finishes from a Learn create link, AiEval stores a handoff in this browser session
+          and highlights that evaluation. The dashboard banner's Compare link opens it.
+        </p>
+      </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">When can I mark the lab complete?</summary>
+        <p class="mb-0 text-muted">
+          After this lab has recorded a handoff evaluation (run automation from the create steps with the
+          Learn links). Then return here and mark complete.
         </p>
       </details>
 
@@ -107,12 +111,20 @@
           winner actually meets the criteria you care about.
         </p>
       </details>
+
+      <details class="learn-lab-faq">
+        <summary class="learn-lab-faq__question">What counts as a ship decision?</summary>
+        <p class="mb-0 text-muted">
+          One sentence that cites a rubric row, for example which model wins Faithfulness on the price case or
+          why neither is safe to ship yet.
+        </p>
+      </details>
     </section>
 
   </main>
   <app-learn-lab-nav
     shellRight
-    [lesson]="meta"
+    [lesson]="meta()"
     [completed]="completed()"
     [completionDisabled]="!canMarkComplete()"
     (complete)="markComplete()"

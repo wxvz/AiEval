@@ -11,6 +11,7 @@ import { TokenUsageBadge } from '../../components/token-usage-badge/token-usage-
 import { WinnerBadge } from '../../components/winner-badge/winner-badge';
 import { Answer, computeScoreSummary, EvaluationRunEstimate, RubricCriterion, Score, TaskDifficulty } from '../../models';
 import { LearnHandoffService } from '../../learn/learn-handoff.service';
+import { getLesson } from '../../learn/curriculum';
 import { EvaluationService } from '../../services/evaluation.service';
 import { SettingsService } from '../../services/settings.service';
 import { useAutomationPageContext } from '../../utils/automation-page-context';
@@ -96,7 +97,14 @@ export class CompareAnswersPage {
   protected readonly evaluation = computed(() => this.evaluationService.getById(this.evaluationId));
   protected readonly showLearnBackLink = computed(() => {
     this.learnHandoff.highlightedEvaluationId();
-    return this.learnHandoff.highlightedEvaluationId() === this.evaluationId;
+    return this.learnHandoff.lessonIdForEvaluation(this.evaluationId) !== null;
+  });
+  protected readonly learnLabRoute = computed(() => {
+    const lessonId = this.learnHandoff.lessonIdForEvaluation(this.evaluationId);
+    if (!lessonId) {
+      return '/learn';
+    }
+    return getLesson(lessonId)?.route ?? '/learn';
   });
   protected readonly displayTokenUsage = this.automationPage.displayTokenUsage;
   protected readonly activeCriteria = computed(() => {

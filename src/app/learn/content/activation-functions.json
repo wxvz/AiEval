@@ -66,13 +66,13 @@
       "paragraphs": [
         "You already know how a neuron mixes evidence with {{weights}} and {{bias}}. Activation functions decide what that mix becomes before the next neuron sees it.",
         "The Activation functions lab lets you compare linear, {{sigmoid}}, {{relu}} and {{tanh}} on the same probe scores so the curves stop being abstract names.",
-        "Then the Neural network lab puts those pieces together: multiple units, a chosen hidden activation, a dataset like XOR and training that updates weights while you watch {{loss}} fall.",
+        "Then **Softmax and distributions** shows how final scores become probabilities. After that, the Neural network lab puts the pieces together: multiple units, a chosen hidden activation, a dataset like XOR and training that updates weights while you watch {{loss}} fall.",
         "Expect teaching shortcuts. The labs use tiny networks and simple activations, not every production trick (batch norm, GELU, carefully tuned initializers). The goal is intuition you can reuse when reading real architecture diagrams.",
         "If an AiEval run later lets you swap model settings or compare prompts, keep the same habit: change one knob, measure on held-out cases and do not treat a prettier training curve as proof by itself."
       ],
       "bullets": [
         "Optional lab: compare activation curves on fixed scores.",
-        "Next hub step: Neural network lab, where you train with a chosen activation.",
+        "Next hub step: Softmax and distributions, then the Neural network lab.",
         "Shortcut honesty: toy sizes, not production stacks."
       ],
       "check": {

@@ -1,9 +1,9 @@
 {
-  "subtitle": "Start with Foundation, then LLM systems, then Systems & production.",
+  "subtitle": "Build evaluation skills from the ground up.",
   "toolsLabel": "AiEval: compare model answers",
   "tracks": {
-    "foundation": "Core ideas every AI engineer should have.",
-    "llm-systems": "Language models, retrieval, evaluation and agents.",
-    "systems-production": "Ship, monitor and scale AI with eval harnesses."
+    "foundation": "Inside the model: maths, activations and how data moves through the network. Branch spurs under Data literacy and Deep learning cover trees, rewards and GANs.",
+    "llm-systems": "Outside the model: prompts, generation behavior, retrieval and scoring answers with evidence. Upcoming craft lessons cover metrics, human review, error analysis and reports.",
+    "systems-production": "Further out: the eval harness, automation and shipping with measurable quality. Upcoming ops lessons cover monitoring, canaries and SLOs."
   }
 }

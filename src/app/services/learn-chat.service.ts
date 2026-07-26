@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { EmptyError, Subject, firstValueFrom, takeUntil } from 'rxjs';
 
+import { getLessonByRoute } from '../learn/curriculum';
 import {
   filterKnownTutorSources,
   getTutorCurriculumCatalog,
@@ -86,16 +87,14 @@ export class LearnChatService {
   }
 
   contextFromRouter(): LearnChatPageContext {
-    const route = this.router.url.split('?')[0] || '/learn';
-    let lessonId: string | null = null;
-
-    const lessonMatch = /^\/learn\/lessons\/([^/]+)/.exec(route);
-    if (lessonMatch) {
-      lessonId = decodeURIComponent(lessonMatch[1]);
-    } else {
-      const labMatch = /^\/learn\/labs\/([^/]+)/.exec(route);
-      if (labMatch) {
-        lessonId = `${decodeURIComponent(labMatch[1])}-lab`;
+    const route = this.router.url.split(/[?#]/, 2)[0] || '/learn';
+    // Prefer curriculum route lookup so short lab slugs (e.g. /learn/labs/softmax)
+    // still map to their full lesson ids.
+    let lessonId: string | null = getLessonByRoute(route)?.id ?? null;
+    if (!lessonId) {
+      const lessonMatch = /^\/learn\/lessons\/([^/]+)/.exec(route);
+      if (lessonMatch) {
+        lessonId = decodeURIComponent(lessonMatch[1]);
       }
     }
 

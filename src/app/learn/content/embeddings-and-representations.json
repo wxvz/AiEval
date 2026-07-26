@@ -1,0 +1,133 @@
+{
+  "sections": [
+    {
+      "title": "Hidden layers hold patterns, not sentences",
+      "paragraphs": [
+        "Inside a trained {{model}}, each layer turns {{input}} numbers into new numbers. Those intermediate lists are representations: compressed patterns the network found useful for the {{target}}.",
+        "An {{embedding}} is a representation stored as a vector: a fixed-length list of numbers. Similar meanings tend to land in nearby regions of that space.",
+        "You do not read an {{embedding}} like a paragraph. You compare vectors (for example with angles or distances) to see which items the inside of the {{model}} treats as alike.",
+        "In a tiny classifier, the hidden layer already builds a representation before the final scores. In language models, each {{token}} usually begins as an {{embedding}} lookup.",
+        "This lesson stays inside the network. Later retrieval products reuse embeddings to search documents; the maths of \"nearby means similar\" starts here."
+      ],
+      "bullets": [
+        "Representation: internal number pattern for an {{input}}.",
+        "{{embedding}}: a vector used as that pattern.",
+        "Similarity: nearby vectors, related meanings."
+      ],
+      "check": {
+        "prompt": "Two product titles land almost on top of each other in embedding space. What does that suggest inside the model?",
+        "answer": "The model treats their meanings as similar",
+        "choices": [
+          "The model treats their meanings as similar",
+          "The titles must share identical characters only",
+          "Embeddings store full PDF files uncompressed",
+          "The learning rate was set to zero"
+        ],
+        "explanation": "Embeddings place related items nearby. Close vectors are the inside signal that the {{model}} sees similar meaning, not a promise about spelling alone."
+      }
+    },
+    {
+      "title": "From table lookup to layered geometry",
+      "paragraphs": [
+        "Many language stacks begin with a table: each {{token}} id selects a row of numbers. That row is the token's {{embedding}} before deeper layers mix context.",
+        "Deeper layers transform those vectors with {{weights}}, {{bias}} and {{activation}}s. Attention (you will revisit it under Transformers) mixes information across positions.",
+        "After training, geometry in representation space reflects the {{dataset}}. If your labels never separate two concepts, do not expect clean clusters for them.",
+        "Click each idea. Keep the honesty bar: teaching diagrams use 2D arrows; production embeddings may have hundreds or thousands of dimensions.",
+        "When AiEval later compares answers, you still judge text on the outside. Representations explain why two phrasings can feel synonymous to a {{model}} even when strings differ."
+      ],
+      "reveals": [
+        {
+          "prompt": "Token id 17 → row 17 in a matrix.",
+          "reveal": "That row is the starting {{embedding}} for the {{token}} before contextual layers run."
+        },
+        {
+          "prompt": "Two paraphrases embed nearby; a random string sits far away.",
+          "reveal": "Useful geometry: meaning clusters, noise stays distant."
+        },
+        {
+          "prompt": "You only train on sports text.",
+          "reveal": "Expect weak structure for legal jargon. Representations mirror the {{dataset}}."
+        }
+      ],
+      "check": {
+        "prompt": "Your hub diagram shows 2D dots for embeddings. What should you remember?",
+        "answer": "Real embedding vectors usually have many more dimensions",
+        "choices": [
+          "Real embedding vectors usually have many more dimensions",
+          "Production models only ever use 2 dimensions",
+          "Embeddings are the same as rubric scores",
+          "2D means the model cannot classify anything"
+        ],
+        "explanation": "Teaching plots flatten space so you can see clusters. Inside real models, {{embedding}} vectors are high-dimensional even when the idea of \"nearby means similar\" stays the same."
+      }
+    },
+    {
+      "title": "Bridge to data literacy",
+      "paragraphs": [
+        "Representations are only as trustworthy as the examples that shaped them. Messy labels and leakage show up as weird geometry and brittle {{prediction}}s.",
+        "Before you chase a fancier architecture, ask what the {{dataset}} teaches the inside of the {{model}} to treat as close.",
+        "Data literacy is next: distributions, leakage and which labels are worth collecting so representations have something honest to learn.",
+        "Side path reminder: Decision trees offer readable rules instead of dense vectors. They sit off the neural spine as optional practice from Data literacy.",
+        "Next lesson: **Data literacy**. Carry the idea that inside similarity is learned, not magical."
+      ],
+      "bullets": [
+        "Geometry reflects training data quality.",
+        "Next spine lesson: Data literacy.",
+        "Optional side path later: Decision trees."
+      ],
+      "check": {
+        "prompt": "In a short phrase, what do embeddings mainly give the inside of a model?",
+        "answer": "Numeric patterns that capture similarity",
+        "accept": [
+          "vectors for similar meanings",
+          "number patterns for related inputs",
+          "a space where nearby means alike",
+          "internal similarity as vectors"
+        ],
+        "wordBank": [
+          "Numeric",
+          "patterns",
+          "that",
+          "capture",
+          "similarity",
+          "prompts",
+          "dashboards"
+        ],
+        "explanation": "An {{embedding}} is an internal numeric pattern. The useful property is similarity: related {{input}}s land nearby so later layers (or retrieval tools) can use that geometry."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Where do token embeddings usually enter a language model?",
+      "answer": "As a lookup row for each token before deeper layers",
+      "choices": [
+        "As a lookup row for each token before deeper layers",
+        "Only after the judge JSON is parsed",
+        "As a replacement for the learning rate",
+        "Only inside decision tree leaves"
+      ],
+      "explanation": "A common inside path is {{token}} id → {{embedding}} row → contextual layers. That is how text becomes numbers the network can transform."
+    },
+    {
+      "prompt": "Complete: if two concepts never appear as distinct in training labels…",
+      "answer": "Their embeddings may stay tangled",
+      "accept": [
+        "representations may not separate them",
+        "they may embed too close",
+        "the model may treat them alike",
+        "geometry may not split them"
+      ],
+      "wordBank": [
+        "Their",
+        "embeddings",
+        "may",
+        "stay",
+        "tangled",
+        "rubric",
+        "perfect"
+      ],
+      "explanation": "Representations mirror the {{dataset}}. If labels never teach a split, inside geometry often keeps the concepts tangled."
+    }
+  ]
+}

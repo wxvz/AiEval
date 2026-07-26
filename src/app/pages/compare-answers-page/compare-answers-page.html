@@ -3,7 +3,7 @@
 } @else {
   @if (showLearnBackLink()) {
     <p class="mb-3">
-      <a routerLink="/learn/labs/first-evaluation" class="btn btn-link px-0">← Back to Learn lab</a>
+      <a [routerLink]="learnLabRoute()" class="btn btn-link px-0">← Back to Learn lab</a>
     </p>
   }
   <div class="d-flex justify-content-between align-items-center gap-3 mb-4">

@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import type { LessonAside, LessonContent } from '../../learn/learn-content';
 import type { LearnLessonMeta } from '../../learn/curriculum';
 import type { LearnGlossaryTerm } from '../../learn/learn-glossary';
+import { pathFromLearnRoute, queryParamsFromLearnRoute } from '../../learn/learn-route';
 import { LearnLessonText } from '../learn-lesson-text/learn-lesson-text';
 
 @Component({
@@ -27,7 +28,20 @@ export class LearnLessonAside {
   readonly activeAside = input<LessonAside | null>(null);
   readonly savedKeyTerms = input<LearnGlossaryTerm[]>([]);
   readonly primaryHintIds = input<ReadonlyMap<LearnGlossaryTerm, string>>(new Map());
+  readonly completed = input(false);
+  readonly markCompleteEnabled = input(false);
   readonly termSelect = output<LearnGlossaryTerm>();
+  readonly markComplete = output<void>();
+
+  readonly sectionsDone = computed(() => this.sectionsSolved().filter(Boolean).length);
+  readonly sectionsTotal = computed(() => this.content()?.sections.length ?? 0);
+  readonly sectionsPercent = computed(() => {
+    const total = this.sectionsTotal();
+    if (total === 0) {
+      return 0;
+    }
+    return Math.round((this.sectionsDone() / total) * 100);
+  });
 
   readonly checksDone = computed(() => {
     const sections = this.sectionsSolved().filter(Boolean).length;
@@ -49,6 +63,17 @@ export class LearnLessonAside {
       return null;
     }
     return aside.actionLabel?.trim() || 'Open in AiEval';
+  });
+
+  /** Path without query/hash so `[routerLink]` does not encode `?`. */
+  readonly asideRoutePath = computed(() => {
+    const route = this.activeAside()?.route;
+    return route ? pathFromLearnRoute(route) : null;
+  });
+
+  readonly asideRouteQueryParams = computed(() => {
+    const route = this.activeAside()?.route;
+    return route ? queryParamsFromLearnRoute(route) : {};
   });
 
   onTermSelect(term: LearnGlossaryTerm): void {

@@ -1,15 +1,6 @@
-.learn-lab-nav {
-  position: sticky;
-  top: 5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-}
-
 .learn-lab-nav__back,
 .learn-lab-nav__links a {
-  color: var(--bs-body-color);
+  color: var(--aieval-ink);
   text-decoration: none;
 }
 
@@ -24,5 +15,5 @@
   flex-direction: column;
   gap: 0.65rem;
   padding-top: 0.9rem;
-  border-top: 1px solid var(--bs-border-color);
+  border-top: 1px solid var(--aieval-border);
 }

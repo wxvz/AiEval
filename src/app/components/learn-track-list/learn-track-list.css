@@ -1,77 +1,228 @@
-.learn-track__title {
-  margin-bottom: 0.35rem;
-  font-weight: 600;
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
-.learn-track__description {
-  margin-bottom: 1rem;
+.learn-track {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--aieval-surface);
+  overflow: hidden;
+}
+
+.learn-track__header {
+  flex-shrink: 0;
+  padding: 0.65rem 0.9rem;
+  background: color-mix(in srgb, var(--aieval-muted) 8%, var(--aieval-surface));
+  border-bottom: 1px solid var(--aieval-border);
+  z-index: 1;
+}
+
+.learn-track__title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+  scroll-margin-top: 5.5rem;
+}
+
+.learn-track__count {
+  font-weight: 500;
+  color: var(--aieval-muted);
 }
 
 .learn-track__list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
-.learn-track__card {
-  display: block;
-  padding: 1rem 1.25rem;
+.learn-track__item + .learn-track__item {
+  border-top: 1px solid var(--aieval-border);
+}
+
+.learn-track__row {
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr) auto;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
   text-decoration: none;
   color: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    padding 0.15s ease;
 }
 
-.learn-track__card--planned,
-.learn-track__card--locked {
-  opacity: 0.72;
-  cursor: default;
+.learn-track__row:hover {
+  background: color-mix(in srgb, var(--aieval-primary) 5%, var(--aieval-surface));
 }
 
-.learn-track__badge {
-  display: inline-block;
-  margin-bottom: 0.5rem;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  font-size: 0.7rem;
+.learn-track__row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--aieval-primary) 55%, transparent);
+  outline-offset: -2px;
+}
+
+.learn-track__row--expanded {
+  padding-block: 0.55rem;
+}
+
+.learn-track__row--next {
+  background: color-mix(in srgb, var(--aieval-primary) 6%, var(--aieval-surface));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--aieval-primary) 45%, transparent);
+}
+
+.learn-track__row--planned,
+.learn-track__row--locked {
+  opacity: 0.78;
+}
+
+.learn-track__index {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  background: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
-  color: var(--aieval-primary);
+  color: var(--aieval-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
-.learn-track__badge--muted {
-  background: color-mix(in srgb, var(--bs-secondary-color) 15%, transparent);
-  color: var(--bs-secondary-color);
+.learn-track__marker {
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-top: 0.25rem;
+  border: 2px solid var(--aieval-primary);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--aieval-primary) 18%, var(--aieval-surface));
+  justify-self: center;
 }
 
-.learn-track__badge--done {
-  background: color-mix(in srgb, var(--bs-success) 15%, transparent);
-  color: var(--bs-success);
+.learn-track__row-body {
+  min-width: 0;
 }
 
 .learn-track__lesson-title {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
+  margin: 0;
+  font-size: 0.8rem;
   font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learn-track__row--expanded .learn-track__lesson-title {
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+}
+
+.learn-track__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.learn-track__title-link:hover {
+  color: var(--aieval-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
 }
 
 .learn-track__lesson-summary {
-  color: var(--bs-secondary-color);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.learn-track__cta {
-  display: inline-block;
-  margin-top: 0.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--aieval-primary);
-}
-
-.learn-track__card:not(.learn-track__card--planned):not(.learn-track__card--locked):hover .learn-track__cta {
-  color: var(--aieval-primary-hover);
+  margin-top: 0.3rem;
+  color: var(--aieval-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  animation: learn-track-detail-in 0.18s ease;
 }
 
 .learn-track__prereq {
-  margin-top: 0.5rem;
-  color: var(--bs-secondary-color);
+  margin-top: 0.3rem;
+  color: var(--aieval-muted);
+  font-size: 0.75rem;
+  animation: learn-track-detail-in 0.18s ease;
+}
+
+@keyframes learn-track-detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.15rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.learn-track__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--aieval-muted);
+  white-space: nowrap;
+}
+
+.learn-track__lock {
+  flex-shrink: 0;
+}
+
+.learn-track__row .learn-status-chip {
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.learn-track__spur {
+  margin: 0;
+  padding: 0 0 0.35rem;
+  background: color-mix(in srgb, var(--aieval-muted) 4%, var(--aieval-surface));
+  border-top: 1px dashed color-mix(in srgb, var(--aieval-border) 80%, transparent);
+}
+
+.learn-track__spur-item {
+  --spur-depth: 0;
+}
+
+.learn-track__row--spur {
+  grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  padding-left: calc(0.75rem + (var(--spur-depth) * 0.85rem));
+  opacity: 0.95;
+}
+
+.learn-track__spur-rail {
+  position: relative;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-top: 0.2rem;
+  justify-self: center;
+}
+
+.learn-track__spur-rail::before {
+  content: '';
+  position: absolute;
+  left: 0.2rem;
+  top: -0.55rem;
+  bottom: 50%;
+  width: 0;
+  border-left: 1.5px solid color-mix(in srgb, var(--aieval-muted) 45%, transparent);
+}
+
+.learn-track__spur-rail::after {
+  content: '';
+  position: absolute;
+  left: 0.2rem;
+  top: 50%;
+  width: 0.55rem;
+  border-top: 1.5px solid color-mix(in srgb, var(--aieval-muted) 45%, transparent);
 }

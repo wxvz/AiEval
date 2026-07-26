@@ -1,0 +1,135 @@
+{
+  "sections": [
+    {
+      "title": "Text becomes pieces before maths",
+      "paragraphs": [
+        "A {{largeLanguageModel}} does not ingest a paragraph as one blob of Unicode. It splits text into {{token}}s: whole words, subwords or punctuation fragments.",
+        "Each {{token}} maps to an id. That id selects an {{embedding}} row. Only then do the weighted layers and {{attention}} blocks run.",
+        "Tokenization is inside the serving stack of the model family you call. Change tokenizer, change ids, change the path numbers take through the network.",
+        "Context limits are counted in {{token}}s, not characters. A short English sentence and a dense code snippet can cost very different budgets.",
+        "This lesson closes the foundation spine's look at how data enters the network. Next track work shifts toward outside behavior: instructions, answers and scoring."
+      ],
+      "bullets": [
+        "Split text → {{token}} ids.",
+        "Ids → {{embedding}} rows.",
+        "Then the network maths runs."
+      ],
+      "check": {
+        "prompt": "Why can two strings with similar character length use different amounts of context budget?",
+        "answer": "Tokenizers split text into different numbers of tokens",
+        "choices": [
+          "Tokenizers split text into different numbers of tokens",
+          "Embeddings delete vowels automatically",
+          "Learning rate counts characters instead",
+          "Rubrics replace tokenizers in production"
+        ],
+        "explanation": "Budgets are in {{token}}s. Different languages, code and punctuation produce different splits, so character length is a weak guide."
+      }
+    },
+    {
+      "title": "Subwords and surprises",
+      "paragraphs": [
+        "Modern tokenizers often use subwords so rare terms can be built from pieces. That keeps the vocabulary finite while still covering new spellings.",
+        "A space, a capital letter or a missing accent can change the {{token}} boundary. Tiny string edits sometimes create large id changes.",
+        "When you evaluate models later, keep prompts byte-identical if you want a fair outside comparison. Silent tokenizer differences across providers are a real footgun.",
+        "Click each example. Honesty: this hub will not ship a full byte-pair trainer. You need the mental model of pieces → ids → embeddings.",
+        "Inside perspective: fluent text is still discrete symbols to the network. That is one reason models can miss a character-level typo humans forgive instantly."
+      ],
+      "reveals": [
+        {
+          "prompt": "Word \"unhappiness\" might become un + happiness pieces.",
+          "reveal": "Subwords let the model reuse parts it has seen even when the full word is rare."
+        },
+        {
+          "prompt": "Adding a leading space changes token ids.",
+          "reveal": "Common gotcha. Identical-looking prompts may not be identical inside."
+        },
+        {
+          "prompt": "You compare two providers on the \"same\" prompt string.",
+          "reveal": "Still verify behavior: different tokenizers mean different inside paths."
+        }
+      ],
+      "check": {
+        "prompt": "You paste the same customer question into two APIs and get odd gaps. What inside factor should you suspect first?",
+        "answer": "Different tokenizers producing different token ids",
+        "choices": [
+          "Different tokenizers producing different token ids",
+          "Softmax being illegal in both APIs",
+          "Decision trees running inside every LLM",
+          "Embeddings being stored as PNG files"
+        ],
+        "explanation": "Providers may tokenize differently. That changes ids and {{embedding}} lookups before any shared {{prompt}} wording can help."
+      }
+    },
+    {
+      "title": "Hand-off to outside behavior",
+      "paragraphs": [
+        "You can now sketch the inside path: text → {{token}}s → embeddings → layers → scores → (often) probabilities → generated {{token}}s.",
+        "The next track, LLM systems, focuses on the outside: how you instruct the model, how answers look and how you score them with evidence.",
+        "**Prompts as instructions** starts that outside craft. You will still benefit from knowing tokens and embeddings exist underneath every call.",
+        "Optional side paths (trees, rewards, GANs) remain available from earlier parents if you want other learning styles. They are not required for Continue.",
+        "Next lesson: **Prompts as instructions**. Carry the inside map with you when answers look magical."
+      ],
+      "bullets": [
+        "Inside path ends at generated tokens.",
+        "Outside path begins with clear prompts.",
+        "Next: Prompts as instructions."
+      ],
+      "check": {
+        "prompt": "In a short phrase, what is the first inside step when text hits a language model?",
+        "answer": "Split text into tokens for embedding lookup",
+        "accept": [
+          "tokenize then embed",
+          "map text to token ids",
+          "split into tokens",
+          "tokenize for the embedding table"
+        ],
+        "wordBank": [
+          "Split",
+          "text",
+          "into",
+          "tokens",
+          "for",
+          "embedding",
+          "lookup",
+          "rubric",
+          "dashboard"
+        ],
+        "explanation": "Before weighted layers run, text becomes {{token}} ids and those ids select {{embedding}} rows. That is the entry ramp inside the model."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Context windows are usually measured in what unit?",
+      "answer": "Tokens",
+      "choices": [
+        "Tokens",
+        "PDF page counts only",
+        "Learning rate steps",
+        "Rubric criterion rows"
+      ],
+      "explanation": "Limits and billing for {{largeLanguageModel}}s are tied to {{token}} counts, which depend on the tokenizer."
+    },
+    {
+      "prompt": "Complete the inside entry path: text → tokens → …",
+      "answer": "Embedding lookup then network layers",
+      "accept": [
+        "embeddings then layers",
+        "embedding rows then the network",
+        "vectors then weighted layers",
+        "embedding table then computation"
+      ],
+      "wordBank": [
+        "Embedding",
+        "lookup",
+        "then",
+        "network",
+        "layers",
+        "judge",
+        "banner"
+      ],
+      "explanation": "After tokenization, ids select {{embedding}}s and the network transforms those vectors. That is the core inside entry path."
+    }
+  ]
+}

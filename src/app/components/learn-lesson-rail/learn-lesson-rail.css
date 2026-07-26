@@ -4,104 +4,117 @@
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 6rem);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .learn-lesson-rail__track {
-  margin-top: 1.25rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  margin-top: 1.1rem;
+}
+
+.learn-lesson-rail__title {
+  margin: 0 0 0.4rem;
+  font-size: 1.35rem;
+  font-weight: 650;
+  line-height: 1.25;
+  color: var(--aieval-ink);
+}
+
+.learn-lesson-rail__summary {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.learn-lesson-rail__toc {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .learn-lesson-rail__toc-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.45rem;
-  padding: 0.3rem 0;
+  gap: 0.55rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: var(--aieval-radius);
+  text-decoration: none;
+  color: inherit;
   font-size: 0.875rem;
   line-height: 1.35;
+  transition: background-color 0.15s ease;
 }
 
-.learn-lesson-rail__status {
-  flex-shrink: 0;
-  width: 1rem;
-  font-size: 0.75rem;
+.learn-lesson-rail__toc-item:hover {
+  background: color-mix(in srgb, var(--aieval-primary) 6%, transparent);
 }
 
-.learn-lesson-rail__sections {
-  flex-shrink: 0;
-  margin-bottom: 1.25rem;
+.learn-lesson-rail__toc-item--active {
+  background: color-mix(in srgb, var(--aieval-primary) 12%, transparent);
+  color: var(--aieval-primary);
+  font-weight: 600;
 }
 
-.learn-lesson-rail > :not(.learn-lesson-rail__key-terms) {
-  flex-shrink: 0;
+.learn-lesson-rail__toc-item--done:not(.learn-lesson-rail__toc-item--active) {
+  color: var(--aieval-muted);
 }
 
-.learn-lesson-rail__key-terms > h2 {
+.learn-lesson-rail__num {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--aieval-primary) 35%, var(--aieval-border));
+  background: color-mix(in srgb, var(--aieval-primary) 10%, var(--aieval-surface));
+  color: var(--aieval-primary);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.learn-lesson-rail__toc-item--active .learn-lesson-rail__num {
+  background: var(--aieval-primary);
+  border-color: var(--aieval-primary);
+  color: #fff;
+}
+
+[data-bs-theme='dark'] .learn-lesson-rail__toc-item--active .learn-lesson-rail__num {
+  color: #0b1220;
+}
+
+.learn-lesson-rail__toc-title {
+  min-width: 0;
 }
 
 .learn-lesson-rail__key-terms {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  margin-top: 0.25rem;
-  padding-top: 1rem;
+  margin-top: 1.1rem;
+  padding-top: 0.95rem;
   border-top: 1px solid var(--aieval-border);
-  border-left: 3px solid var(--aieval-term-popover-accent);
-  padding-left: 0.75rem;
-  overflow: hidden;
 }
 
-.learn-lesson-rail__key-term-list {
+.learn-lesson-rail__terms {
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
-  gap: 0.5rem;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding-right: 0.25rem;
-  scrollbar-gutter: stable;
+  gap: 0.7rem;
 }
 
-.learn-lesson-rail__key-term-toggle {
+.learn-lesson-rail__term {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 0.15rem;
 }
 
-.learn-lesson-rail__key-term-toggle:focus-visible {
-  outline: 2px solid var(--aieval-term-popover-accent);
-  outline-offset: 2px;
-  border-radius: 0.25rem;
-}
-
-.learn-lesson-rail__key-term-label {
-  font-weight: 600;
-  color: var(--aieval-term-fg);
+.learn-lesson-rail__term-label {
   font-size: 0.875rem;
+  font-weight: 650;
+  color: var(--aieval-ink);
 }
 
-.learn-lesson-rail__key-term-chevron {
-  flex-shrink: 0;
-  font-size: 0.75rem;
-  line-height: 1;
-  color: var(--bs-secondary-color);
-}
-
-.learn-lesson-rail__key-term-body {
-  margin-top: 0.35rem;
-  padding-left: 0.1rem;
+.learn-lesson-rail__term-body {
+  font-size: 0.8rem;
   line-height: 1.4;
+  color: var(--aieval-muted);
 }
 
 @media (max-width: 991.98px) {
@@ -110,15 +123,5 @@
     max-height: none;
     overflow: visible;
   }
-
-  .learn-lesson-rail__key-terms {
-    flex: none;
-    overflow: visible;
-  }
-
-  .learn-lesson-rail__key-term-list {
-    flex: none;
-    max-height: min(16rem, 40vh);
-    overflow-y: auto;
-  }
 }
+

@@ -20,7 +20,7 @@
         : feel how weight sets the slope and bias shifts the decision boundary.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: one neuron, one feature (<code>score = w·x + b</code>, then sigmoid). Next, the
       <a routerLink="/learn/lessons/activation-functions">Activation functions</a>
       lesson compares sigmoid with ReLU and tanh; the
@@ -33,7 +33,7 @@
     </p>
 
     @if (solved()) {
-      <div class="alert alert-success mb-4" role="status">
+      <div class="learn-callout learn-callout--success mb-4" role="status">
         Solved: every probe
         <app-nn-term-hint
           term="input"
@@ -239,6 +239,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

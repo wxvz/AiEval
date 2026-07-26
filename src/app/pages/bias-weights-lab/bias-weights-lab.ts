@@ -82,6 +82,9 @@ export class BiasWeightsLabPage {
   }
 
   markLabComplete(): void {
+    if (!this.solved()) {
+      return;
+    }
     this.progress.markComplete('bias-and-weights-lab');
   }
 }

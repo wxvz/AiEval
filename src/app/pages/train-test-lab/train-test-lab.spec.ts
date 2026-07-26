@@ -9,6 +9,7 @@ describe('TrainTestLabPage', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['train-vs-test']));
     await TestBed.configureTestingModule({
       imports: [TrainTestLabPage],
       providers: [provideRouter([])],

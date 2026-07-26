@@ -5,7 +5,7 @@ import {
   inject,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 
 import { apiTokenInterceptor } from './interceptors/api-token.interceptor';
 import { routes } from './app.routes';
@@ -23,7 +23,13 @@ function loadAppData(): () => Promise<void> {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(
+      routes,
+      withInMemoryScrolling({
+        anchorScrolling: 'enabled',
+        scrollPositionRestoration: 'enabled',
+      }),
+    ),
     provideHttpClient(withInterceptors([apiTokenInterceptor])),
     {
       provide: APP_INITIALIZER,

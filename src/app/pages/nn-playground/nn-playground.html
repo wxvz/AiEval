@@ -16,7 +16,7 @@
         and tanh reshape a neuron’s score before the next layer.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: this lab trains on every row with no held-out test set. Real projects keep test data
       separate so you can measure generalization honestly.
     </div>
@@ -57,10 +57,10 @@
     </figure>
 
     @if (sigmoidWarning(); as warning) {
-      <div class="alert alert-warning" role="alert">{{ warning }}</div>
+      <div class="learn-callout learn-callout--warning" role="alert">{{ warning }}</div>
     }
     @if (validationMessage(); as message) {
-      <div class="alert alert-danger" role="alert">{{ message }}</div>
+      <div class="learn-callout learn-callout--danger" role="alert">{{ message }}</div>
     }
 
     <div class="card mb-4 nn-playground-card">

@@ -21,7 +21,7 @@
         : switch activations until the curve matches the challenge below.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: one score in, one value out. Real networks stack many units; the
       <a routerLink="/learn/labs/neural-network">Neural network lab</a>
       lets you pick a hidden
@@ -39,7 +39,7 @@
     </p>
 
     @if (solved()) {
-      <div class="alert alert-success mb-4" role="status">
+      <div class="learn-callout learn-callout--success mb-4" role="status">
         Solved: that shape is ReLU. Negatives stay silent; positives keep their magnitude.
       </div>
     }
@@ -179,6 +179,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

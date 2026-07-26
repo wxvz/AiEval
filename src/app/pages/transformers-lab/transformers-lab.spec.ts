@@ -11,6 +11,7 @@ describe('TransformersLabPage', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['transformers-overview']));
     await TestBed.configureTestingModule({
       imports: [TransformersLabPage],
       providers: [provideRouter([])],
@@ -44,8 +45,13 @@ describe('TransformersLabPage', () => {
     expect(page.result().success).toBe(true);
   });
 
-  it('wires mark complete for transformers-lab', () => {
+  it('wires mark complete for transformers-lab after target ranking', () => {
     expect(page.labMeta?.id).toBe('transformers-lab');
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['transformers-overview']));
+    page.markLabComplete();
+    expect(page.labCompleted()).toBe(false);
+
+    page.rawWeights.set([...HINT_ATTENTION_WEIGHTS]);
     page.markLabComplete();
     expect(page.labCompleted()).toBe(true);
   });

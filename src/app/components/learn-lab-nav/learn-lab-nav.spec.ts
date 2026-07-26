@@ -23,10 +23,21 @@ describe('LearnLabNav', () => {
 
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelectorAll('a[href="/learn/lessons/semantic-memory"]')).toHaveLength(1);
-    expect(el.querySelector('a[href="/learn/labs/semantic-search"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeTruthy();
   });
 
-  it('emits completion from the sticky nav button', () => {
+  it('walks nested branch parents to spine Continue neighbors', () => {
+    fixture.componentRef.setInput('lesson', getLesson('rag-playground-lab'));
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('a[href="/learn/labs/semantic-search"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/lessons/structured-outputs-for-judges"]')).toBeTruthy();
+  });
+
+  it('emits completion from the sticky nav button when unlocked', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['semantic-memory']));
     fixture.componentRef.setInput('lesson', getLesson('semantic-search-lab'));
     const emitSpy = vi.spyOn(fixture.componentInstance.complete, 'emit');
     fixture.detectChanges();
@@ -34,4 +45,26 @@ describe('LearnLabNav', () => {
     (fixture.nativeElement.querySelector('button') as HTMLButtonElement).click();
     expect(emitSpy).toHaveBeenCalledOnce();
   });
+
+  it('disables mark complete while lab prerequisites are missing', () => {
+    fixture.componentRef.setInput('lesson', getLesson('learning-rate-lab'));
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.textContent?.trim()).toBe('Locked');
+    expect(button.getAttribute('title')).toBe('Complete prerequisites first');
+  });
+
+  it('explains why mark complete is disabled when the lab goal is unfinished', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['learning-rate']));
+    fixture.componentRef.setInput('lesson', getLesson('learning-rate-lab'));
+    fixture.componentRef.setInput('completionDisabled', true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('title')).toBe('Finish the lab goal before marking complete');
+  });
 });
+

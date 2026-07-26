@@ -15,7 +15,7 @@
         labeled tickets.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: one split, two leaves, four rows. Real trees grow deeper and need held-out checks for
       overfitting.
     </div>
@@ -26,7 +26,7 @@
     </p>
 
     @if (solved()) {
-      <div class="alert alert-success mb-4" role="status">
+      <div class="learn-callout learn-callout--success mb-4" role="status">
         Solved: “Mentions refund?” separates the labels and both leaves match the table.
       </div>
     }
@@ -177,6 +177,7 @@
     [lesson]="labMeta"
     [parent]="prereqMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

@@ -1,0 +1,141 @@
+{
+  "sections": [
+    {
+      "title": "Scores are not probabilities yet",
+      "paragraphs": [
+        "A neuron can emit a raw score for each option: cat, dog, bird or the next {{token}} in a sentence. Those scores are sometimes called logits. They are not probabilities until you reshape them.",
+        "{{softmax}} turns a list of scores into a list of positive numbers that add up to one. The largest score becomes the largest share; smaller scores keep a smaller share.",
+        "Why bother? Training and sampling need a distribution. Cross-entropy {{loss}} compares a probability vector to a one-hot {{target}}. Next-token generation samples from a distribution over the vocabulary.",
+        "Elementwise {{activation}}s like {{sigmoid}} or {{relu}} act on one number at a time. {{softmax}} looks at the whole vector so options compete.",
+        "This is inside-model maths: how the network turns internal scores into a {{prediction}} distribution before anyone writes a product {{prompt}}."
+      ],
+      "bullets": [
+        "Raw scores: unbounded comparisons between options.",
+        "{{softmax}}: map scores to probabilities that sum to 1.",
+        "Use case: multi-class labels and next-{{token}} choice."
+      ],
+      "check": {
+        "prompt": "Three scores become 0.7, 0.2 and 0.1 after {{softmax}}. What must be true?",
+        "answer": "They are probabilities that add to one",
+        "choices": [
+          "They are probabilities that add to one",
+          "They are still unbounded logits",
+          "Softmax always outputs exactly two numbers",
+          "The smallest score always becomes probability 1"
+        ],
+        "explanation": "{{softmax}} outputs a distribution: each entry is at least zero and the entries sum to one. That is what makes them usable as probabilities for a {{prediction}}."
+      }
+    },
+    {
+      "title": "Sharpening and flattening the distribution",
+      "paragraphs": [
+        "If one score is much larger than the others, {{softmax}} puts almost all mass on that option. The {{prediction}} looks confident.",
+        "If scores are close, the distribution stays flatter. Many options keep meaningful probability.",
+        "Dividing scores by a positive temperature-like constant before {{softmax}} changes sharpness. Lower values peak harder; higher values flatten. That maths lives inside the probability step.",
+        "Later, outside the model, product knobs named {{temperature}} reuse the same idea when sampling text. Do not confuse the layers: the formula is inside; the API dial is an outside control you will lock for fair evals.",
+        "Click each case. The optional Softmax lab lets you drag three scores and watch the bars reshape."
+      ],
+      "reveals": [
+        {
+          "prompt": "Scores [5, 0, 0] into {{softmax}}.",
+          "reveal": "Almost all probability lands on the first option. The distribution is sharp."
+        },
+        {
+          "prompt": "Scores [0.1, 0.1, 0.1] into {{softmax}}.",
+          "reveal": "Nearly uniform probabilities. The model is undecided among the three."
+        },
+        {
+          "prompt": "You need a crisp class {{prediction}} for training.",
+          "reveal": "A peaked distribution matches a clear {{target}} class. Flat distributions fight one-hot labels."
+        }
+      ],
+      "check": {
+        "prompt": "A teammate says {{temperature}} on an API is the same thing as a {{weights}} matrix. What is the clearer split?",
+        "answer": "Softmax maths is inside; sampling dials are outside controls",
+        "choices": [
+          "Softmax maths is inside; sampling dials are outside controls",
+          "Temperature rewrites every weight in the network",
+          "Softmax only exists in decision trees",
+          "API temperature trains new embeddings from scratch"
+        ],
+        "explanation": "{{softmax}} (and score scaling) is part of turning logits into probabilities inside the model. Product {{temperature}} knobs change sampling behavior outside when you generate text."
+      }
+    },
+    {
+      "title": "Into the neural network lab",
+      "paragraphs": [
+        "You now have the chain for a classifier-style head: weighted sums, {{activation}}s in hidden layers, then often {{softmax}} on the final scores.",
+        "The Neural network lab keeps some heads simple so you can focus on {{loss}} falling. Still, when you see multi-class language later, remember the distribution view.",
+        "Honesty: stable {{softmax}} subtracts the max score before exp to avoid overflow. Libraries do that for you; the lab can show the probabilities without forcing you to type the formula.",
+        "Branch spur on the Learn hub: Softmax lab and Neural network lab peel off this lesson. They are not required for Continue.",
+        "Next spine step: **Embeddings and representations**, where hidden layers hold number patterns that capture similarity."
+      ],
+      "bullets": [
+        "Classifier head: scores → {{softmax}} → probabilities.",
+        "Next spine step: Embeddings and representations.",
+        "Branch: Softmax lab and Neural network lab on the hub spur."
+      ],
+      "aside": {
+        "title": "Branch on the hub",
+        "body": "Open Softmax lab or Neural network lab from this lesson's Branch spur on the Learn hub.",
+        "route": "/learn/labs/neural-network",
+        "actionLabel": "Open neural network lab"
+      },
+      "check": {
+        "prompt": "In a short phrase, what does {{softmax}} add on top of raw scores?",
+        "answer": "A probability distribution over options",
+        "accept": [
+          "probabilities that sum to one",
+          "a distribution over classes or tokens",
+          "normalized positive shares",
+          "competing options as probabilities"
+        ],
+        "wordBank": [
+          "A",
+          "probability",
+          "distribution",
+          "over",
+          "options",
+          "rubric",
+          "dataset"
+        ],
+        "explanation": "{{softmax}} converts competing scores into a {{prediction}} distribution. That is the inside step before you treat outputs as class chances or next-{{token}} chances."
+      }
+    }
+  ],
+  "recapQuestions": [
+    {
+      "prompt": "Why use {{softmax}} instead of reading raw scores as final answers?",
+      "answer": "You need probabilities that compete and sum to one",
+      "choices": [
+        "You need probabilities that compete and sum to one",
+        "Softmax deletes the need for any training data",
+        "Raw scores are already guaranteed to be between 0 and 1",
+        "Softmax only formats JSON for judges"
+      ],
+      "explanation": "Training losses and sampling need a proper distribution. {{softmax}} is the standard inside map from logits to probabilities."
+    },
+    {
+      "prompt": "Complete: elementwise {{relu}} acts on one unit; {{softmax}}…",
+      "answer": "Looks at the whole score vector at once",
+      "accept": [
+        "considers all options together",
+        "normalizes the full vector",
+        "lets options compete in one step",
+        "uses the entire score list"
+      ],
+      "wordBank": [
+        "Looks",
+        "at",
+        "the",
+        "whole",
+        "score",
+        "vector",
+        "at",
+        "once",
+        "prompt"
+      ],
+      "explanation": "{{softmax}} is a vector {{activation}}: every option's probability depends on every score, not on a single number in isolation."
+    }
+  ]
+}

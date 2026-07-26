@@ -6,15 +6,16 @@
       [trackLabel]="track()?.title ?? ''"
       [content]="content()"
       [sectionsSolved]="sessionState()?.sectionsSolved ?? []"
+      [activeSectionIndex]="activeSectionIndex()"
       [locked]="locked()"
       [savedKeyTerms]="savedKeyTerms()"
     />
 
     <main shellMain>
       @if (locked()) {
-        <div class="alert alert-secondary" role="status">Complete earlier lessons in this track first.</div>
+        <div class="learn-callout learn-callout--muted" role="status">Complete earlier lessons in this track first.</div>
       } @else if (!hasContent()) {
-        <div class="alert alert-light border" role="status">Content coming soon.</div>
+        <div class="learn-callout learn-callout--muted" role="status">Content coming soon.</div>
       } @else if (content(); as lessonContent) {
         @for (section of lessonContent.sections; track $index) {
           <app-learn-lesson-section
@@ -50,24 +51,6 @@
           </section>
         }
       }
-
-      <div class="learn-lesson-footer mb-4">
-        @if (!markCompleteEnabled() && hasContent() && !completed() && !locked()) {
-          <p class="text-muted small mb-2">Answer all section checks and recap questions first.</p>
-        }
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          [disabled]="!markCompleteEnabled()"
-          (click)="markComplete()"
-        >
-          @if (completed()) {
-            Completed
-          } @else {
-            Mark complete
-          }
-        </button>
-      </div>
     </main>
 
     <app-learn-lesson-aside
@@ -83,7 +66,10 @@
       [activeAside]="activeAside()"
       [savedKeyTerms]="savedKeyTerms()"
       [primaryHintIds]="primaryHintIds()"
+      [completed]="completed()"
+      [markCompleteEnabled]="markCompleteEnabled()"
       (termSelect)="selectKeyTerm($event)"
+      (markComplete)="markComplete()"
     />
   </app-page-shell>
 }

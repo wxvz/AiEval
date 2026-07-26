@@ -17,21 +17,40 @@ describe('LearnPage', () => {
     fixture.detectChanges();
   });
 
-  it('uses the full-width shell with sticky Continue and Dashboard navigation', () => {
+  it('uses the full-width shell with Learn brand, track index, sticky Continue and Dashboard navigation', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('app-page-shell')).toBeTruthy();
-    expect(el.querySelector('[shellleft]')).toBeFalsy();
+    expect(el.querySelector('[shellleft].learn-hub-rail')).toBeTruthy();
+    expect(el.querySelector('[shellleft] .learn-hub-rail__title')).toBeNull();
+    expect(el.querySelector('[shellmain] .learn-hub-main-brand__title')?.textContent?.trim()).toBe(
+      'Learn',
+    );
+    expect(el.querySelector('[shellleft] .learn-hub-tracks')).toBeTruthy();
+    expect(el.querySelector('[shellleft] a[href="/learn#track-foundation"]')).toBeTruthy();
+    expect(
+      el.querySelector('[shellleft] a.learn-hub-tracks__link--active[href="/learn#track-foundation"]'),
+    ).toBeTruthy();
+    expect(el.querySelector('[shellmain] .page-header')).toBeNull();
     expect(el.querySelector('[shellmain] app-learn-roadmap')).toBeTruthy();
+    expect(el.querySelector('[shellmain] .learn-more__list')).toBeTruthy();
+    expect(el.querySelector('[shellmain] .learn-more__list a[href="/evaluations/new"]')).toBeTruthy();
+    expect(el.querySelector('[shellmain] .learn-more__list')?.textContent).not.toContain(
+      'Decision trees',
+    );
     expect(el.querySelector('[shellright].learn-hub-nav a[href="/"]')).toBeTruthy();
     expect(el.querySelector('[shellright].learn-hub-nav a[href^="/learn/"]')?.textContent).toContain(
       'Continue',
     );
+    expect(el.querySelector('.learn-hub-nav__continue--solid')).toBeTruthy();
+    expect(el.querySelector('.learn-roadmap a')?.textContent ?? '').not.toContain('Continue');
+    expect(el.querySelector('[shellmain] .btn-primary')?.textContent ?? '').not.toContain('Continue');
   });
 
   it('shows the next lesson title and summary above Continue', () => {
     const el: HTMLElement = fixture.nativeElement;
     const next = el.querySelector('.learn-hub-nav__next');
-    expect(next?.textContent).toContain('Up next');
+    expect(next?.textContent).toContain('Lesson');
+    expect(next?.textContent).not.toContain('Up next');
     expect(next?.textContent).toContain('Learning from examples');
     expect(next?.textContent).toContain('Supervised learning');
     expect(el.querySelector('.learn-hub-nav__continue')?.textContent).toContain('Continue');

@@ -17,7 +17,7 @@
         Optional practice for <a [routerLink]="parentMeta.route">{{ parentMeta.title }}</a>.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: four hand-picked pairs. Real datasets hold thousands of rows; the pairing idea is identical.
     </div>
     <p class="text-muted small mb-3">Tap an input, then tap the target that belongs to it. Tap a matched target to undo.</p>
@@ -99,6 +99,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>

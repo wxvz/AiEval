@@ -8,7 +8,7 @@ import { LearnLessonRail } from '../../components/learn-lesson-rail/learn-lesson
 import { LearnLessonSection } from '../../components/learn-lesson-section/learn-lesson-section';
 import { LearnCheckQuestion } from '../../components/learn-check-question/learn-check-question';
 import { PageShell } from '../../components/page-shell/page-shell';
-import { getAdjacentLessons, getLesson, getOptionalLabForLesson, getTrack, isLessonLocked } from '../../learn/curriculum';
+import { getLesson, getNavigableAdjacent, getOptionalLabForLesson, getTrack, isLessonLocked } from '../../learn/curriculum';
 import type { LearnGlossaryTerm } from '../../learn/learn-glossary';
 import { loadLessonContent } from '../../learn/learn-content';
 import { getPrimaryTermHintIds } from '../../learn/primary-term-hints';
@@ -54,7 +54,7 @@ export class LearnLessonPage {
     const trackId = this.meta()?.trackId;
     return trackId ? getTrack(trackId) : null;
   });
-  readonly adjacent = computed(() => getAdjacentLessons(this.lessonId()));
+  readonly adjacent = computed(() => getNavigableAdjacent(this.lessonId()));
   readonly completed = computed(() => {
     this.progress.completedIds();
     const id = this.meta()?.id;

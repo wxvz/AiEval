@@ -35,7 +35,7 @@
         : retrieve the authorized waterproof match for a boot photo.
       </p>
     }
-    <div class="alert alert-light border mb-3" role="note">
+    <div class="learn-callout mb-3" role="note">
       Teaching shortcut: five fixed products and three-number vectors stand in for a real index.
       Production systems handle approximate search, model-version migrations and much higher
       dimensions. The
@@ -54,7 +54,7 @@
     </p>
 
     @if (solved()) {
-      <div class="alert alert-success mb-4" role="status">
+      <div class="learn-callout learn-callout--success mb-4" role="status">
         Solved: filters kept the private tenant out and preferred the waterproof authorized match
         over a dry lookalike.
       </div>
@@ -183,6 +183,7 @@
     [lesson]="labMeta"
     [parent]="parentMeta"
     [completed]="labCompleted()"
+    [completionDisabled]="!solved()"
     (complete)="markLabComplete()"
   />
 </app-page-shell>
