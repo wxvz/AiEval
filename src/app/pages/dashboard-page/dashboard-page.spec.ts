@@ -208,4 +208,26 @@ describe('DashboardPage', () => {
       replaceUrl: true,
     });
   });
+
+  it('hides Learn banner and highlight when the requested lab has no handoff', () => {
+    learnHandoff.recordEvaluation('eval-first', 'first-evaluation-lab');
+    evaluationService['evaluationsSignal'].set([sampleEvaluation('eval-first')]);
+    evaluationService['loadingSignal'].set(false);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['showLearnBanner']()).toBe(true);
+    expect(fixture.componentInstance['highlightedEvaluationId']()).toBe('eval-first');
+
+    queryParamMap$.next(
+      convertToParamMap({
+        from: 'learn',
+        learnLesson: 'support-bot-decision-lab',
+      }),
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance['showLearnBanner']()).toBe(false);
+    expect(fixture.componentInstance['highlightedEvaluationId']()).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('From Learn lab');
+  });
 });

@@ -65,15 +65,33 @@ export class DashboardPage {
   });
   protected readonly dayPages = signal<Record<string, number>>({});
   protected readonly deleteTargetId = signal<string | null>(null);
-  protected readonly highlightedEvaluationId = computed(() =>
-    this.learnHandoff.highlightedEvaluationId(),
+
+  /** Query `learnLesson` when present; drives Learn chrome without falling back to another lab. */
+  private readonly requestedLearnLessonId = computed(
+    () => this.queryParamMap().get(LEARN_LESSON_QUERY),
   );
+
+  protected readonly highlightedEvaluationId = computed(() => {
+    this.learnHandoff.highlightedEvaluationId();
+    const requested = this.requestedLearnLessonId();
+    if (requested) {
+      // No handoff for the requested lab → do not highlight another lab's evaluation.
+      return this.learnHandoff.evaluationIdForLesson(requested);
+    }
+    return this.learnHandoff.highlightedEvaluationId();
+  });
+
   protected readonly showLearnBanner = computed(() => {
     this.learnHandoff.highlightedEvaluationId();
+    const requested = this.requestedLearnLessonId();
+    if (requested && !this.learnHandoff.hasHandoffForLesson(requested)) {
+      return false;
+    }
     return this.learnHandoff.showDashboardBanner();
   });
+
   protected readonly learnBannerCopy = computed(() => {
-    const lessonId = this.learnHandoff.lessonId();
+    const lessonId = this.requestedLearnLessonId() ?? this.learnHandoff.lessonId();
     if (!lessonId) {
       return 'Your evaluation from the Learn lab is highlighted below.';
     }
@@ -82,8 +100,9 @@ export class DashboardPage {
       'Your evaluation from the Learn lab is highlighted below.'
     );
   });
+
   protected readonly learnLabRoute = computed(() => {
-    const lessonId = this.learnHandoff.lessonId();
+    const lessonId = this.requestedLearnLessonId() ?? this.learnHandoff.lessonId();
     if (!lessonId) {
       return '/learn';
     }
