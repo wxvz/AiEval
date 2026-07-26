@@ -20,8 +20,11 @@ const STATUS_BODY = {
 };
 
 /** Prefetch runs on first render via afterNextRender. */
-function flushPrefetch(httpMock: HttpTestingController): void {
-  httpMock.expectOne('/api/settings').flush(SETTINGS_BODY);
+function flushPrefetch(
+  httpMock: HttpTestingController,
+  body: typeof SETTINGS_BODY = SETTINGS_BODY,
+): void {
+  httpMock.expectOne('/api/settings').flush(body);
 }
 
 /** Settings open loads after Bootstrap fires `shown.bs.offcanvas`. */
@@ -48,12 +51,13 @@ describe('SettingsAside refreshStatus', () => {
     httpMock.verify();
   });
 
-  it('keeps Refresh idle during silent open status load', () => {
+  it('keeps Refresh idle during silent open status load', async () => {
     const fixture = TestBed.createComponent(SettingsAside);
     const component = fixture.componentInstance;
 
     fixture.detectChanges();
     flushPrefetch(httpMock);
+    await fixture.whenStable();
 
     settingsService.open();
     fixture.detectChanges();
@@ -61,7 +65,7 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     const statusReq = httpMock.expectOne('/api/status');
-    const settingsReq = httpMock.expectOne('/api/settings');
+    httpMock.expectNone('/api/settings');
 
     expect((component as unknown as { statusRefreshing: () => boolean }).statusRefreshing()).toBe(
       false,
@@ -76,18 +80,18 @@ describe('SettingsAside refreshStatus', () => {
     expect(refreshButton?.textContent?.trim()).toBe('Refresh');
 
     statusReq.flush(STATUS_BODY);
-    settingsReq.flush(SETTINGS_BODY);
     fixture.detectChanges();
 
     expect(refreshButton?.hasAttribute('disabled')).toBe(false);
   });
 
-  it('queues a user Refresh click that arrives during silent open load', () => {
+  it('queues a user Refresh click that arrives during silent open load', async () => {
     const fixture = TestBed.createComponent(SettingsAside);
     const component = fixture.componentInstance;
 
     fixture.detectChanges();
     flushPrefetch(httpMock);
+    await fixture.whenStable();
 
     settingsService.open();
     fixture.detectChanges();
@@ -95,7 +99,7 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     const silentStatus = httpMock.expectOne('/api/status');
-    httpMock.expectOne('/api/settings').flush(SETTINGS_BODY);
+    httpMock.expectNone('/api/settings');
 
     (component as unknown as { refreshStatus: (showToast?: boolean) => void }).refreshStatus(true);
     fixture.detectChanges();
@@ -120,12 +124,13 @@ describe('SettingsAside refreshStatus', () => {
     );
   });
 
-  it('disables refresh while a user-initiated status request is in flight', () => {
+  it('disables refresh while a user-initiated status request is in flight', async () => {
     const fixture = TestBed.createComponent(SettingsAside);
     const component = fixture.componentInstance;
 
     fixture.detectChanges();
     flushPrefetch(httpMock);
+    await fixture.whenStable();
 
     settingsService.open();
     fixture.detectChanges();
@@ -133,7 +138,7 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     httpMock.expectOne('/api/status').flush(STATUS_BODY);
-    httpMock.expectOne('/api/settings').flush(SETTINGS_BODY);
+    httpMock.expectNone('/api/settings');
     fixture.detectChanges();
 
     (component as unknown as { refreshStatus: (showToast?: boolean) => void }).refreshStatus(true);
@@ -159,12 +164,13 @@ describe('SettingsAside refreshStatus', () => {
     expect(refreshButton?.textContent?.trim()).toBe('Refresh');
   });
 
-  it('ignores duplicate silent refresh while in flight', () => {
+  it('ignores duplicate silent refresh while in flight', async () => {
     const fixture = TestBed.createComponent(SettingsAside);
     const component = fixture.componentInstance;
 
     fixture.detectChanges();
     flushPrefetch(httpMock);
+    await fixture.whenStable();
 
     settingsService.open();
     fixture.detectChanges();
@@ -172,20 +178,20 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     const statusReq = httpMock.expectOne('/api/status');
-    const settingsReq = httpMock.expectOne('/api/settings');
+    httpMock.expectNone('/api/settings');
 
     (component as unknown as { refreshStatus: () => void }).refreshStatus();
     httpMock.expectNone('/api/status');
 
     statusReq.flush(STATUS_BODY);
-    settingsReq.flush(SETTINGS_BODY);
   });
 
-  it('loads panel data when already visible without a second shown event', () => {
+  it('loads panel data when already visible without a second shown event', async () => {
     const fixture = TestBed.createComponent(SettingsAside);
 
     fixture.detectChanges();
     flushPrefetch(httpMock);
+    await fixture.whenStable();
 
     const panel = fixture.nativeElement.querySelector('.settings-aside') as HTMLElement;
     panel.classList.add('show');
@@ -194,7 +200,7 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     httpMock.expectOne('/api/status').flush(STATUS_BODY);
-    httpMock.expectOne('/api/settings').flush(SETTINGS_BODY);
+    httpMock.expectNone('/api/settings');
   });
 
   it('shows empty-state banner when apiTokenRequired and no stored token', async () => {
@@ -202,7 +208,8 @@ describe('SettingsAside refreshStatus', () => {
     const fixture = TestBed.createComponent(SettingsAside);
 
     fixture.detectChanges();
-    flushPrefetch(httpMock);
+    flushPrefetch(httpMock, { ...SETTINGS_BODY, apiTokenRequired: true });
+    await fixture.whenStable();
 
     settingsService.open();
     fixture.detectChanges();
@@ -210,10 +217,7 @@ describe('SettingsAside refreshStatus', () => {
     fixture.detectChanges();
 
     httpMock.expectOne('/api/status').flush(STATUS_BODY);
-    httpMock.expectOne('/api/settings').flush({
-      ...SETTINGS_BODY,
-      apiTokenRequired: true,
-    });
+    httpMock.expectNone('/api/settings');
     await fixture.whenStable();
     fixture.detectChanges();
 

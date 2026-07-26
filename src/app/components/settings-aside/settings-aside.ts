@@ -476,7 +476,7 @@ export class SettingsAside {
 
     this.panelDataLoadedForOpen = true;
     this.ensureEvaluationsLoaded();
-    void this.serverSettingsService.load({ soft: true });
+    void this.serverSettingsService.load({ soft: true, skipIfCached: true });
     this.refreshStatus(false);
   }
 }
