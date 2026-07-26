@@ -193,8 +193,16 @@ describe('DashboardPage', () => {
     );
     fixture.detectChanges();
 
-    expect(routerNavigate).not.toHaveBeenCalled();
+    expect(fixture.componentInstance['openCompareMiss']()).toContain('Compare is unavailable');
+    expect(routerNavigate).toHaveBeenCalledWith([], {
+      relativeTo: expect.anything(),
+      queryParams: { openCompare: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
 
+    routerNavigate.mockClear();
+    fixture.componentInstance['openCompareMiss'].set(null);
     queryParamMap$.next(
       convertToParamMap({
         from: 'learn',
@@ -204,10 +212,12 @@ describe('DashboardPage', () => {
     );
     fixture.detectChanges();
 
+    expect(fixture.componentInstance['openCompareMiss']()).toBeNull();
     expect(routerNavigate).toHaveBeenCalledWith(['/evaluations', 'eval-support', 'compare'], {
       replaceUrl: true,
     });
   });
+
 
   it('hides Learn banner and highlight when the requested lab has no handoff', () => {
     learnHandoff.recordEvaluation('eval-first', 'first-evaluation-lab');

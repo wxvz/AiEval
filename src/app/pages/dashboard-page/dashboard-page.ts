@@ -65,6 +65,8 @@ export class DashboardPage {
   });
   protected readonly dayPages = signal<Record<string, number>>({});
   protected readonly deleteTargetId = signal<string | null>(null);
+  /** Set when openCompare=1 arrives without a resolvable Learn handoff evaluation. */
+  protected readonly openCompareMiss = signal<string | null>(null);
 
   /** Query `learnLesson` when present; drives Learn chrome without falling back to another lab. */
   private readonly requestedLearnLessonId = computed(
@@ -128,8 +130,20 @@ export class DashboardPage {
         ? this.learnHandoff.evaluationIdForLesson(lessonId)
         : this.learnHandoff.highlightedEvaluationId();
       if (!evalId) {
+        this.openCompareMiss.set(
+          lessonId
+            ? 'Compare is unavailable until this Learn lab has a finished automated evaluation.'
+            : 'Compare is unavailable until a Learn lab evaluation is linked.',
+        );
+        void this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { openCompare: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
         return;
       }
+      this.openCompareMiss.set(null);
       void this.router.navigate(['/evaluations', evalId, 'compare'], { replaceUrl: true });
     });
 

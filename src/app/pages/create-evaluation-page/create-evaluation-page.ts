@@ -254,7 +254,8 @@ export class CreateEvaluationPage {
         void this.router.navigate(['/evaluations', created.id, 'edit']);
       })
       .catch(() => {
-        if (this.fromLearn()) {
+        // Tip CTAs may send from=learn without learnLesson; only tool handoffs use lab copy.
+        if (this.learnLessonId()) {
           this.learnCreateError.set('Could not create the evaluation for the Learn lab. Try again.');
         }
       });
@@ -453,7 +454,7 @@ export class CreateEvaluationPage {
         // Handoff is recorded in applyAutomationResult when automation finishes.
       })
       .catch(() => {
-        if (this.fromLearn()) {
+        if (this.learnLessonId()) {
           this.learnCreateError.set('Could not start automation for the Learn lab. Try again.');
         }
       })
