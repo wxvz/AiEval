@@ -1,4 +1,14 @@
-import { Component, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import {
   ConfirmDeleteModal,
@@ -33,6 +43,7 @@ export class AutomationControlsComponent {
   private readonly evaluationService = inject(EvaluationService);
   private readonly settingsService = inject(SettingsService);
   private readonly appStatus = inject(AppStatusService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly providerChoiceModal = viewChild(ProviderChoiceModal);
   private pendingProviderChoiceResolve: ((useCloud: boolean) => void) | null = null;
@@ -55,6 +66,8 @@ export class AutomationControlsComponent {
   readonly statusDismissed = output<void>();
 
   private autoStartTriggered = false;
+  /** Bumped on each runAutomate and evaluationId change so A→B→A cannot revive a stale run. */
+  private runGeneration = 0;
 
   protected readonly automationOutcome = signal<AutomationOutcome>(idleAutomationOutcome());
   protected readonly progressSteps = signal<string[]>([]);
@@ -100,7 +113,35 @@ export class AutomationControlsComponent {
     () => `confirmAutomation${this.phase()}${this.evaluationId()}`,
   );
 
+  private lastEvaluationId: string | null = null;
+
   constructor() {
+    this.destroyRef.onDestroy(() => {
+      const id = this.lastEvaluationId ?? this.evaluationId();
+
+      if (id && this.evaluationService.isAutomating(id)) {
+        this.evaluationService.cancelAutomation(id);
+      }
+
+      this.cancelProviderChoicePrompt();
+    });
+
+    effect(() => {
+      const currentId = this.evaluationId();
+
+      if (this.lastEvaluationId !== null && this.lastEvaluationId !== currentId) {
+        // Cancel the prior eval's SSE run before re-arming auto-start (Codex P2).
+        this.evaluationService.cancelAutomation(this.lastEvaluationId);
+        this.cancelProviderChoicePrompt();
+        this.runGeneration += 1;
+        this.automationOutcome.set(idleAutomationOutcome());
+        this.progressSteps.set([]);
+        this.autoStartTriggered = false;
+      }
+
+      this.lastEvaluationId = currentId;
+    });
+
     effect(() => {
       if (!this.autoStart() || this.autoStartTriggered) {
         return;
@@ -210,16 +251,25 @@ export class AutomationControlsComponent {
   }
 
   private async runAutomate(force: boolean): Promise<void> {
+    const runForId = this.evaluationId();
+    const generation = ++this.runGeneration;
+    const isCurrentRun = () =>
+      this.runGeneration === generation && this.evaluationId() === runForId;
+
     this.cancelProviderChoicePrompt();
     this.automationOutcome.set({ status: 'running' });
     this.progressSteps.set(['Starting automation…']);
 
     try {
       const evaluation = await this.evaluationService.automate(
-        this.evaluationId(),
+        runForId,
         { force, phase: this.phase() },
         {
           onStatus: (status) => {
+            if (!isCurrentRun()) {
+              return;
+            }
+
             this.automationOutcome.set({ status });
 
             if (status === 'cancelled') {
@@ -227,6 +277,10 @@ export class AutomationControlsComponent {
             }
           },
           onProgress: (event) => {
+            if (!isCurrentRun()) {
+              return;
+            }
+
             const label = automationProgressLabel(event);
 
             if (!label) {
@@ -235,7 +289,15 @@ export class AutomationControlsComponent {
 
             this.progressSteps.update((steps) => [...steps, label]);
           },
-          onSlowProviderPrompt: (event) => this.promptProviderChoice(event),
+          onSlowProviderPrompt: (event) => {
+            if (!isCurrentRun()) {
+              // Prior id-change/destroy cancel should have aborted; do not keep-local POST.
+              this.evaluationService.cancelAutomation(runForId);
+              return Promise.resolve(false);
+            }
+
+            return this.promptProviderChoice(event);
+          },
           operationFeedback: {
             success: this.successMessage(),
             error: this.errorMessage(),
@@ -243,8 +305,16 @@ export class AutomationControlsComponent {
         },
       );
 
+      if (!isCurrentRun()) {
+        return;
+      }
+
       this.automationFinished.emit(evaluation);
     } catch (error) {
+      if (!isCurrentRun()) {
+        return;
+      }
+
       this.cancelProviderChoicePrompt();
       const message = error instanceof Error ? error.message : this.errorMessage();
       const status = automationStatusFromError(message);
@@ -328,9 +398,11 @@ export class AutomationControlsComponent {
   private dismissProviderChoiceModal(): void {
     const modalElement = document.getElementById(this.providerChoiceModalId());
 
-    if (modalElement) {
-      bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+    if (!modalElement || typeof bootstrap === 'undefined') {
+      return;
     }
+
+    bootstrap.Modal.getOrCreateInstance(modalElement).hide();
   }
 }
 

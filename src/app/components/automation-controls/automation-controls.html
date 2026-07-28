@@ -39,10 +39,18 @@
           <p class="text-danger small mb-2">Automation was cancelled.</p>
         } @else if (automationOutcome().status === 'failed') {
           <p class="text-danger small mb-2">Automation did not complete.</p>
+        } @else if (
+          automationOutcome().status === 'running' || automationOutcome().status === 'waiting'
+        ) {
+          <p class="text-muted small mb-2">
+            Automation is no longer active. Dismiss this status or run again.
+          </p>
         }
-        <div class="mb-2">
-          <app-token-usage-badge [usage]="displayTokenUsage()" />
-        </div>
+        @if (!automating()) {
+          <div class="mb-2">
+            <app-token-usage-badge [usage]="displayTokenUsage()" />
+          </div>
+        }
         <ul class="small mb-0 ps-3">
           @for (step of progressSteps(); track $index) {
             <li>{{ step }}</li>

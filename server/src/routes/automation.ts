@@ -1,7 +1,10 @@
 import { Router } from 'express';
 
 import { submitProviderChoice } from '../automation/provider-choice.js';
-import { cancelAutomationRun, getActiveAutomationRunId } from '../automation/run-registry.js';
+import {
+  cancelAutomationRun,
+  registerAutomationRun,
+} from '../automation/run-registry.js';
 import {
   AutomationError,
   runEvaluationAutomation,
@@ -193,14 +196,19 @@ export function createAutomationRouter(): Router {
     };
 
     const onClientDisconnect = () => {
-      // Only cancel if this run is still active — after clearAutomationRun, a late
-      // close must not record an orphan pending cancel for the finished runId.
-      if (!res.writableFinished && getActiveAutomationRunId(evaluationId) === runId) {
-        cancelAutomationRun(evaluationId, runId);
+      // After a clean res.end(), skip — avoids orphan pending cancels for finished runs.
+      // Before register / mid-run: cancel active or record pending so a late register aborts.
+      if (res.writableFinished) {
+        return;
       }
+
+      cancelAutomationRun(evaluationId, runId);
     };
 
     try {
+      // Register before headers/flush so a fast client disconnect is pending-cancel safe.
+      registerAutomationRun(evaluationId, runId);
+
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');

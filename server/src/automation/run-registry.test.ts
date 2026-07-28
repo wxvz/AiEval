@@ -40,6 +40,15 @@ describe('registerAutomationRun', () => {
     expect(signal.aborted).toBe(true);
     expect(ownsAutomationRun(evaluationId, 'run-pre')).toBe(true);
   });
+
+  it('reuses the same signal when registering the same runId again', () => {
+    const first = registerAutomationRun(evaluationId, 'run-a');
+    const second = registerAutomationRun(evaluationId, 'run-a');
+
+    expect(second).toBe(first);
+    expect(first.aborted).toBe(false);
+    expect(ownsAutomationRun(evaluationId, 'run-a')).toBe(true);
+  });
 });
 
 describe('cancelAutomationRun', () => {
