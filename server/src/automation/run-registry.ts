@@ -37,6 +37,11 @@ function prunePendingCancels(evaluationId: string, now = Date.now()): Map<string
 export function registerAutomationRun(evaluationId: string, runId: string): AbortSignal {
   const existing = activeByEvaluationId.get(evaluationId);
 
+  // Same runId re-register (route early register + orchestrator) — keep the signal.
+  if (existing?.runId === runId) {
+    return existing.abortController.signal;
+  }
+
   if (existing) {
     existing.abortController.abort();
     clearProviderChoice(evaluationId);

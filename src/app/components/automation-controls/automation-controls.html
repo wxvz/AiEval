@@ -39,6 +39,12 @@
           <p class="text-danger small mb-2">Automation was cancelled.</p>
         } @else if (automationOutcome().status === 'failed') {
           <p class="text-danger small mb-2">Automation did not complete.</p>
+        } @else if (
+          automationOutcome().status === 'running' || automationOutcome().status === 'waiting'
+        ) {
+          <p class="text-muted small mb-2">
+            Automation is no longer active. Dismiss this status or run again.
+          </p>
         }
         @if (!automating()) {
           <div class="mb-2">

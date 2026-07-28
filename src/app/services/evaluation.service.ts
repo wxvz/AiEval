@@ -564,6 +564,7 @@ export class EvaluationService {
     }
 
     const apiToken = readStoredApiToken();
+    // EventSource cannot set Authorization headers — token rides the query string when required.
     if (apiToken) {
       params.set('api_token', apiToken);
     }
@@ -658,12 +659,16 @@ export class EvaluationService {
         settled = true;
         clearTimer();
 
-        if (this.activeAutomations.get(evaluationId)?.eventSource === eventSource) {
-          this.clearActiveAutomation(evaluationId, eventSource);
-          eventSource.close();
+        // Invoke status/complete callbacks while still marked automating so the UI
+        // does not briefly show outcome === 'running' with automating() === false.
+        try {
+          handler();
+        } finally {
+          if (this.activeAutomations.get(evaluationId)?.eventSource === eventSource) {
+            this.clearActiveAutomation(evaluationId, eventSource);
+            eventSource.close();
+          }
         }
-
-        handler();
       };
 
       const abort = (): void => {
