@@ -100,7 +100,21 @@ export class AutomationControlsComponent {
     () => `confirmAutomation${this.phase()}${this.evaluationId()}`,
   );
 
+  private lastEvaluationId: string | null = null;
+
   constructor() {
+    effect(() => {
+      const currentId = this.evaluationId();
+
+      if (this.lastEvaluationId !== null && this.lastEvaluationId !== currentId) {
+        this.automationOutcome.set(idleAutomationOutcome());
+        this.progressSteps.set([]);
+        this.autoStartTriggered = false;
+      }
+
+      this.lastEvaluationId = currentId;
+    });
+
     effect(() => {
       if (!this.autoStart() || this.autoStartTriggered) {
         return;
