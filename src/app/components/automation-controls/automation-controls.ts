@@ -66,6 +66,8 @@ export class AutomationControlsComponent {
   readonly statusDismissed = output<void>();
 
   private autoStartTriggered = false;
+  /** Bumped on each runAutomate and evaluationId change so A→B→A cannot revive a stale run. */
+  private runGeneration = 0;
 
   protected readonly automationOutcome = signal<AutomationOutcome>(idleAutomationOutcome());
   protected readonly progressSteps = signal<string[]>([]);
@@ -131,6 +133,7 @@ export class AutomationControlsComponent {
         // Cancel the prior eval's SSE run before re-arming auto-start (Codex P2).
         this.evaluationService.cancelAutomation(this.lastEvaluationId);
         this.cancelProviderChoicePrompt();
+        this.runGeneration += 1;
         this.automationOutcome.set(idleAutomationOutcome());
         this.progressSteps.set([]);
         this.autoStartTriggered = false;
@@ -249,7 +252,9 @@ export class AutomationControlsComponent {
 
   private async runAutomate(force: boolean): Promise<void> {
     const runForId = this.evaluationId();
-    const isCurrentRun = () => this.evaluationId() === runForId;
+    const generation = ++this.runGeneration;
+    const isCurrentRun = () =>
+      this.runGeneration === generation && this.evaluationId() === runForId;
 
     this.cancelProviderChoicePrompt();
     this.automationOutcome.set({ status: 'running' });

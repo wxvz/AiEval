@@ -132,6 +132,62 @@ describe('AutomationControlsComponent evaluationId change', () => {
     expect(finished).not.toHaveBeenCalled();
   });
 
+  it('ignores the original A run after cycling A → B → A', async () => {
+    let resolveFirstA!: (evaluation: Evaluation) => void;
+    let onProgressFirstA:
+      | ((event: { type: 'generating'; modelLabel: string; index: number; total: number }) => void)
+      | undefined;
+    let resolveSecondA!: (evaluation: Evaluation) => void;
+    let callCount = 0;
+
+    vi.spyOn(evaluationService, 'automate').mockImplementation((id, _opts, callbacks) => {
+      callCount += 1;
+
+      if (id === 'eval-a' && callCount === 1) {
+        onProgressFirstA = callbacks?.onProgress;
+        return new Promise<Evaluation>((resolve) => {
+          resolveFirstA = resolve;
+        });
+      }
+
+      if (id === 'eval-a') {
+        return new Promise<Evaluation>((resolve) => {
+          resolveSecondA = resolve;
+        });
+      }
+
+      return Promise.resolve(evalB);
+    });
+
+    const finished = vi.fn();
+    component.automationFinished.subscribe(finished);
+
+    const firstRun = component['runAutomate'](false);
+
+    fixture.componentRef.setInput('evaluationId', 'eval-b');
+    fixture.detectChanges();
+    TestBed.tick();
+
+    fixture.componentRef.setInput('evaluationId', 'eval-a');
+    fixture.detectChanges();
+    TestBed.tick();
+
+    const secondRun = component['runAutomate'](false);
+
+    onProgressFirstA?.({ type: 'generating', modelLabel: 'stale', index: 1, total: 3 });
+    resolveFirstA(evalA);
+    await firstRun;
+
+    expect(component['progressSteps']()).toEqual(['Starting automation…']);
+    expect(finished).not.toHaveBeenCalled();
+
+    resolveSecondA({ ...evalA, title: 'A second' });
+    await secondRun;
+
+    expect(finished).toHaveBeenCalledTimes(1);
+    expect(finished).toHaveBeenCalledWith({ ...evalA, title: 'A second' });
+  });
+
   it('cancels the bound evaluation when destroyed while automating', () => {
     evaluationService.automatingEvaluationId.set('eval-a');
     const cancelSpy = vi.spyOn(evaluationService, 'cancelAutomation');
