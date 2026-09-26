@@ -13,6 +13,9 @@ Create an evaluation from a prompt, add model answers, score each answer against
 - Capture an improved answer after reviewing the comparison.
 - Success and error feedback via toast-style alerts.
 - **Automation** — run the full pipeline from **Create**, or run individual steps on **Edit** (generate answers), **Compare** (auto-score), and **Improved** (draft improved answer), with live SSE progress.
+- **Resilient LLM calls** — five providers with model and provider fallback, 429 backoff, concurrency limits, and checkpoints so partial runs resume instead of starting over.
+- **Learn hub** — a curriculum of lessons and interactive labs on ML, LLM systems, and evaluation, with a curriculum-grounded tutor chat. See [Learn hub](#learn-hub).
+- **Agent skills** — project skills that teach AI coding agents how to build, debug, test, and use AiEval. See [Agent skills](#agent-skills).
 
 ## How to use AiEval
 
@@ -155,6 +158,15 @@ Server logs emit structured JSON events (`LOG_LEVEL`, optional `LOG_FILE`). Set 
 1. On the dashboard, open the menu on an evaluation card.
 2. Choose **Delete** and confirm in the dialog.
 
+## Learn hub
+
+Open **Learn** (`/learn`) for a self-paced curriculum in three tracks: **Foundation**, **LLM systems**, and **Systems & production**. Each track can be started on its own.
+
+- **Lessons** are written in JSON under `src/app/learn/content/`, with lesson order and prerequisites in `src/app/learn/curriculum.ts`.
+- **Labs** are hands-on pages under `/learn/labs/…`, including a neural network playground, semantic search, a RAG playground, transformers, softmax, decision trees, reinforcement learning, faithfulness, and LLM-as-judge JSON.
+- **The neural network labs** run on a small from-scratch engine in `src/app/utils/nn` (forward pass, MSE loss, backpropagation, activations), so every number on screen can be traced.
+- **Tutor chat** is a floating assistant that answers questions about the page you are on. The API proxies `POST /api/learn-chat` to an n8n agent workflow, grounded in curriculum excerpts and allowed to cite only live lessons. Configure it with the `LEARN_CHAT_*` variables in `.env.example`.
+
 ## Development
 
 ### Prerequisites
@@ -253,13 +265,39 @@ npm run build:server
 Run unit tests:
 
 ```bash
-npm test
+npm test              # Angular
+npm run test:server   # API
 ```
+
+Run everything CI runs (both builds and both test suites):
+
+```bash
+npm run ci
+```
+
+GitHub Actions runs `npm run ci` on every pull request and on pushes to `master`.
+
+## Agent skills
+
+`.cursor/skills/` holds 20 project skills for AI coding agents such as Cursor. Each skill is a `SKILL.md` with a `name` and a `description` that says what it covers and when to use it, so the agent loads the right one for the task.
+
+| Area | Skills |
+| --- | --- |
+| Running and reading evaluations | `run-model-evaluation`, `rubric-design`, `interpret-evaluation-results`, `prompt-variant-benchmark`, `evaluation-report`, `api-batch-runner` |
+| LLM pipeline | `resilient-llm`, `prompts-and-judge`, `add-llm-provider`, `model-preset-regression`, `openrouter-free-tier` |
+| Debugging and tests | `automation-debug`, `automation-testing`, `keep-tests-current` |
+| API and Learn | `api-auth`, `learn-hub`, `learn-chat`, `nn-core`, `nn-playground` |
+| Upkeep | `skill-maintenance` (manual only: audits the other skills for stale paths, commands, and CI drift) |
+
+All names carry an `aieval-` prefix. See the [catalog](.cursor/skills/README.md) for links and audiences. The skills contain no API keys or private prompts.
 
 ## Project layout
 
 ```
-src/app/          Angular UI (pages, components, services)
-server/src/       Express API and MongoDB access
-proxy.conf.json   Dev proxy from /api to localhost:3000
+src/app/            Angular UI (pages, components, services)
+src/app/learn/      Learn curriculum metadata and lesson content
+src/app/utils/nn/   Teaching neural network engine
+server/src/         Express API, automation pipeline, and MongoDB access
+.cursor/skills/     Agent skills (see above)
+proxy.conf.json     Dev proxy from /api to localhost:3000
 ```
