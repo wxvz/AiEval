@@ -17,12 +17,15 @@ Project skills for developing and using [AiEval](../../README.md). Invoke by nam
 | [aieval-resilient-llm](aieval-resilient-llm/SKILL.md) | Maintainer |
 | [aieval-automation-testing](aieval-automation-testing/SKILL.md) | Maintainer |
 | [aieval-add-llm-provider](aieval-add-llm-provider/SKILL.md) | Maintainer |
+| [aieval-api-auth](aieval-api-auth/SKILL.md) | Maintainer |
 | [aieval-api-batch-runner](aieval-api-batch-runner/SKILL.md) | Practitioner / CI |
 | [aieval-model-preset-regression](aieval-model-preset-regression/SKILL.md) | Maintainer |
 | [aieval-nn-core](aieval-nn-core/SKILL.md) | Maintainer |
 | [aieval-nn-playground](aieval-nn-playground/SKILL.md) | Maintainer |
 | [aieval-learn-hub](aieval-learn-hub/SKILL.md) | Maintainer |
+| [aieval-learn-chat](aieval-learn-chat/SKILL.md) | Maintainer |
 | [aieval-keep-tests-current](aieval-keep-tests-current/SKILL.md) | Maintainer — CI via `.github/workflows/ci.yml` → `npm run ci` |
+| [aieval-skill-maintenance](aieval-skill-maintenance/SKILL.md) | Maintainer — manual only (`disable-model-invocation`) |
 
 ## Personal vs repo
 
