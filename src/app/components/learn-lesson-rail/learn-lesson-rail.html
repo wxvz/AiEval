@@ -1,5 +1,9 @@
 <div class="learn-lesson-rail">
-  <a routerLink="/learn" class="learn-back-link learn-nav-link">← Learn</a>
+  @if (parentLesson(); as parent) {
+    <a [routerLink]="parent.route" class="learn-back-link learn-nav-link">← {{ parent.title }}</a>
+  } @else {
+    <a routerLink="/learn" class="learn-back-link learn-nav-link">← Learn</a>
+  }
 
   @if (trackLabel()) {
     <p class="learn-eyebrow learn-eyebrow--accent learn-lesson-rail__track mb-2">{{ trackLabel() }}</p>
