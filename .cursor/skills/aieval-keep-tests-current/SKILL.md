@@ -13,7 +13,7 @@ AiEval uses **two test runners** plus **build steps** in CI. Match the merge gat
 
 ## CI parity (merge gate)
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on push to `main` and on pull requests:
+GitHub Actions (`.github/workflows/ci.yml`) runs on push to `master` and on pull requests:
 
 ```bash
 npm ci
