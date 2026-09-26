@@ -3,12 +3,14 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getLesson } from '../../learn/curriculum';
+import { SettingsService } from '../../services/settings.service';
 import { LearnLabNav } from './learn-lab-nav';
 
 describe('LearnLabNav', () => {
   let fixture: ComponentFixture<LearnLabNav>;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [LearnLabNav],
       providers: [provideRouter([])],
@@ -17,6 +19,7 @@ describe('LearnLabNav', () => {
   });
 
   it('uses a parent lesson to navigate around an optional lab', () => {
+    TestBed.inject(SettingsService).setLearnUnlockAll(true);
     fixture.componentRef.setInput('lesson', getLesson('semantic-memory-lab'));
     fixture.componentRef.setInput('parent', getLesson('semantic-memory'));
     fixture.detectChanges();
@@ -27,6 +30,7 @@ describe('LearnLabNav', () => {
   });
 
   it('walks nested branch parents to spine Continue neighbors', () => {
+    TestBed.inject(SettingsService).setLearnUnlockAll(true);
     fixture.componentRef.setInput('lesson', getLesson('rag-playground-lab'));
     fixture.detectChanges();
 
@@ -34,6 +38,18 @@ describe('LearnLabNav', () => {
     expect(el.querySelector('a[href="/learn/labs/semantic-search"]')).toBeTruthy();
     expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeTruthy();
     expect(el.querySelector('a[href="/learn/lessons/structured-outputs-for-judges"]')).toBeTruthy();
+  });
+
+  it('sends a locked neighbor link to its first missing prerequisite', () => {
+    fixture.componentRef.setInput('lesson', getLesson('semantic-memory-lab'));
+    fixture.componentRef.setInput('parent', getLesson('semantic-memory'));
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelector('a[href="/learn/lessons/faithfulness-and-hallucinations"]')).toBeFalsy();
+    const redirected = el.querySelector('a[title="Complete Semantic memory first"]');
+    expect(redirected?.getAttribute('href')).toBe('/learn/lessons/semantic-memory');
+    expect(redirected?.textContent).toContain('Faithfulness');
   });
 
   it('emits completion from the sticky nav button when unlocked', () => {

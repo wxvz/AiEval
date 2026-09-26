@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { NnTermHint } from '../../components/nn-term-hint/nn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -16,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-learning-rate-lab',
-  imports: [DecimalPipe, RouterLink, NnTermHint, LearnLabNav, PageShell],
+  imports: [DecimalPipe, RouterLink, NnTermHint, LearnLabNav, LearnLockedCallout, PageShell],
   templateUrl: './learning-rate-lab.html',
   styleUrl: './learning-rate-lab.css',
 })

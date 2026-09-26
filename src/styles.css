@@ -339,6 +339,12 @@ body {
   box-shadow: 0 0 0 0.2rem rgb(var(--aieval-primary-rgb) / 20%);
 }
 
+.learn-lab-body--locked {
+  opacity: 0.72;
+  pointer-events: none;
+  user-select: none;
+}
+
 .app-shell {
   max-width: 84rem;
 }

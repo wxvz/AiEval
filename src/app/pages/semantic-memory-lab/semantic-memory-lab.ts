@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { RetrievalTermHint } from '../../components/retrieval-term-hint/retrieval-term-hint';
 import { getLesson } from '../../learn/curriculum';
@@ -19,7 +20,7 @@ const PRESET_QUERIES = [
 
 @Component({
   selector: 'app-semantic-memory-lab',
-  imports: [FormsModule, DecimalPipe, RouterLink, RetrievalTermHint, LearnLabNav, PageShell],
+  imports: [FormsModule, DecimalPipe, RouterLink, RetrievalTermHint, LearnLabNav, PageShell, LearnLockedCallout],
   templateUrl: './semantic-memory-lab.html',
   styleUrl: './semantic-memory-lab.css',
 })

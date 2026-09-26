@@ -5,6 +5,8 @@
     }
 
     <h1 class="h3 mb-3">RAG playground</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Like a research assistant with notes on the desk,
       <app-retrieval-term-hint term="rag" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -194,7 +196,7 @@
     </section>
 
     <p class="text-muted small mb-4">
-      Review: <a routerLink="/learn/labs/semantic-search">Semantic search lab</a> ·
+      Review: <app-learn-lab-link route="/learn/labs/semantic-search">Semantic search lab</app-learn-lab-link> ·
       Next: <a routerLink="/learn/lessons/faithfulness-and-hallucinations">Faithfulness and hallucinations</a>: score grounding before your first eval.
     </p>
 
@@ -233,6 +235,8 @@
         </p>
       </details>
     </section>
+
+  </app-learn-locked-callout>
 
   </main>
   <app-learn-lab-nav

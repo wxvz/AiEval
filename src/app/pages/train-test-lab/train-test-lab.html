@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Train vs test</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Hold one XOR corner out of the
       <app-learn-term-hint term="trainSet" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       and train only on the rest. The shaded map shows what the network learned; the table compares honest
@@ -139,7 +141,7 @@
 
     <p class="text-muted small mb-4">
       Next: <a routerLink="/learn/lessons/loss-and-updates">Loss and updates</a>: how wrong guesses become weight
-      nudges, then the <a routerLink="/learn/labs/neural-network">Neural network lab</a>.
+      nudges, then the <app-learn-lab-link route="/learn/labs/neural-network">Neural network lab</app-learn-lab-link>.
     </p>
 
     <section class="mb-4">
@@ -169,6 +171,8 @@
         </p>
       </details>
     </section>
+
+  </app-learn-locked-callout>
 
   </main>
   <app-learn-lab-nav

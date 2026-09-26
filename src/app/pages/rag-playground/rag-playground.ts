@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLabLink } from '../../components/learn-lab-link/learn-lab-link';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { RetrievalTermHint } from '../../components/retrieval-term-hint/retrieval-term-hint';
 import { getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
@@ -18,7 +20,7 @@ const DEFAULT_MAX_CHARS = 400;
 
 @Component({
   selector: 'app-rag-playground',
-  imports: [FormsModule, RouterLink, RetrievalTermHint, DecimalPipe, LearnLabNav, PageShell],
+  imports: [FormsModule, RouterLink, RetrievalTermHint, DecimalPipe, LearnLabNav, LearnLockedCallout, PageShell, LearnLabLink],
   templateUrl: './rag-playground.html',
   styleUrl: './rag-playground.css',
 })

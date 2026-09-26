@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Learning from examples lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Every supervised example pairs an
       <app-learn-term-hint term="input" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       with a
@@ -93,6 +95,7 @@
         makes supervised learning general.
       </p>
     </details>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

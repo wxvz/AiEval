@@ -5,6 +5,8 @@
     }
 
     <h1 class="h3 mb-3">Semantic search</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Like an open-book exam, semantic search finds the passages that best match your question, even when the
       wording differs. Text becomes vectors in meaning-space; chunks with similar
@@ -124,7 +126,7 @@
     </div>
 
     <p class="text-muted small mb-4">
-      Next: <a routerLink="/learn/labs/rag-playground">RAG playground</a>: assemble retrieved chunks into a prompt.
+      Next: <app-learn-lab-link route="/learn/labs/rag-playground">RAG playground</app-learn-lab-link>: assemble retrieved chunks into a prompt.
     </p>
 
     <section class="mb-4">
@@ -162,6 +164,8 @@
         </p>
       </details>
     </section>
+
+  </app-learn-locked-callout>
 
   </main>
   <app-learn-lab-nav

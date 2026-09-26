@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Comparing answers lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Two model answers to the same
       <app-learn-term-hint term="prompt" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />.
       Pick the stronger answer per
@@ -96,6 +98,7 @@
         different judges, which is exactly why rubrics with anchors come next.
       </p>
     </details>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

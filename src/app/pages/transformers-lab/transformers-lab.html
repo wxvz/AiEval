@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Transformers lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Set
       <app-learn-term-hint term="attention" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       weights over a fixed sentence, build a context vector and watch which next
@@ -178,6 +180,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

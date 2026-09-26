@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Rubrics and criteria lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Score one answer against a
       <app-learn-term-hint term="rubric" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       with anchored 1–5 scales, then compare your scores to the reference.
@@ -78,6 +80,7 @@
         a two-point spread is the signal that an anchor needs sharper wording.
       </p>
     </details>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

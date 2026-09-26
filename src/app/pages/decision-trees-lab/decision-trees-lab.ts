@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { LearnTermHint } from '../../components/learn-term-hint/learn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -22,7 +23,7 @@ import {
 
 @Component({
   selector: 'app-decision-trees-lab',
-  imports: [DecimalPipe, RouterLink, LearnTermHint, LearnLabNav, PageShell],
+  imports: [DecimalPipe, RouterLink, LearnTermHint, LearnLabNav, LearnLockedCallout, PageShell],
   templateUrl: './decision-trees-lab.html',
   styleUrl: './decision-trees-lab.css',
 })
