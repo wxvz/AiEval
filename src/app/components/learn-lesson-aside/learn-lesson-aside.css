@@ -45,6 +45,17 @@
   background: color-mix(in srgb, var(--aieval-muted) 6%, var(--aieval-surface));
 }
 
+.learn-lesson-aside__branches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.learn-lesson-aside__branch:not(:last-child) {
+  padding-bottom: 0.85rem;
+  border-bottom: 1px dashed var(--aieval-border);
+}
+
 .learn-lesson-aside__complete-btn {
   --bs-btn-color: #fff;
   --bs-btn-bg: var(--aieval-primary);

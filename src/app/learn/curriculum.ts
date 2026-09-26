@@ -1005,6 +1005,11 @@ export function getOptionalLabForLesson(lessonId: string): LearnLessonMeta | und
   );
 }
 
+/** Direct branch children (labs or nested read lessons) under a parent lesson. */
+export function getDirectBranchLessons(parentId: string): LearnLessonMeta[] {
+  return branchChildrenOf(parentId).filter((lesson) => lesson.status === 'live');
+}
+
 function branchChildrenOf(parentId: string): LearnLessonMeta[] {
   return LEARN_LESSONS.filter((lesson) => lesson.branch && lesson.parentLessonId === parentId)
     .map((lesson, index) => ({ lesson, index }))

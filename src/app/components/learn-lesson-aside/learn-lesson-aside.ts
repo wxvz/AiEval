@@ -28,6 +28,8 @@ export class LearnLessonAside {
   readonly optionalLabComplete = input(false);
   /** Route of the read lesson hosting this aside; used to avoid self-nav unlock CTAs. */
   readonly currentLessonRoute = input<string | null>(null);
+  readonly branchLessons = input<LearnLessonMeta[]>([]);
+  readonly branchLessonCompleteIds = input<ReadonlySet<string>>(new Set());
   readonly adjacent = input<{ previous: LearnLessonMeta | null; next: LearnLessonMeta | null }>({
     previous: null,
     next: null,
@@ -127,6 +129,27 @@ export class LearnLessonAside {
     const safe = this.optionalLabSafeLink();
     const current = this.currentLessonRoute();
     return Boolean(safe?.locked && current && safe.route === current);
+  });
+
+  readonly branchLessonLinks = computed(() => {
+    this.progress.completedIds();
+    this.settings.learnUnlockAll();
+    const completed = this.progress.completedIds();
+    const unlockAll = this.settings.learnUnlockAll();
+    const done = this.branchLessonCompleteIds();
+    const current = this.currentLessonRoute();
+    return this.branchLessons().map((lesson) => {
+      const safe = resolveLearnSafeLink(lesson.route, completed, unlockAll);
+      const needsSelfComplete = Boolean(safe.locked && current && safe.route === current);
+      return {
+        lesson,
+        route: safe.route,
+        hint: safe.title,
+        locked: safe.locked,
+        needsSelfComplete,
+        complete: done.has(lesson.id),
+      };
+    });
   });
 
   readonly previousAdjacentSafe = computed(() => {

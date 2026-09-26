@@ -8,7 +8,7 @@ import { LearnLessonRail } from '../../components/learn-lesson-rail/learn-lesson
 import { LearnLessonSection } from '../../components/learn-lesson-section/learn-lesson-section';
 import { LearnCheckQuestion } from '../../components/learn-check-question/learn-check-question';
 import { PageShell } from '../../components/page-shell/page-shell';
-import { getLesson, getNavigableAdjacent, getOptionalLabForLesson, getTrack, isLessonLocked } from '../../learn/curriculum';
+import { getLesson, getDirectBranchLessons, getNavigableAdjacent, getOptionalLabForLesson, getTrack, isLessonLocked } from '../../learn/curriculum';
 import type { LearnGlossaryTerm } from '../../learn/learn-glossary';
 import { loadLessonContent } from '../../learn/learn-content';
 import { getPrimaryTermHintIds } from '../../learn/primary-term-hints';
@@ -108,6 +108,19 @@ export class LearnLessonPage {
     this.progress.completedIds();
     const lab = this.optionalLab();
     return lab ? this.progress.isComplete(lab.id) : false;
+  });
+
+  /** Branch labs/lessons under this spine (or branch) parent — shown in the aside. */
+  readonly branchLessons = computed(() => getDirectBranchLessons(this.lessonId()));
+
+  readonly branchLessonCompleteIds = computed(() => {
+    this.progress.completedIds();
+    const completed = this.progress.completedIds();
+    return new Set(
+      this.branchLessons()
+        .filter((lesson) => completed.has(lesson.id))
+        .map((lesson) => lesson.id),
+    );
   });
 
   readonly recapCount = computed(() => this.content()?.recapQuestions.length ?? 0);
