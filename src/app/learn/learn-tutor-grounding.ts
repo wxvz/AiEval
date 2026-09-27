@@ -71,7 +71,7 @@ export function resolveContentLessonId(lessonId: string | null): string | null {
     return meta.id;
   }
   if (meta.parentLessonId) {
-    return meta.parentLessonId;
+    return resolveContentLessonId(meta.parentLessonId);
   }
   return meta.id;
 }
