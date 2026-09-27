@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { NnTermHint } from '../../components/nn-term-hint/nn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -19,7 +20,7 @@ import {
 
 @Component({
   selector: 'app-softmax-lab',
-  imports: [DecimalPipe, FormsModule, RouterLink, NnTermHint, LearnLabNav, PageShell],
+  imports: [DecimalPipe, FormsModule, RouterLink, NnTermHint, LearnLabNav, LearnLockedCallout, PageShell],
   templateUrl: './softmax-lab.html',
   styleUrl: './softmax-lab.css',
 })

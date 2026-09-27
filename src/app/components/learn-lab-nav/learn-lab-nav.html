@@ -21,13 +21,13 @@
     }
   </button>
 
-  @if (adjacent().previous || adjacent().next) {
+  @if (previousSafe() || nextSafe()) {
     <div class="learn-lab-nav__links">
-      @if (adjacent().previous; as previous) {
-        <a class="small" [routerLink]="previous.route">← {{ previous.title }}</a>
+      @if (previousSafe(); as previous) {
+        <a class="small" [routerLink]="previous.route" [attr.title]="previous.hint">← {{ previous.label }}</a>
       }
-      @if (adjacent().next; as next) {
-        <a class="small" [routerLink]="next.route">{{ next.title }} →</a>
+      @if (nextSafe(); as next) {
+        <a class="small" [routerLink]="next.route" [attr.title]="next.hint">{{ next.label }} →</a>
       }
     </div>
   }

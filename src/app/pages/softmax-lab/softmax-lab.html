@@ -2,6 +2,8 @@
   <main shellMain>
     <p class="text-muted small mb-2">Optional lab</p>
     <h1 class="h3 mb-3">Softmax</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Adjust three raw scores and watch
       <app-nn-term-hint term="softmax" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -77,6 +79,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
 
   <app-learn-lab-nav

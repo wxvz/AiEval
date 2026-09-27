@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { NnTermHint } from '../../components/nn-term-hint/nn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson, getHubLessonsForTrack, getTrack } from '../../learn/curriculum';
@@ -78,7 +79,7 @@ function threeClassToCustomRows(): CustomRow[] {
 
 @Component({
   selector: 'app-nn-playground',
-  imports: [FormsModule, DecimalPipe, NnTermHint, RouterLink, LearnLabNav, PageShell],
+  imports: [FormsModule, DecimalPipe, NnTermHint, RouterLink, LearnLabNav, LearnLockedCallout, PageShell],
   templateUrl: './nn-playground.html',
   styleUrl: './nn-playground.css',
 })

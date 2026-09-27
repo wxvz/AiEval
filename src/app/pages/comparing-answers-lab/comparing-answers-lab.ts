@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { LearnTermHint } from '../../components/learn-term-hint/learn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -50,7 +51,7 @@ const CRITERIA: ComparisonCriterion[] = [
 
 @Component({
   selector: 'app-comparing-answers-lab',
-  imports: [RouterLink, LearnTermHint, LearnLabNav, PageShell],
+  imports: [RouterLink, LearnTermHint, LearnLabNav, PageShell, LearnLockedCallout],
   templateUrl: './comparing-answers-lab.html',
   styleUrl: './comparing-answers-lab.css',
 })

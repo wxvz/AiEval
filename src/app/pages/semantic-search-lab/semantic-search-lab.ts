@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLabLink } from '../../components/learn-lab-link/learn-lab-link';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { RetrievalTermHint } from '../../components/retrieval-term-hint/retrieval-term-hint';
 import { getLesson, getLessonsForTrack, getTrack } from '../../learn/curriculum';
@@ -21,7 +23,7 @@ const PRESET_QUERIES = [
 
 @Component({
   selector: 'app-semantic-search-lab',
-  imports: [FormsModule, DecimalPipe, RouterLink, RetrievalTermHint, LearnLabNav, PageShell],
+  imports: [FormsModule, DecimalPipe, RouterLink, RetrievalTermHint, LearnLabNav, LearnLockedCallout, PageShell, LearnLabLink],
   templateUrl: './semantic-search-lab.html',
   styleUrl: './semantic-search-lab.css',
 })

@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Semantic memory practice</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Rank teaching chunks by meaning, like looking up the right page in an indexed notebook before you answer a
       question. Similar
       <app-retrieval-term-hint term="embedding" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -90,6 +92,8 @@
         </table>
       </div>
     }
+
+  </app-learn-locked-callout>
 
   </main>
   <app-learn-lab-nav

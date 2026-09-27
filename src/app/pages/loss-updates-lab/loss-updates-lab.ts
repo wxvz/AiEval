@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLabLink } from '../../components/learn-lab-link/learn-lab-link';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { NnTermHint } from '../../components/nn-term-hint/nn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -21,7 +23,7 @@ interface PredictionRow {
 
 @Component({
   selector: 'app-loss-updates-lab',
-  imports: [FormsModule, DecimalPipe, RouterLink, NnTermHint, LearnLabNav, PageShell],
+  imports: [FormsModule, DecimalPipe, RouterLink, NnTermHint, LearnLabNav, PageShell, LearnLockedCallout, LearnLabLink],
   templateUrl: './loss-updates-lab.html',
   styleUrl: './loss-updates-lab.css',
 })

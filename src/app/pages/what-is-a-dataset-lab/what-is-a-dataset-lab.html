@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Build the XOR dataset</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       A <app-learn-term-hint term="dataset" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       is rows of
       <app-learn-term-hint term="input" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />–<app-learn-term-hint term="target" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -96,6 +98,7 @@
         real-world dataset problems.
       </p>
     </details>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

@@ -5,9 +5,9 @@ import {
   getAdjacentLessons,
   getLesson,
   getNavigableAdjacent,
-  isLessonLocked,
   type LearnLessonMeta,
 } from '../../learn/curriculum';
+import { isLearnLabLocked, resolveLearnSafeLink } from '../../learn/learn-lab-lock';
 import { LearnProgressService } from '../../learn/learn-progress.service';
 import { SettingsService } from '../../services/settings.service';
 
@@ -30,13 +30,11 @@ export class LearnLabNav {
   readonly locked = computed(() => {
     this.progress.completedIds();
     this.settings.learnUnlockAll();
-    const lesson = this.lesson();
-    if (!lesson) {
-      return false;
-    }
-    return isLessonLocked(lesson, this.progress.completedIds(), {
-      ignorePrerequisites: this.settings.learnUnlockAll(),
-    });
+    return isLearnLabLocked(
+      this.lesson(),
+      this.progress.completedIds(),
+      this.settings.learnUnlockAll(),
+    );
   });
 
   readonly markCompleteDisabled = computed(
@@ -74,5 +72,35 @@ export class LearnLabNav {
       return getAdjacentLessons(lesson.id);
     }
     return getNavigableAdjacent(lesson.id);
+  });
+
+  readonly previousSafe = computed(() => {
+    this.progress.completedIds();
+    this.settings.learnUnlockAll();
+    const previous = this.adjacent().previous;
+    if (!previous) {
+      return null;
+    }
+    const safe = resolveLearnSafeLink(
+      previous.route,
+      this.progress.completedIds(),
+      this.settings.learnUnlockAll(),
+    );
+    return { label: previous.title, route: safe.route, hint: safe.title };
+  });
+
+  readonly nextSafe = computed(() => {
+    this.progress.completedIds();
+    this.settings.learnUnlockAll();
+    const next = this.adjacent().next;
+    if (!next) {
+      return null;
+    }
+    const safe = resolveLearnSafeLink(
+      next.route,
+      this.progress.completedIds(),
+      this.settings.learnUnlockAll(),
+    );
+    return { label: next.title, route: safe.route, hint: safe.title };
   });
 }

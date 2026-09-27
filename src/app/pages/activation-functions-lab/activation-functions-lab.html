@@ -2,6 +2,8 @@
   <main shellMain>
     <p class="text-muted small mb-2">Optional lab</p>
     <h1 class="h3 mb-3">Activation functions</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Compare how
       <app-nn-term-hint term="linear" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />,
@@ -23,7 +25,7 @@
     }
     <div class="learn-callout mb-3" role="note">
       Teaching shortcut: one score in, one value out. Real networks stack many units; the
-      <a routerLink="/learn/labs/neural-network">Neural network lab</a>
+      <app-learn-lab-link route="/learn/labs/neural-network">Neural network lab</app-learn-lab-link>
       lets you pick a hidden
       <app-nn-term-hint
         term="activation"
@@ -173,6 +175,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

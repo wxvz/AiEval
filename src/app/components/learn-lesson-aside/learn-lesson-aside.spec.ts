@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getLesson } from '../../learn/curriculum';
 import { loadLessonContent } from '../../learn/learn-content';
 import { LearnLessonAside } from './learn-lesson-aside';
 
@@ -9,6 +10,7 @@ describe('LearnLessonAside', () => {
   let fixture: ComponentFixture<LearnLessonAside>;
 
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [LearnLessonAside],
       providers: [provideRouter([])],
@@ -33,6 +35,7 @@ describe('LearnLessonAside', () => {
   });
 
   it('renders optional lab, tip and mark complete when unlocked', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['train-vs-test']));
     fixture.componentRef.setInput('content', loadLessonContent('prompts-as-instructions'));
     fixture.componentRef.setInput('sectionsSolved', [false, false, false]);
     fixture.componentRef.setInput('recapCount', 0);
@@ -42,12 +45,7 @@ describe('LearnLessonAside', () => {
       'activeAside',
       loadLessonContent('prompts-as-instructions')?.sections[0]?.aside ?? null,
     );
-    fixture.componentRef.setInput('optionalLab', {
-      id: 'train-vs-test-lab',
-      title: 'Train vs test lab',
-      summary: 'Hold out one XOR corner.',
-      route: '/learn/labs/train-vs-test',
-    });
+    fixture.componentRef.setInput('optionalLab', getLesson('train-vs-test-lab')!);
     fixture.detectChanges();
 
     const el: HTMLElement = fixture.nativeElement;
@@ -75,12 +73,7 @@ describe('LearnLessonAside', () => {
       'activeAside',
       loadLessonContent('prompts-as-instructions')?.sections[0]?.aside ?? null,
     );
-    fixture.componentRef.setInput('optionalLab', {
-      id: 'train-vs-test-lab',
-      title: 'Train vs test lab',
-      summary: 'Hold out one XOR corner.',
-      route: '/learn/labs/train-vs-test',
-    });
+    fixture.componentRef.setInput('optionalLab', getLesson('train-vs-test-lab')!);
     fixture.componentRef.setInput('adjacent', {
       previous: { id: 'x', title: 'Prev', route: '/learn/lessons/x' } as never,
       next: { id: 'y', title: 'Next', route: '/learn/lessons/y' } as never,

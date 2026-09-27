@@ -2,6 +2,8 @@
   <main shellMain>
     <p class="text-muted small mb-2">Optional lab</p>
     <h1 class="h3 mb-3">Bias and weights</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Nudge one
       <app-nn-term-hint term="weights" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -24,7 +26,7 @@
       Teaching shortcut: one neuron, one feature (<code>score = w·x + b</code>, then sigmoid). Next, the
       <a routerLink="/learn/lessons/activation-functions">Activation functions</a>
       lesson compares sigmoid with ReLU and tanh; the
-      <a routerLink="/learn/labs/neural-network">Neural network lab</a>
+      <app-learn-lab-link route="/learn/labs/neural-network">Neural network lab</app-learn-lab-link>
       stacks many units after that.
     </div>
     <p class="text-muted small mb-4">
@@ -233,6 +235,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

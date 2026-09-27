@@ -1,6 +1,8 @@
 <app-page-shell>
   <main shellMain>
     <h1 class="h3 mb-3">Decision trees lab</h1>
+
+    <app-learn-locked-callout [lesson]="labMeta">
     <p class="lead mb-3">
       Build a one-question
       <app-learn-term-hint term="decisionTree" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
@@ -171,6 +173,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

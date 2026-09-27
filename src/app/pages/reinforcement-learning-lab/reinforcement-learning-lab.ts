@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { LearnLabNav } from '../../components/learn-lab-nav/learn-lab-nav';
+import { LearnLockedCallout } from '../../components/learn-locked-callout/learn-locked-callout';
 import { LearnTermHint } from '../../components/learn-term-hint/learn-term-hint';
 import { PageShell } from '../../components/page-shell/page-shell';
 import { getLesson } from '../../learn/curriculum';
@@ -20,7 +21,7 @@ import {
 
 @Component({
   selector: 'app-reinforcement-learning-lab',
-  imports: [DecimalPipe, RouterLink, LearnTermHint, LearnLabNav, PageShell],
+  imports: [DecimalPipe, RouterLink, LearnTermHint, LearnLabNav, PageShell, LearnLockedCallout],
   templateUrl: './reinforcement-learning-lab.html',
   styleUrl: './reinforcement-learning-lab.css',
 })

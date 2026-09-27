@@ -55,6 +55,7 @@
 
     <app-learn-lesson-aside
       shellRight
+      [currentLessonRoute]="lesson.route"
       [content]="content()"
       [sectionsSolved]="sessionState()?.sectionsSolved ?? []"
       [recapSolved]="sessionState()?.recapSolved ?? []"

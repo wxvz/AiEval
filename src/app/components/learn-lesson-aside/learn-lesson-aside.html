@@ -26,13 +26,30 @@
       <p class="learn-eyebrow mb-1">Optional · try it yourself</p>
       <h2 class="h6 mb-2">{{ lab.title }}</h2>
       <p class="text-muted small mb-3">{{ lab.summary }}</p>
-      <a class="btn btn-outline-primary btn-sm" [routerLink]="lab.route">
-        @if (optionalLabComplete()) {
-          Open lab again (completed)
-        } @else {
-          Open optional lab →
-        }
-      </a>
+      @if (optionalLabNeedsSelfComplete()) {
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          disabled
+          title="Mark this lesson complete first"
+        >
+          Mark this lesson complete first
+        </button>
+      } @else {
+        <a
+          class="btn btn-outline-primary btn-sm"
+          [routerLink]="optionalLabSafeLink()?.route ?? lab.route"
+          [attr.title]="optionalLabSafeLink()?.title"
+        >
+          @if (optionalLabComplete()) {
+            Open lab again (completed)
+          } @else if (optionalLabSafeLink()?.locked) {
+            Unlock prerequisites →
+          } @else {
+            Open optional lab →
+          }
+        </a>
+      }
     </section>
   }
 
@@ -61,6 +78,7 @@
           class="btn btn-outline-primary btn-sm mt-3"
           [routerLink]="path"
           [queryParams]="asideRouteQueryParams()"
+          [attr.title]="asideRouteTitle()"
         >
           {{ asideActionLabel() }}
         </a>
@@ -88,16 +106,24 @@
     </div>
   }
 
-  @if (!locked() && (adjacent().previous || adjacent().next)) {
+  @if (!locked() && (previousAdjacentSafe() || nextAdjacentSafe())) {
     <nav class="learn-lesson-aside__nav" aria-label="Lesson navigation">
-      @if (adjacent().previous; as previous) {
-        <a class="learn-lesson-aside__nav-link small" [routerLink]="previous.route">
-          ← Previous: {{ previous.title }}
+      @if (previousAdjacentSafe(); as previous) {
+        <a
+          class="learn-lesson-aside__nav-link small"
+          [routerLink]="previous.route"
+          [attr.title]="previous.hint"
+        >
+          ← Previous: {{ previous.label }}
         </a>
       }
-      @if (adjacent().next; as next) {
-        <a class="learn-lesson-aside__nav-link small learn-lesson-aside__nav-link--next" [routerLink]="next.route">
-          Next: {{ next.title }} →
+      @if (nextAdjacentSafe(); as next) {
+        <a
+          class="learn-lesson-aside__nav-link small learn-lesson-aside__nav-link--next"
+          [routerLink]="next.route"
+          [attr.title]="next.hint"
+        >
+          Next: {{ next.label }} →
         </a>
       }
     </nav>

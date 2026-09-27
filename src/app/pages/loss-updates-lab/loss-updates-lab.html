@@ -2,7 +2,9 @@
   <main shellMain>
     <p class="text-muted small mb-2">Optional lab</p>
     <h1 class="h3 mb-3">Loss and updates</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Train a tiny network on XOR and watch
       <app-nn-term-hint term="loss" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       drop as
@@ -14,7 +16,7 @@
       Teaching shortcut: fixed architecture and XOR rows. After
       <a routerLink="/learn/lessons/activation-functions">Activation functions</a>,
       the full
-      <a routerLink="/learn/labs/neural-network">Neural network lab</a> adds datasets and controls.
+      <app-learn-lab-link route="/learn/labs/neural-network">Neural network lab</app-learn-lab-link> adds datasets and controls.
     </div>
     <p class="text-muted small mb-4">
       Tip: press <strong>Train 200 epochs</strong> and watch the loss curve fall while the table fills with ✓ marks.
@@ -122,6 +124,8 @@
         </p>
       </details>
     </section>
+
+  </app-learn-locked-callout>
 
   </main>
   <app-learn-lab-nav

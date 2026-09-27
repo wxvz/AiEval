@@ -1,7 +1,9 @@
 <app-page-shell>
   <main shellMain>
     <h1 class="h3 mb-3">Reinforcement learning lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Act as an
       <app-learn-term-hint term="agent" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />
       in a tiny café
@@ -137,6 +139,7 @@
         </p>
       </details>
     </section>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight

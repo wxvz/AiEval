@@ -348,6 +348,12 @@ body {
   background-color: var(--aieval-border);
 }
 
+.learn-lab-body--locked {
+  opacity: 0.72;
+  pointer-events: none;
+  user-select: none;
+}
+
 .app-shell {
   max-width: 84rem;
 }

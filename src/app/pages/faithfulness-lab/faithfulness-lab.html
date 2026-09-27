@@ -3,7 +3,9 @@
     <p class="text-muted small mb-2">Optional lab</p>
 
     <h1 class="h3 mb-3">Faithfulness lab</h1>
-    <p class="lead mb-3">
+    
+    <app-learn-locked-callout [lesson]="labMeta">
+<p class="lead mb-3">
       Which sentences are grounded in the retrieved context and which look like
       <app-learn-term-hint term="hallucination" [activeId]="openTermId()" (activeIdChange)="setOpenTermId($event)" />?
     </p>
@@ -45,6 +47,7 @@
       <summary class="learn-lab-faq__question">Why flag the warranty sentence?</summary>
       <p class="mb-0 text-muted">It adds specifics that never appear in the context: classic unfaithful detail even when tone sounds helpful.</p>
     </details>
+  </app-learn-locked-callout>
   </main>
   <app-learn-lab-nav
     shellRight
