@@ -160,7 +160,7 @@ describe('LearnChatService', () => {
       curriculumCatalog: { title: string }[];
     };
     expect(body.lessonId).toBe('rag-playground-lab');
-    expect(body.termHints[0]?.term).toBe('bias');
+    expect(body.termHints[0]?.term).toBe('semanticMemory');
     expect(body.excerpts.length).toBeGreaterThan(0);
     expect(body.sources[0]?.title).toBe('Bias and weights');
     expect(body.curriculumCatalog.some((entry) => entry.title === 'Bias and weights')).toBe(true);

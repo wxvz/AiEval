@@ -339,6 +339,15 @@ body {
   box-shadow: 0 0 0 0.2rem rgb(var(--aieval-primary-rgb) / 20%);
 }
 
+/* Slider/range input track visibility */
+.form-range::-webkit-slider-runnable-track {
+  background-color: var(--aieval-border);
+}
+
+.form-range::-moz-range-track {
+  background-color: var(--aieval-border);
+}
+
 .learn-lab-body--locked {
   opacity: 0.72;
   pointer-events: none;

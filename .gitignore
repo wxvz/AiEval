@@ -53,5 +53,6 @@ Thumbs.db
 # logs
 logs/
 
-
-.cursor/
+# Cursor: local state stays private; project agent skills are shared
+.cursor/*
+!.cursor/skills/
