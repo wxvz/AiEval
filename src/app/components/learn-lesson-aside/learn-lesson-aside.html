@@ -53,6 +53,46 @@
     </section>
   }
 
+  @if (!locked() && branchLessonLinks().length > 0) {
+    <section class="learn-optional-lab mb-0" aria-label="Practice branches">
+      <p class="learn-eyebrow mb-2">Practice · try it yourself</p>
+      <ul class="list-unstyled mb-0 learn-lesson-aside__branches">
+        @for (entry of branchLessonLinks(); track entry.lesson.id) {
+          <li class="learn-lesson-aside__branch">
+            <h2 class="h6 mb-1">{{ entry.lesson.title }}</h2>
+            <p class="text-muted small mb-2">{{ entry.lesson.summary }}</p>
+            @if (entry.needsSelfComplete) {
+              <button
+                type="button"
+                class="btn btn-outline-secondary btn-sm"
+                disabled
+                title="Mark this lesson complete first"
+              >
+                Mark this lesson complete first
+              </button>
+            } @else {
+              <a
+                class="btn btn-outline-primary btn-sm"
+                [routerLink]="entry.route"
+                [attr.title]="entry.hint"
+              >
+                @if (entry.complete) {
+                  Open again (completed)
+                } @else if (entry.locked) {
+                  Unlock prerequisites →
+                } @else if (entry.lesson.kind === 'read') {
+                  Open branch →
+                } @else {
+                  Open lab →
+                }
+              </a>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   @if (!locked() && activeAside(); as aside) {
     <section class="learn-lesson-aside__tip" aria-label="AiEval tip">
       <h2 class="learn-eyebrow learn-eyebrow--accent mb-2">

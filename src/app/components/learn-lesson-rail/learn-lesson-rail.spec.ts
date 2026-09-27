@@ -57,4 +57,26 @@ describe('LearnLessonRail', () => {
 
     expect(fixture.nativeElement.querySelector('.learn-lesson-rail__key-terms')).toBeFalsy();
   });
+
+  it('shows parent lesson back link for branch lessons', () => {
+    fixture.componentRef.setInput('lesson', getLesson('decision-trees'));
+    fixture.componentRef.setInput('content', loadLessonContent('decision-trees'));
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const backLink = el.querySelector('.learn-back-link') as HTMLAnchorElement;
+    expect(backLink).toBeTruthy();
+    expect(backLink.textContent).toContain('Data literacy');
+    expect(backLink.getAttribute('href')).toBe('/learn/lessons/data-literacy');
+  });
+
+  it('shows Learn hub back link for spine lessons without parent', () => {
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const backLink = el.querySelector('.learn-back-link') as HTMLAnchorElement;
+    expect(backLink).toBeTruthy();
+    expect(backLink.textContent).toContain('Learn');
+    expect(backLink.getAttribute('href')).toBe('/learn');
+  });
 });

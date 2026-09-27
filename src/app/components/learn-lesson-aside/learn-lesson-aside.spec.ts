@@ -64,6 +64,45 @@ describe('LearnLessonAside', () => {
     );
   });
 
+  it('renders branch practice links for the parent lesson', () => {
+    localStorage.setItem('aieval-learn-progress', JSON.stringify(['softmax-and-distributions']));
+    fixture.componentRef.setInput('content', loadLessonContent('softmax-and-distributions'));
+    fixture.componentRef.setInput('locked', false);
+    fixture.componentRef.setInput('currentLessonRoute', '/learn/lessons/softmax-and-distributions');
+    fixture.componentRef.setInput('branchLessons', [
+      getLesson('softmax-and-distributions-lab')!,
+      getLesson('neural-network-lab')!,
+    ]);
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Practice · try it yourself');
+    expect(el.textContent).toContain('Softmax lab');
+    expect(el.textContent).toContain('Neural network lab');
+    expect(el.querySelector('a[href="/learn/labs/softmax"]')).toBeTruthy();
+    expect(el.querySelector('a[href="/learn/labs/neural-network"]')).toBeTruthy();
+  });
+
+  it('shows disabled self-complete CTA when branch lab prereq is the current lesson', () => {
+    fixture.componentRef.setInput('content', loadLessonContent('softmax-and-distributions'));
+    fixture.componentRef.setInput('locked', false);
+    fixture.componentRef.setInput('currentLessonRoute', '/learn/lessons/softmax-and-distributions');
+    fixture.componentRef.setInput('branchLessons', [getLesson('softmax-and-distributions-lab')!]);
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const selfLink = el.querySelector(
+      'a[href="/learn/lessons/softmax-and-distributions"]',
+    );
+    const disabledBtn = el.querySelector(
+      'button[disabled][title="Mark this lesson complete first"]',
+    );
+
+    expect(selfLink).toBeFalsy();
+    expect(disabledBtn).toBeTruthy();
+    expect(el.textContent).toContain('Mark this lesson complete first');
+  });
+
   it('hides optional lab, tip and nav when locked', () => {
     fixture.componentRef.setInput('content', loadLessonContent('prompts-as-instructions'));
     fixture.componentRef.setInput('sectionsSolved', [false, false, false]);
@@ -74,6 +113,7 @@ describe('LearnLessonAside', () => {
       loadLessonContent('prompts-as-instructions')?.sections[0]?.aside ?? null,
     );
     fixture.componentRef.setInput('optionalLab', getLesson('train-vs-test-lab')!);
+    fixture.componentRef.setInput('branchLessons', [getLesson('neural-network-lab')!]);
     fixture.componentRef.setInput('adjacent', {
       previous: { id: 'x', title: 'Prev', route: '/learn/lessons/x' } as never,
       next: { id: 'y', title: 'Next', route: '/learn/lessons/y' } as never,
@@ -83,6 +123,7 @@ describe('LearnLessonAside', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('Progress');
     expect(el.textContent).not.toContain('Optional · try it yourself');
+    expect(el.textContent).not.toContain('Practice · try it yourself');
     expect(el.textContent).not.toContain('Try in AiEval');
     expect(el.textContent).not.toContain('Key terms');
     expect(el.querySelector('.learn-lesson-aside__nav-link')).toBeFalsy();

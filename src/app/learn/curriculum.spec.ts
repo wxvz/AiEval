@@ -7,6 +7,7 @@ import {
   getLessonByRoute,
   getHubLessonsForTrack,
   getBranchSpurForLesson,
+  getDirectBranchLessons,
   getNavigableAdjacent,
   getOptionalLabForLesson,
   getSpineNavigationAnchor,
@@ -108,6 +109,15 @@ describe('curriculum', () => {
     expect(getOptionalLabForLesson('softmax-and-distributions')).toBeUndefined();
     expect(getOptionalLabForLesson('semantic-memory')).toBeUndefined();
     expect(getOptionalLabForLesson('data-literacy')).toBeUndefined();
+
+    expect(getDirectBranchLessons('softmax-and-distributions').map((l) => l.id)).toEqual([
+      'softmax-and-distributions-lab',
+      'neural-network-lab',
+    ]);
+    expect(getDirectBranchLessons('data-literacy').map((l) => l.id)).toEqual(['decision-trees']);
+    expect(getDirectBranchLessons('decision-trees').map((l) => l.id)).toEqual([
+      'decision-trees-lab',
+    ]);
 
     const softmaxSpur = getBranchSpurForLesson('softmax-and-distributions');
     expect(softmaxSpur.map((n) => n.lesson.id)).toEqual([

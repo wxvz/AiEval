@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import type { LearnLessonMeta } from '../../learn/curriculum';
+import { getLesson, type LearnLessonMeta } from '../../learn/curriculum';
 import type { LessonContent } from '../../learn/learn-content';
 import { LEARN_GLOSSARY, type LearnGlossaryTerm } from '../../learn/learn-glossary';
 
@@ -19,6 +19,15 @@ export class LearnLessonRail {
   readonly activeSectionIndex = input(0);
   readonly locked = input(false);
   readonly savedKeyTerms = input<LearnGlossaryTerm[]>([]);
+
+  /** Parent lesson for branch/optional lessons; null falls back to hub. */
+  readonly parentLesson = computed(() => {
+    const current = this.lesson();
+    if (current.parentLessonId) {
+      return getLesson(current.parentLessonId) ?? null;
+    }
+    return null;
+  });
 
   readonly sections = computed(() =>
     (this.content()?.sections ?? []).map((section, index) => ({
