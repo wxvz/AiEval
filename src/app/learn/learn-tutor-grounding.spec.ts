@@ -20,6 +20,11 @@ describe('learn-tutor-grounding', () => {
     expect(grounding.termHints[0]?.sense).not.toMatch(/fairness/i);
   });
 
+  it('walks nested parent chain to content-bearing ancestor', () => {
+    expect(resolveContentLessonId('support-bot-decision-lab')).toBe('outside-eval-practice');
+    expect(resolveContentLessonId('rag-playground-lab')).toBe('semantic-memory');
+  });
+
   it('hints temperature senses for controlling generation', () => {
     const grounding = getTutorPageGrounding('controlling-generation');
     expect(grounding.termHints.map((hint) => hint.term)).toEqual([
@@ -113,7 +118,7 @@ describe('learn-tutor-grounding', () => {
     expect(sources[0]?.route).toBe('/learn/lessons/bias-and-weights');
     expect(excerpts.length).toBeGreaterThan(0);
     expect(excerpts.some((excerpt) => /bias/i.test(excerpt.text))).toBe(true);
-    expect(relatedTermHints.map((hint) => hint.term)).toEqual(['bias', 'weights']);
+    expect(relatedTermHints).toEqual([]);
   });
 
   it('exposes a live curriculum catalog with Bias and weights', () => {
